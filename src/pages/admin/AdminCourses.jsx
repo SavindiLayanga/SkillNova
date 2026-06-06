@@ -1,0 +1,126 @@
+import { Edit3, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import AdminCard from "../../components/admin/AdminCard.jsx";
+import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
+import Button from "../../components/ui/Button.jsx";
+import { adminCourses } from "../../data/adminDummyData.js";
+
+const emptyCourse = { provider: "", skills: "", title: "" };
+
+export default function AdminCourses() {
+  const [courses, setCourses] = useState(adminCourses);
+  const [form, setForm] = useState(emptyCourse);
+  const [editingId, setEditingId] = useState(null);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const nextCourse = {
+      id: editingId ?? Date.now(),
+      provider: form.provider.trim(),
+      skills: form.skills
+        .split(",")
+        .map((skill) => skill.trim())
+        .filter(Boolean),
+      title: form.title.trim(),
+    };
+
+    setCourses((currentCourses) =>
+      editingId
+        ? currentCourses.map((course) =>
+            course.id === editingId ? nextCourse : course
+          )
+        : [nextCourse, ...currentCourses]
+    );
+    setEditingId(null);
+    setForm(emptyCourse);
+  }
+
+  function editCourse(course) {
+    setEditingId(course.id);
+    setForm({
+      provider: course.provider,
+      skills: course.skills.join(", "),
+      title: course.title,
+    });
+  }
+
+  function deleteCourse(id) {
+    setCourses((currentCourses) =>
+      currentCourses.filter((course) => course.id !== id)
+    );
+  }
+
+  return (
+    <div>
+      <AdminPageHeader
+        description="Manage course recommendations and the skills each course covers."
+        title="Courses"
+      />
+
+      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <AdminCard>
+          <h2 className="text-lg font-bold text-slate-950">
+            {editingId ? "Edit course" : "Add course"}
+          </h2>
+          <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+            <input
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+              onChange={(event) => setForm({ ...form, title: event.target.value })}
+              placeholder="Course title"
+              required
+              value={form.title}
+            />
+            <input
+              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+              onChange={(event) => setForm({ ...form, provider: event.target.value })}
+              placeholder="Provider"
+              required
+              value={form.provider}
+            />
+            <textarea
+              className="min-h-28 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+              onChange={(event) => setForm({ ...form, skills: event.target.value })}
+              placeholder="Skills covered, comma separated"
+              required
+              value={form.skills}
+            />
+            <Button icon={Plus} type="submit">
+              {editingId ? "Update course" : "Add course"}
+            </Button>
+          </form>
+        </AdminCard>
+
+        <div className="space-y-4">
+          {courses.map((course) => (
+            <AdminCard key={course.id}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-950">{course.title}</h3>
+                  <p className="mt-1 text-sm text-slate-500">{course.provider}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {course.skills.map((skill) => (
+                      <span
+                        className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700"
+                        key={skill}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button icon={Edit3} onClick={() => editCourse(course)} size="sm" variant="secondary">
+                    Edit
+                  </Button>
+                  <Button icon={Trash2} onClick={() => deleteCourse(course.id)} size="sm" variant="ghost">
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </AdminCard>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
