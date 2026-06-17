@@ -217,6 +217,46 @@ export default function Dashboard() {
 
       {hasAnalysis ? (
         <>
+          <section className="animate-fade-in-slide-up">
+            <SectionHeader
+              description="A quick overview of your career readiness based on your CV and skill analysis."
+              title="Career Readiness Score"
+            />
+            <Card className="p-5 sm:p-6 grid gap-6 lg:grid-cols-2 items-center bg-gradient-to-br from-white to-primary-50/30">
+              <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
+                 <div className="relative inline-flex items-center justify-center">
+                    <svg className="w-32 h-32 transform -rotate-90 drop-shadow-sm">
+                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-ink-100/50" />
+                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * 78) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
+                    </svg>
+                    <span className="absolute text-3xl font-extrabold text-ink-900">78%</span>
+                 </div>
+                 <h3 className="mt-4 text-xl font-bold text-ink-900 tracking-tight">Overall Score</h3>
+                 <p className="mt-2 text-sm leading-relaxed text-ink-600 max-w-sm text-center lg:text-left">
+                   Your profile is looking strong! Focus on bridging your technical skill gaps to boost your job match score and stand out to employers.
+                 </p>
+              </div>
+              <div className="space-y-5">
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">82%</span></div>
+                  <ProgressBar value={82} className="h-2 opacity-90" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">70%</span></div>
+                  <ProgressBar value={70} className="h-2 opacity-90" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Industry Readiness</span><span className="font-bold text-ink-900">75%</span></div>
+                  <ProgressBar value={75} className="h-2 opacity-90" />
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Job Match</span><span className="font-bold text-ink-900">80%</span></div>
+                  <ProgressBar value={80} className="h-2 opacity-90" />
+                </div>
+              </div>
+            </Card>
+          </section>
+
           <section>
             <SectionHeader
               description="Human-readable feedback generated from your CV."

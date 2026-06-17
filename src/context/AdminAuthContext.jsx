@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { AdminAuthContext } from "./adminAuthContextValue.js";
 
 const ADMIN_USERNAME = "admin";
-const DEFAULT_PASSWORD = "Admin@12345";
+const DEFAULT_PASSWORD = "";
 const ADMIN_PASSWORD_KEY = "skillnova_admin_password";
 const ADMIN_PASSWORD_CHANGED_KEY = "skillnova_admin_password_changed";
 const ADMIN_SESSION_KEY = "skillnova_admin_session";

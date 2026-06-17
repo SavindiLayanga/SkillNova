@@ -5,6 +5,9 @@ import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
+console.log("ENV KEY =", process.env.GEMINI_API_KEY);
+console.log("ENV FILE LOADED");
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -349,5 +352,5 @@ app.post('/api/custom-learning-path', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(\`Backend server running on http://localhost:\${port}\`);
+  console.log(`Backend server running on http://localhost:${port}`);
 });

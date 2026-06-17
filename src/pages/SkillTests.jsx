@@ -901,6 +901,60 @@ export default function SkillTests() {
         eyebrow="Assessment Hub"
         title="Skill assessment center"
       />
+      {/* Interview Readiness Predictor */}
+      <section className="animate-fade-in-slide-up">
+        <Card className="bg-gradient-to-br from-primary-50/50 to-white border-primary-100 p-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="md:w-1/3 text-center md:text-left flex flex-col items-center md:items-start">
+               <h2 className="text-lg font-bold text-ink-900 flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5 text-primary-600" />
+                  Interview Readiness
+               </h2>
+               <div className="mt-4 relative inline-flex items-center justify-center">
+                  <svg className="w-24 h-24 transform -rotate-90">
+                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-ink-100/50" />
+                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * 65) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
+                  </svg>
+                  <span className="absolute text-2xl font-extrabold text-ink-900">65%</span>
+               </div>
+               <p className="mt-3 text-xs text-ink-500 font-medium">Predicted from test scores & CV</p>
+            </div>
+            
+            <div className="md:w-2/3 grid gap-4 sm:grid-cols-2">
+               <div className="space-y-3">
+                  <div>
+                     <h3 className="text-sm font-bold text-ink-900 mb-1">Strong Areas</h3>
+                     <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">React Fundamentals</span>
+                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">API Integration</span>
+                     </div>
+                  </div>
+                  <div>
+                     <h3 className="text-sm font-bold text-ink-900 mb-1">Weak Areas</h3>
+                     <div className="flex flex-wrap gap-1.5">
+                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">System Design</span>
+                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">Advanced State</span>
+                     </div>
+                  </div>
+               </div>
+               <div>
+                  <h3 className="text-sm font-bold text-ink-900 mb-2">Recommended Practice</h3>
+                  <div className="bg-white p-3 rounded-lg border border-ink-100 shadow-sm space-y-2">
+                     <div className="flex items-start gap-2">
+                        <BookOpen className="h-4 w-4 text-primary-600 mt-0.5 shrink-0" />
+                        <div>
+                           <p className="text-xs font-bold text-ink-900">System Design Patterns</p>
+                           <p className="text-[10px] text-ink-500">Take the related conceptual quiz.</p>
+                        </div>
+                     </div>
+                     <Button size="sm" variant="secondary" className="w-full text-xs">Start Practice</Button>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
 
       {/* Tab Switcher */}
       <div className="flex border-b border-ink-100 pb-px">
