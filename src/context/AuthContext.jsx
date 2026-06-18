@@ -1,110 +1,91 @@
-import { useMemo, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
+import { auth } from "../config/firebase.js";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from "firebase/auth";
 import { AuthContext } from "./authContextValue.js";
 
-const USERS_KEY = "skillnova_users";
-const SESSION_KEY = "skillnova_session";
-
-function readJson(key, fallback) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function getStoredUsers() {
-  return readJson(USERS_KEY, []);
-}
-
-function toText(value) {
-  return typeof value === "string" ? value : "";
-}
-
-function getStoredSessionUser() {
-  const session = readJson(SESSION_KEY, null);
-
-  if (!session?.email) {
-    return null;
-  }
-
-  return (
-    getStoredUsers().find(
-      (storedUser) => storedUser.email === session.email.toLowerCase()
-    ) ?? null
-  );
-}
-
-function withoutPassword(user) {
-  if (!user) {
-    return null;
-  }
-
-  const { password: _password, ...safeUser } = user;
-  return safeUser;
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => withoutPassword(getStoredSessionUser()));
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+          // Keep a ref to the original object to get token
+          _firebaseUser: firebaseUser,
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const value = useMemo(() => {
-    function signup(details) {
-      const email = toText(details.email).trim().toLowerCase();
-      const users = getStoredUsers();
-      const exists = users.some((storedUser) => storedUser.email === email);
-
-      if (exists) {
-        throw new Error("An account already exists for this email.");
+    async function signup(details) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, details.email, details.password);
+        
+        // After firebase signup, we notify our backend to create/upsert the MongoDB profile
+        const token = await userCredential.user.getIdToken();
+        await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: details.name })
+        });
+        
+        return userCredential.user;
+      } catch (error) {
+        throw new Error(error.message);
       }
-
-      const newUser = {
-        id: crypto.randomUUID?.() ?? `${Date.now()}`,
-        name: toText(details.name).trim(),
-        email,
-        password: toText(details.password),
-        targetRole: toText(details.targetRole).trim(),
-        experience: toText(details.experience).trim(),
-        createdAt: new Date().toISOString(),
-      };
-
-      localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ email }));
-      setUser(withoutPassword(newUser));
-
-      return withoutPassword(newUser);
     }
 
-    function signin(emailInput, passwordInput) {
-      const email = toText(emailInput).trim().toLowerCase();
-      const password = toText(passwordInput);
-      const matchedUser = getStoredUsers().find(
-        (storedUser) =>
-          storedUser.email === email && storedUser.password === password
-      );
-
-      if (!matchedUser) {
+    async function signin(emailInput, passwordInput) {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, emailInput, passwordInput);
+        return userCredential.user;
+      } catch (error) {
         throw new Error("Wrong email or password. Please try again.");
       }
-
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ email }));
-      setUser(withoutPassword(matchedUser));
-
-      return withoutPassword(matchedUser);
     }
 
-    function logout() {
-      localStorage.removeItem(SESSION_KEY);
-      setUser(null);
+    async function logout() {
+      await signOut(auth);
+    }
+
+    // Helper to get token for API requests
+    async function getToken() {
+      if (!auth.currentUser) return null;
+      return await auth.currentUser.getIdToken();
     }
 
     return {
       isAuthenticated: Boolean(user),
+      loading,
       logout,
       signin,
       signup,
       user,
+      getToken
     };
-  }, [user]);
+  }, [user, loading]);
+
+  // Don't render children until we have finished checking auth state
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

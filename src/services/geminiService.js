@@ -1,17 +1,35 @@
+import { auth } from '../config/firebase.js';
+
+async function fetchWithAuth(url, options = {}) {
+  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Request failed with status ${response.status}`);
+  }
+
+  return await response.json();
+}
+
 export async function analyzeCV(text) {
   try {
-    const response = await fetch('/api/analyze-cv', {
+    return await fetchWithAuth('/api/analyze-cv', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to analyze CV with API');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('API Error:', error);
     throw error;
@@ -20,18 +38,10 @@ export async function analyzeCV(text) {
 
 export async function analyzeManualSkills(name, skills, targetRole, experience, education) {
   try {
-    const response = await fetch('/api/analyze-manual-skills', {
+    return await fetchWithAuth('/api/analyze-manual-skills', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, skills, targetRole, experience, education }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to analyze manual skills with API');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('API Error (Manual Analysis):', error);
     throw error;
@@ -40,18 +50,10 @@ export async function analyzeManualSkills(name, skills, targetRole, experience, 
 
 export async function generateSkillTest(skillName, type) {
   try {
-    const response = await fetch('/api/generate-test', {
+    return await fetchWithAuth('/api/generate-test', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ skillName, type }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate test with API');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('API Error (Test Generation):', error);
     throw error;
@@ -60,18 +62,10 @@ export async function generateSkillTest(skillName, type) {
 
 export async function chatWithGemini(messages, apiKey_unused, cvContext) {
   try {
-    const response = await fetch('/api/chat', {
+    const data = await fetchWithAuth('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, cvContext }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to communicate with AI Assistant.');
-    }
-
-    const data = await response.json();
     return data.text;
   } catch (error) {
     console.error('Chat API Error:', error);
@@ -81,21 +75,51 @@ export async function chatWithGemini(messages, apiKey_unused, cvContext) {
 
 export async function generateCustomLearningPath(targetRole, missingSkills) {
   try {
-    const response = await fetch('/api/custom-learning-path', {
+    return await fetchWithAuth('/api/custom-learning-path', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetRole, missingSkills }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate custom learning path with API');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('API Error (Custom Learning Path):', error);
     throw error;
   }
 }
 
+// User History Endpoints
+export async function fetchCVAnalyses() {
+  try {
+    return await fetchWithAuth('/api/user/cv-analyses');
+  } catch (error) {
+    console.error('API Error (Fetch CV Analyses):', error);
+    return [];
+  }
+}
+
+export async function fetchManualAnalyses() {
+  try {
+    return await fetchWithAuth('/api/user/manual-analyses');
+  } catch (error) {
+    console.error('API Error (Fetch Manual Analyses):', error);
+    return [];
+  }
+}
+
+export async function fetchSkillTests() {
+  try {
+    return await fetchWithAuth('/api/user/skill-tests');
+  } catch (error) {
+    console.error('API Error (Fetch Skill Tests):', error);
+    return [];
+  }
+}
+
+export async function deleteCVAnalysis(id) {
+  try {
+    return await fetchWithAuth(`/api/user/cv-analyses/${id}`, {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('API Error (Delete CV Analysis):', error);
+    throw error;
+  }
+}
