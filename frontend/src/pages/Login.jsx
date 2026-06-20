@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import FormField from "../components/ui/FormField.jsx";
@@ -10,15 +11,16 @@ export default function Login() {
   const location = useLocation();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
     const formData = new FormData(event.currentTarget);
 
     try {
-      signin(formData.get("email"), formData.get("password"));
+      await signin(formData.get("email"), formData.get("password"));
       navigate(location.state?.from?.pathname ?? "/dashboard", { replace: true });
     } catch (submitError) {
       setError(submitError.message);
@@ -44,13 +46,27 @@ export default function Login() {
           required
           type="email"
         />
-        <FormField
-          label="Password"
-          name="password"
-          placeholder="Enter password"
-          required
-          type="password"
-        />
+        <label className="block">
+          <span className="mb-2 block text-sm font-semibold text-ink-700">
+            Password
+          </span>
+          <div className="flex w-full overflow-hidden rounded-lg border border-ink-200 bg-white/95 transition focus-within:border-primary-400 focus-within:ring-4 focus-within:ring-primary-100">
+            <input
+              className="w-full flex-1 bg-transparent px-4 py-3 text-sm text-ink-900 outline-none placeholder:text-ink-500"
+              name="password"
+              placeholder="Enter password"
+              required
+              type={showPassword ? "text" : "password"}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="flex w-12 items-center justify-center text-ink-500 hover:text-ink-700"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </label>
         {error ? (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}

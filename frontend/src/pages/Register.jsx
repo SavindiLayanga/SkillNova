@@ -10,14 +10,14 @@ export default function Register() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
     const formData = new FormData(event.currentTarget);
 
     try {
-      signup({
+      await signup({
         email: formData.get("email"),
         experience: formData.get("experience"),
         name: formData.get("name"),
