@@ -13,6 +13,7 @@ import { User } from "./server/models/User.js";
 import { CVAnalysis } from "./server/models/CVAnalysis.js";
 import { ManualAnalysis } from "./server/models/ManualAnalysis.js";
 import { SkillTest } from "./server/models/SkillTest.js";
+import { LearningPath } from "./server/models/LearningPath.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -183,7 +184,7 @@ ${text}
     const newAnalysis = new CVAnalysis({
       userId: req.user.uid,
       originalText: text,
-      analysisData: data,
+      ...data,
     });
 
     await newAnalysis.save();
@@ -239,8 +240,12 @@ Return ONLY valid JSON:
 
     const newAnalysis = new ManualAnalysis({
       userId: req.user.uid,
-      inputData: { name, skills, targetRole, experience, education },
-      analysisData: data,
+      name,
+      skills: Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim()),
+      targetRole,
+      experience,
+      education,
+      ...data,
     });
 
     await newAnalysis.save();
@@ -366,9 +371,18 @@ Return ONLY JSON array:
       config: { responseMimeType: "application/json" },
     });
 
-    const data = JSON.parse(response.text);
+    const modules = JSON.parse(response.text);
 
-    res.json(data);
+    const newPath = new LearningPath({
+      userId: req.user.uid,
+      targetRole,
+      missingSkills: missingSkills.map((s) => s.skill || s),
+      modules,
+    });
+
+    await newPath.save();
+
+    res.json(newPath);
   } catch (error) {
     console.error("Learning Path Error:", error);
     res.status(500).json({ error: error.message });
