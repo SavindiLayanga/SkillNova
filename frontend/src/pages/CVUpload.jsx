@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, RotateCcw, UploadCloud, Sparkles, Type } from "lucide-react";
+import { CheckCircle2, FileText, RotateCcw, UploadCloud, Sparkles, Type, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -26,8 +26,17 @@ export default function CVUpload() {
   const [manualSkills, setManualSkills] = useState("");
   const [manualExperience, setManualExperience] = useState("");
   const [manualEducation, setManualEducation] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   const isProcessing = status === "uploading" || status === "analyzing";
+
+  function handleRemoveCV() {
+    resetAnalysis();
+    setShowConfirmModal(false);
+    setToastMessage("CV removed successfully.");
+    setTimeout(() => setToastMessage(""), 3000);
+  }
 
   function handleFileChange(event) {
     const file = event.target.files?.[0];
@@ -130,11 +139,29 @@ export default function CVUpload() {
                         <p className="mt-1 text-xs text-ink-500">Matching skills to roles</p>
                       </div>
                     </div>
+                    <div className="mt-8 flex justify-center">
+                      <Button 
+                        icon={Trash2} 
+                        onClick={() => setShowConfirmModal(true)} 
+                        variant="secondary" 
+                        className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm"
+                      >
+                        Remove CV
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="mt-8 flex justify-center">
+                  <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <Button icon={RotateCcw} onClick={resetAnalysis} variant="secondary">
                       Analyze another profile
+                    </Button>
+                    <Button 
+                      icon={Trash2} 
+                      onClick={() => setShowConfirmModal(true)} 
+                      variant="secondary" 
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm"
+                    >
+                      Remove CV
                     </Button>
                   </div>
                 )}
@@ -287,6 +314,40 @@ export default function CVUpload() {
           )}
         </Card>
       </section>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mb-4">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-ink-900">Remove uploaded CV?</h3>
+            <p className="mt-2 text-sm text-ink-500">
+              This will remove your current CV analysis and let you upload a new profile.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button onClick={() => setShowConfirmModal(false)} variant="secondary">
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleRemoveCV} 
+                className="bg-rose-600 text-white hover:bg-rose-700 border-transparent"
+              >
+                Remove CV
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-emerald-50 border border-emerald-200 p-4 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-6 duration-300">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <p className="text-sm font-semibold text-emerald-800">{toastMessage}</p>
+        </div>
+      )}
     </div>
   );
 }
