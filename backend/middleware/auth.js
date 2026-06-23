@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { getFirebaseAuth } from '../firebase.js';
 
 export const verifyAuth = async (req, res, next) => {
   try {
@@ -16,7 +16,7 @@ export const verifyAuth = async (req, res, next) => {
     // Note: If Firebase Admin is not properly initialized with credentials (e.g. in dev), 
     // this will fail. For local dev without proper service accounts, one might mock this.
     try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
+      const decodedToken = await getFirebaseAuth().verifyIdToken(token);
       req.user = {
         uid: decodedToken.uid,
         email: decodedToken.email,

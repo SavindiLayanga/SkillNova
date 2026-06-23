@@ -1,12 +1,14 @@
 import React from 'react';
 import clsx from '../../utils/clsx.js';
 
-export default function Loader({ variant = 'glass', size = 'md', className }) {
+export default function Loader({ variant = 'nova', size = 'md', className }) {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
     lg: 'h-12 w-12',
     xl: 'h-16 w-16',
+    '2xl': 'h-24 w-24',
+    '3xl': 'h-32 w-32',
   };
 
   const dotSizeClasses = {
@@ -14,6 +16,8 @@ export default function Loader({ variant = 'glass', size = 'md', className }) {
     md: 'h-2 w-2',
     lg: 'h-3 w-3',
     xl: 'h-4 w-4',
+    '2xl': 'h-5 w-5',
+    '3xl': 'h-6 w-6',
   };
 
   if (variant === 'dots') {
@@ -23,6 +27,24 @@ export default function Loader({ variant = 'glass', size = 'md', className }) {
         <div className={clsx(dotSizeClasses[size], "rounded-full bg-primary-500 animate-[bounce_1s_infinite_200ms]")} />
         <div className={clsx(dotSizeClasses[size], "rounded-full bg-primary-500 animate-[bounce_1s_infinite_400ms]")} />
       </div>
+    );
+  }
+
+  if (variant === 'nova') {
+    const borderSizes = {
+      sm: '2px',
+      md: '4px',
+      lg: '6px',
+      xl: '8px',
+      '2xl': '10px',
+      '3xl': '12px'
+    };
+
+    return (
+      <div 
+        className={clsx("custom-loader", sizeClasses[size], className)}
+        style={{ '--b': borderSizes[size] }}
+      ></div>
     );
   }
 

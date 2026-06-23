@@ -169,6 +169,12 @@ export default function CVUpload() {
             ) : (
               // Input Forms
               <div className="w-full max-w-md flex flex-col items-center">
+                {error && (
+                  <div className="w-full mb-4 rounded-lg bg-rose-50 p-4 border border-rose-200 text-left">
+                    <p className="text-sm font-bold text-rose-800">Analysis Failed</p>
+                    <p className="mt-1 text-sm text-rose-600">{error}</p>
+                  </div>
+                )}
                 {activeTab === "upload" ? (
                   <>
                     <input

@@ -66,7 +66,7 @@ function Pill({ children }) {
 
 export default function Profile() {
   const { user } = useAuth();
-  const { analysis, hasAnalysis, status } = useCVAnalysis();
+  const { analysis, status } = useCVAnalysis();
   const [activeTab, setActiveTab] = useState("Overview");
 
   if (status === "noCV") {

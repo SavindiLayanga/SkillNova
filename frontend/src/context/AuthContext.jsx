@@ -1,4 +1,4 @@
-import { createContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { auth } from "../config/firebase.js";
 import { 
   createUserWithEmailAndPassword, 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, emailInput, passwordInput);
         return userCredential.user;
-      } catch (error) {
+      } catch {
         throw new Error("Wrong email or password. Please try again.");
       }
     }

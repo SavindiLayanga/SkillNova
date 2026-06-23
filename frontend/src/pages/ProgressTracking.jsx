@@ -12,10 +12,8 @@ export default function ProgressTracking() {
   const navigate = useNavigate();
 
   const missingSkills = analysis?.missingSkills || [];
-  const skillScore = analysis?.skillMatchScore || 0;
-  
   // Create simulated milestones based on missing skills
-  const milestones = missingSkills.map((gap, idx) => ({
+  const milestones = missingSkills.map((gap) => ({
     title: `Master ${typeof gap === "string" ? gap : gap.skill}`,
     status: (typeof gap !== "string" && gap.current > 0) ? "In Progress" : "Not Started",
     progress: typeof gap === "string" ? 0 : gap.current || 0

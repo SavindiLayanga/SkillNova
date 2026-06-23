@@ -1,8 +1,10 @@
-import { Bell, BriefcaseBusiness, Lock, Mail, Save, ShieldCheck, User } from "lucide-react";
+import { Bell, BriefcaseBusiness, Lock, Mail, Save, ShieldCheck, User, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import FormField from "../components/ui/FormField.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
+import Loader from "../components/ui/Loader.jsx";
 import useAuth from "../hooks/useAuth.js";
 
 const preferenceGroups = [
@@ -11,10 +13,10 @@ const preferenceGroups = [
     description: "Control how SkillNova prioritizes course and job suggestions.",
     icon: BriefcaseBusiness,
     items: [
-      "Email course recommendations",
-      "Show remote jobs first",
-      "Use CV data for match scoring",
-      "Prioritize beginner-friendly learning paths",
+      { label: "Email course recommendations", key: "emailCourseRecommendations" },
+      { label: "Show remote jobs first", key: "showRemoteJobsFirst" },
+      { label: "Use CV data for match scoring", key: "useCVDataForMatchScoring" },
+      { label: "Prioritize beginner-friendly learning paths", key: "prioritizeBeginnerFriendlyPaths" },
     ],
   },
   {
@@ -22,21 +24,146 @@ const preferenceGroups = [
     description: "Choose the reminders that help you keep steady progress.",
     icon: Bell,
     items: [
-      "Weekly progress reminders",
-      "New job match alerts",
-      "Skill test availability alerts",
-      "Course completion reminders",
+      { label: "Weekly progress reminders", key: "weeklyProgressReminders" },
+      { label: "New job match alerts", key: "newJobMatchAlerts" },
+      { label: "Skill test availability alerts", key: "skillTestAvailabilityAlerts" },
+      { label: "Course completion reminders", key: "courseCompletionReminders" },
     ],
   },
 ];
 
+const privacyItems = [
+  {
+    title: "CV analysis storage",
+    description: "Keep the latest simulated CV analysis available after refresh.",
+    key: "cvAnalysisStorage"
+  },
+  {
+    title: "Personalized recommendations",
+    description: "Use target role, skills, and progress to improve suggestions.",
+    key: "personalizedRecommendations"
+  },
+  {
+    title: "Progress visibility",
+    description: "Show learning progress throughout dashboard and profile pages.",
+    key: "progressVisibility"
+  },
+  {
+    title: "Account activity",
+    description: "Display recent activity to help track your career workflow.",
+    key: "accountActivity"
+  },
+];
+
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ message: "", type: "" }); // type: "success" | "error"
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const token = await getToken();
+        if (!token) throw new Error("No token found");
+        
+        const res = await fetch("http://localhost:5000/api/settings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        setSettings(data);
+      } catch (error) {
+        console.error("Failed to fetch settings", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (user) {
+      fetchSettings();
+    } else {
+      setLoading(false);
+    }
+  }, [user, getToken]);
+
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "" }), 3000);
+  };
+
+  const handleToggle = async (key, currentValue) => {
+    const newValue = !currentValue;
+    
+    // Optimistic UI update
+    setSettings((prev) => ({ ...prev, [key]: newValue }));
+
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No token found");
+
+      const res = await fetch("http://localhost:5000/api/settings", {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ [key]: newValue })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Failed to update");
+      }
+      showToast("Settings updated", "success");
+    } catch (error) {
+      console.error("Failed to update setting", error);
+      // Revert on failure
+      setSettings((prev) => ({ ...prev, [key]: currentValue }));
+      showToast(error.message || "Could not update settings", "error");
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No token found");
+
+      const res = await fetch("http://localhost:5000/api/user/profile", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          name: data.name,
+          targetRole: data.targetRole,
+          location: data.location,
+          experience: data.experience,
+        })
+      });
+      if (!res.ok) throw new Error("Failed to save profile");
+      showToast("Profile saved successfully", "success");
+    } catch (error) {
+      console.error("Profile save error:", error);
+      showToast("Could not save profile", "error");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader size="3xl" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
       <PageHeader
-        action={<Button icon={Save}>Save changes</Button>}
+        action={<Button type="submit" form="profile-form" icon={Save}>Save changes</Button>}
         description="Manage profile, recommendations, notifications, and account preferences in one clean flow."
         eyebrow="Settings"
         title="Personalize your career profile"
@@ -55,17 +182,19 @@ export default function Settings() {
           </div>
         </div>
 
-        <form className="mt-6 grid gap-5 sm:grid-cols-2">
-          <FormField label="Full name" defaultValue={user?.name ?? ""} />
-          <FormField label="Email" defaultValue={user?.email ?? ""} type="email" />
+        <form id="profile-form" onSubmit={handleSaveProfile} className="mt-6 grid gap-5 sm:grid-cols-2">
+          <FormField label="Full name" name="name" defaultValue={user?.name ?? ""} />
+          <FormField label="Email" name="email" defaultValue={user?.email ?? ""} type="email" disabled />
           <FormField
             label="Target role"
+            name="targetRole"
             defaultValue={user?.targetRole ?? "Junior React Developer"}
           />
-          <FormField label="Location" defaultValue="Colombo, Sri Lanka" />
+          <FormField label="Location" name="location" defaultValue={user?.location ?? "Colombo, Sri Lanka"} />
           <FormField
             className="sm:col-span-2"
             label="Career summary"
+            name="experience"
             defaultValue={
               user?.experience ??
               "Final year software engineering student focused on frontend development, UI systems, and practical project work."
@@ -91,17 +220,18 @@ export default function Settings() {
               </div>
 
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {items.map((item, index) => (
+                {items.map((item) => (
                   <label
-                    className="flex min-h-16 items-center justify-between gap-4 rounded-lg bg-ink-50 p-4"
-                    key={item}
+                    className="flex min-h-16 cursor-pointer items-center justify-between gap-4 rounded-lg bg-ink-50 p-4 transition-colors hover:bg-ink-100/50"
+                    key={item.key}
                   >
                     <span className="text-sm font-semibold text-ink-700">
-                      {item}
+                      {item.label}
                     </span>
                     <input
-                      className="h-5 w-5 rounded border-ink-200 text-primary-500 focus:ring-primary-400"
-                      defaultChecked={index !== 3}
+                      className="h-5 w-5 cursor-pointer rounded border-ink-200 text-primary-500 focus:ring-primary-400"
+                      checked={settings?.[item.key] ?? false}
+                      onChange={() => handleToggle(item.key, settings?.[item.key])}
                       type="checkbox"
                     />
                   </label>
@@ -126,34 +256,23 @@ export default function Settings() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {[
-                {
-                  title: "CV analysis storage",
-                  description:
-                    "Keep the latest simulated CV analysis available after refresh.",
-                },
-                {
-                  title: "Personalized recommendations",
-                  description:
-                    "Use target role, skills, and progress to improve suggestions.",
-                },
-                {
-                  title: "Progress visibility",
-                  description:
-                    "Show learning progress throughout dashboard and profile pages.",
-                },
-                {
-                  title: "Account activity",
-                  description:
-                    "Display recent activity to help track your career workflow.",
-                },
-              ].map((item) => (
-                <div className="rounded-lg border border-ink-100 bg-white p-4" key={item.title}>
-                  <h3 className="font-bold text-ink-900">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-ink-500">
-                    {item.description}
-                  </p>
-                </div>
+              {privacyItems.map((item) => (
+                <label className="flex cursor-pointer gap-4 rounded-lg border border-ink-100 bg-white p-4 transition-colors hover:border-ink-200" key={item.key}>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-ink-900">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-ink-500">
+                      {item.description}
+                    </p>
+                  </div>
+                  <div className="pt-1">
+                    <input
+                      className="h-5 w-5 cursor-pointer rounded border-ink-200 text-primary-500 focus:ring-primary-400"
+                      checked={settings?.[item.key] ?? false}
+                      onChange={() => handleToggle(item.key, settings?.[item.key])}
+                      type="checkbox"
+                    />
+                  </div>
+                </label>
               ))}
             </div>
           </Card>
@@ -199,6 +318,22 @@ export default function Settings() {
           </Card>
         </div>
       </section>
+
+      {/* Toast Notification */}
+      {toast.message && (
+        <div className={`fixed bottom-6 right-6 z-50 rounded-xl border p-4 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-6 duration-300 ${
+          toast.type === "error" 
+            ? "bg-rose-50 border-rose-200 text-rose-800" 
+            : "bg-emerald-50 border-emerald-200 text-emerald-800"
+        }`}>
+          {toast.type === "error" ? (
+            <AlertCircle className="h-5 w-5 text-rose-600" />
+          ) : (
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          )}
+          <p className="text-sm font-semibold">{toast.message}</p>
+        </div>
+      )}
     </div>
   );
 }

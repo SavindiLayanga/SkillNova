@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { connectDB } from "./db.js";
-// import { initializeFirebaseAdmin } from "./firebase.js";
+import { initializeFirebaseAdmin } from "./firebase.js";
 import { verifyAuth } from "./middleware/auth.js";
 
 import { User } from "./models/User.js";
@@ -24,7 +24,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 
@@ -222,7 +223,7 @@ ${text}
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -241,7 +242,60 @@ ${text}
     res.json(data);
   } catch (error) {
     console.error("CV Analysis Error:", error);
-    res.status(500).json({ error: error.message });
+    
+    const errorMessage = error?.message || "";
+    const isQuotaError = 
+      error?.status === 429 || 
+      errorMessage.includes("429") || 
+      errorMessage.includes("RESOURCE_EXHAUSTED") || 
+      errorMessage.toLowerCase().includes("quota exceeded");
+
+    if (isQuotaError) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Using mock CV data due to Gemini quota error in development.");
+        const mockData = {
+          name: "Jane Doe (Mock)",
+          email: "jane.doe@example.com",
+          skills: ["JavaScript", "React", "Node.js", "MongoDB"],
+          education: ["BSc Computer Science, Mock University"],
+          experience: ["Frontend Developer at MockCorp (2020 - Present)", "Intern at WebStudio (2019)"],
+          projects: ["Portfolio Website", "E-commerce App"],
+          certifications: ["AWS Certified Developer"],
+          targetRole: "Full Stack Developer",
+          careerRecommendations: ["Focus on Backend architecture", "Learn Cloud deployment"],
+          missingSkills: ["Docker", "Kubernetes", "GraphQL"],
+          jobMatches: ["Full Stack Developer at TechSolutions", "React Developer at Webify"],
+          skillMatchScore: 85,
+          cvScore: 78,
+          learningPath: ["Complete a Docker course", "Build a microservices project"],
+          aiInsights: "This is a mock insight generated because the AI quota was exceeded. Your CV shows strong frontend skills."
+        };
+
+        try {
+          const newAnalysis = new CVAnalysis({
+            userId: req.user.uid,
+            originalText: text,
+            ...mockData,
+          });
+          await newAnalysis.save();
+          mockData._id = newAnalysis._id;
+          return res.json(mockData);
+        } catch (dbError) {
+          console.error("Mock data DB Error:", dbError);
+          return res.status(500).json({ error: "Failed to save mock data." });
+        }
+      } else {
+        return res.status(429).json({ error: "AI quota exceeded. Please try again later." });
+      }
+    }
+
+    // Clean error message instead of raw JSON
+    let cleanError = "Failed to analyze CV. Please try again.";
+    if (errorMessage && !errorMessage.includes("{") && !errorMessage.includes("[")) {
+      cleanError = errorMessage;
+    }
+
+    res.status(500).json({ error: cleanError });
   }
 });
 
@@ -279,7 +333,7 @@ Return ONLY valid JSON:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -333,7 +387,7 @@ Return ONLY JSON array:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -375,7 +429,7 @@ app.post("/api/chat", verifyAuth, async (req, res) => {
     }));
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: formattedContents,
     });
 
@@ -414,7 +468,7 @@ Return ONLY JSON array:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });

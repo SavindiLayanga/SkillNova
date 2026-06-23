@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -9,15 +10,22 @@ import {
   Sparkles,
   Target,
   TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
-import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
-import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import useAuth from "../hooks/useAuth.js";
-import useCVAnalysis from "../hooks/useCVAnalysis.js";
+import {
+  fetchDashboardSummary,
+  fetchLatestAnalysis,
+  fetchSkillGaps,
+  fetchLearningPath,
+  fetchRecentTests
+} from "../services/dashboardService.js";
 
 const quickActions = [
   {
@@ -96,15 +104,64 @@ function SummaryCard({ icon: Icon, label, value, caption, tone = "orange" }) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const { analysis, hasAnalysis, status } = useCVAnalysis();
+  const { user, getToken } = useAuth();
   
-  const displayName = analysis?.name && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
-    ? analysis.name 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const [summary, setSummary] = useState(null);
+  const [latestAnalysis, setLatestAnalysis] = useState(null);
+  const [skillGaps, setSkillGaps] = useState(null);
+  const [learningPath, setLearningPath] = useState(null);
+  const [recentTests, setRecentTests] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDashboard() {
+      try {
+        setLoading(true);
+        setError(null);
+        const token = await getToken();
+        if (!token) {
+          if (isMounted) setLoading(false);
+          return;
+        }
+
+        const [sumRes, analysisRes, gapsRes, pathRes, testsRes] = await Promise.all([
+          fetchDashboardSummary(token).catch(() => ({})),
+          fetchLatestAnalysis(token).catch(() => ({})),
+          fetchSkillGaps(token).catch(() => ({ missingSkills: [] })),
+          fetchLearningPath(token).catch(() => ({})),
+          fetchRecentTests(token).catch(() => [])
+        ]);
+
+        if (isMounted) {
+          setSummary(sumRes);
+          setLatestAnalysis(analysisRes);
+          setSkillGaps(gapsRes);
+          setLearningPath(pathRes);
+          setRecentTests(testsRes);
+        }
+      } catch (err) {
+        console.error(err);
+        if (isMounted) setError("Failed to load dashboard data. Please try again.");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadDashboard();
+    return () => { isMounted = false; };
+  }, [getToken]);
+
+  const hasAnalysis = latestAnalysis && Object.keys(latestAnalysis).length > 0;
+  
+  const displayName = latestAnalysis?.name && latestAnalysis.name !== "User" && latestAnalysis.name !== "Candidate's full name" 
+    ? latestAnalysis.name 
     : user?.name || "SkillNova User";
   const firstName = displayName.split(" ")[0];
-  const targetRole = analysis?.targetRole && analysis.targetRole !== "Unknown Role" 
-    ? analysis.targetRole 
+  const targetRole = latestAnalysis?.targetRole && latestAnalysis.targetRole !== "Unknown Role" 
+    ? latestAnalysis.targetRole 
     : user?.targetRole || "Unknown Role";
   
   const initials = getInitials(displayName) || "SN";
@@ -114,41 +171,60 @@ export default function Dashboard() {
     weekday: "long",
   }).format(new Date());
 
-  const careerMatch = hasAnalysis ? analysis.skillMatchScore : 0;
-  const missingSkillsCount = hasAnalysis ? analysis.missingSkills?.length || 0 : 0;
+  const summaryCards = [
+    {
+      label: "Total Skills",
+      value: summary?.totalSkills || 0,
+      caption: "Identified from your profile.",
+      icon: BarChart3,
+      tone: "orange",
+    },
+    {
+      label: "Skill Gaps",
+      value: summary?.skillGapCount || 0,
+      caption: "Priority gaps detected for your target role.",
+      icon: Target,
+      tone: "rose",
+    },
+    {
+      label: "Career Match",
+      value: `${summary?.careerMatch || 0}%`,
+      caption: "Best current job match confidence.",
+      icon: TrendingUp,
+      tone: "teal",
+    },
+    {
+      label: "Completed Tests",
+      value: summary?.completedTests || 0,
+      caption: "Skill tests taken.",
+      icon: BookOpen,
+      tone: "blue",
+    },
+  ];
 
-  const summaryCards = hasAnalysis
-    ? [
-        {
-          label: "Overall CV Score",
-          value: analysis.cvScore || 0,
-          caption: "Based on content and structure.",
-          icon: BarChart3,
-          tone: "orange",
-        },
-        {
-          label: "Missing Skills",
-          value: missingSkillsCount,
-          caption: "Priority gaps detected for your target role.",
-          icon: Target,
-          tone: "rose",
-        },
-        {
-          label: "Skill Match Score",
-          value: `${careerMatch}%`,
-          caption: "Best current job match confidence.",
-          icon: TrendingUp,
-          tone: "teal",
-        },
-        {
-          label: "Target Role",
-          value: analysis.targetRole,
-          caption: "Inferred from your CV.",
-          icon: BriefcaseBusiness,
-          tone: "blue",
-        },
-      ]
-    : [];
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+        <p className="text-sm font-medium text-ink-600">Loading your dashboard data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-10 w-10 text-rose-500" />
+        <div>
+          <h2 className="text-lg font-bold text-ink-900">Oops! Something went wrong.</h2>
+          <p className="mt-1 text-sm text-ink-600">{error}</p>
+        </div>
+        <button onClick={() => window.location.reload()} className="mt-4 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-12 pb-10">
@@ -209,17 +285,14 @@ export default function Dashboard() {
         ) : null}
       </section>
 
-      {status === "noCV" ? <AnalysisEmptyState /> : null}
-
-      {status === "uploading" || status === "analyzing" ? (
-        <AnalysisProcessingState status={status} />
-      ) : null}
+      {!hasAnalysis ? <AnalysisEmptyState /> : null}
 
       {hasAnalysis ? (
         <>
+          {/* LATEST ANALYSIS SECTION */}
           <section className="animate-fade-in-slide-up">
             <SectionHeader
-              description="A quick overview of your career readiness based on your CV and skill analysis."
+              description="A quick overview of your career readiness based on your latest analysis."
               title="Career Readiness Score"
             />
             <Card className="p-5 sm:p-6 grid gap-6 lg:grid-cols-2 items-center bg-gradient-to-br from-white to-primary-50/30">
@@ -227,9 +300,9 @@ export default function Dashboard() {
                  <div className="relative inline-flex items-center justify-center">
                     <svg className="w-32 h-32 transform -rotate-90 drop-shadow-sm">
                       <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-ink-100/50" />
-                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * 78) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
+                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * (latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0)) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
                     </svg>
-                    <span className="absolute text-3xl font-extrabold text-ink-900">78%</span>
+                    <span className="absolute text-3xl font-extrabold text-ink-900">{latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0}%</span>
                  </div>
                  <h3 className="mt-4 text-xl font-bold text-ink-900 tracking-tight">Overall Score</h3>
                  <p className="mt-2 text-sm leading-relaxed text-ink-600 max-w-sm text-center lg:text-left">
@@ -246,31 +319,29 @@ export default function Dashboard() {
                   <ProgressBar value={70} className="h-2 opacity-90" />
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Industry Readiness</span><span className="font-bold text-ink-900">75%</span></div>
-                  <ProgressBar value={75} className="h-2 opacity-90" />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Job Match</span><span className="font-bold text-ink-900">80%</span></div>
-                  <ProgressBar value={80} className="h-2 opacity-90" />
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Job Match</span><span className="font-bold text-ink-900">{latestAnalysis.skillMatchScore || 0}%</span></div>
+                  <ProgressBar value={latestAnalysis.skillMatchScore || 0} className="h-2 opacity-90" />
                 </div>
               </div>
             </Card>
           </section>
 
-          <section>
-            <SectionHeader
-              description="Human-readable feedback generated from your CV."
-              title="AI Insights"
-            />
-            <Card className="p-5 sm:p-6 bg-primary-50 border-primary-100">
-              <div className="flex items-start gap-4">
-                <Sparkles className="h-6 w-6 text-primary-600 mt-1 shrink-0" />
-                <p className="text-sm leading-6 text-ink-700">
-                  {analysis.aiInsights}
-                </p>
-              </div>
-            </Card>
-          </section>
+          {latestAnalysis.aiInsights && (
+            <section>
+              <SectionHeader
+                description="Human-readable feedback generated from your profile."
+                title="AI Insights"
+              />
+              <Card className="p-5 sm:p-6 bg-primary-50 border-primary-100">
+                <div className="flex items-start gap-4">
+                  <Sparkles className="h-6 w-6 text-primary-600 mt-1 shrink-0" />
+                  <p className="text-sm leading-6 text-ink-700">
+                    {latestAnalysis.aiInsights}
+                  </p>
+                </div>
+              </Card>
+            </section>
+          )}
 
           <section>
             <SectionHeader
@@ -299,120 +370,104 @@ export default function Dashboard() {
             </div>
           </section>
 
-          <section>
-            <SectionHeader
-              description="Categorized skills extracted from your CV."
-              title="Extracted Skills"
-            />
-            <Card className="p-5 sm:p-6">
-                <div className="flex flex-wrap gap-2">
-                    {analysis.extracted?.skills?.map((skill, idx) => (
-                      <span
-                        className="rounded-full bg-ink-50 border border-ink-100 px-3 py-1 text-sm font-semibold text-ink-700"
-                        key={idx}
-                      >
-                        {skill.name} <span className="text-xs font-normal text-ink-500">({skill.category})</span>
+          {/* SKILL GAPS SECTION */}
+          {skillGaps?.missingSkills?.length > 0 && (
+            <section>
+              <SectionHeader
+                description="Skills you need to acquire to match your target role."
+                title="Skill Gaps"
+              />
+              <Card className="p-5 sm:p-6">
+                  <div className="flex flex-wrap gap-2">
+                      {skillGaps.missingSkills.map((skill, idx) => (
+                        <span
+                          className="rounded-full bg-rose-50 border border-rose-100 px-3 py-1 text-sm font-semibold text-rose-700 flex items-center gap-1"
+                          key={idx}
+                        >
+                          <Target className="h-3 w-3" />
+                          {skill.name || skill}
+                        </span>
+                      ))}
+                  </div>
+              </Card>
+            </section>
+          )}
+
+          {/* LEARNING PATH SECTION */}
+          {learningPath?.modules?.length > 0 && (
+            <section>
+              <SectionHeader
+                description="Personalized learning roadmap to fill your skill gaps."
+                title="Learning Path"
+              />
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {learningPath.modules.map((module, idx) => (
+                  <Card className="p-5 flex flex-col justify-between" key={idx}>
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                         <h3 className="font-bold text-ink-900 leading-tight">{module.title}</h3>
+                         {module.isCompleted && <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />}
+                      </div>
+                      <span className="inline-block bg-ink-50 text-ink-600 text-xs font-semibold px-2 py-1 rounded-md mb-3">
+                        {module.duration}
                       </span>
-                    ))}
-                </div>
-            </Card>
-          </section>
-
-          <section>
-            <SectionHeader
-              description="Personalized learning roadmap to fill your skill gaps."
-              title="Learning Recommendations"
-            />
-            <div className="grid gap-4 lg:grid-cols-2">
-              {analysis.learningPath?.map((path, idx) => (
-                <Card className="p-5" key={idx}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Target className="h-5 w-5 text-rose-500" />
-                    <h3 className="font-bold text-ink-900">Missing: {path.skill}</h3>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {path.courses?.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-ink-500 mb-2">Courses</p>
-                        <ul className="list-disc pl-5 text-sm text-ink-700 space-y-1">
-                          {path.courses.map((course, i) => <li key={i}>{course}</li>)}
-                        </ul>
-                      </div>
-                    )}
-                    {path.certifications?.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-ink-500 mb-2">Certifications</p>
-                        <ul className="list-disc pl-5 text-sm text-ink-700 space-y-1">
-                          {path.certifications.map((cert, i) => <li key={i}>{cert}</li>)}
-                        </ul>
-                      </div>
-                    )}
-                    {path.projects?.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-ink-500 mb-2">Projects</p>
-                        <ul className="list-disc pl-5 text-sm text-ink-700 space-y-1">
-                          {path.projects.map((proj, i) => <li key={i}>{proj}</li>)}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          <section>
-            <SectionHeader
-              description="A short preview of opportunities that fit your analyzed CV."
-              title="Career Recommendations"
-            />
-            <div className="grid gap-4 xl:grid-cols-3">
-              {analysis.careerRecommendations?.map((job, idx) => (
-                <Card className="flex flex-col justify-between p-5" key={idx}>
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <h3 className="font-bold text-ink-900">{job.role}</h3>
-                    <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 whitespace-nowrap">
-                      {job.matchPercentage}% match
-                    </span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-             <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-bold text-ink-900 mb-4">Experience Summary</h3>
-                <div className="space-y-4">
-                  {analysis.extracted?.experience?.map((exp, idx) => (
-                    <div key={idx} className="border-l-2 border-ink-100 pl-4 py-1">
-                      <h4 className="font-semibold text-ink-900">{exp.role}</h4>
-                      <p className="text-xs font-semibold text-ink-500 mt-1">{exp.place} | {exp.period}</p>
-                      <p className="text-sm text-ink-700 mt-2">{exp.detail}</p>
+                      <p className="text-sm text-ink-600 mb-4">{module.description}</p>
                     </div>
-                  ))}
-                  {!analysis.extracted?.experience?.length && (
-                    <p className="text-sm text-ink-500">No experience extracted.</p>
-                  )}
-                </div>
-             </Card>
-             <Card className="p-5 sm:p-6">
-                <h3 className="text-lg font-bold text-ink-900 mb-4">Education Summary</h3>
-                <div className="space-y-4">
-                  {analysis.extracted?.education?.map((edu, idx) => (
-                    <div key={idx} className="border-l-2 border-ink-100 pl-4 py-1">
-                      <h4 className="font-semibold text-ink-900">{edu.title}</h4>
-                      <p className="text-xs font-semibold text-ink-500 mt-1">{edu.provider}</p>
-                      <p className="text-sm text-ink-700 mt-2">{edu.detail}</p>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* RECENT TESTS SECTION */}
+          {recentTests && recentTests.length > 0 && (
+            <section>
+              <SectionHeader
+                description="Your latest skill assessment results."
+                title="Recent Tests"
+              />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                 {recentTests.map((test) => (
+                    <Card key={test._id} className="p-5 border-l-4 border-l-blue-500">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-bold text-ink-900">{test.skillName}</h4>
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${test.isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {test.isCompleted ? 'Completed' : 'Pending'}
+                        </span>
+                      </div>
+                      {test.isCompleted && (
+                        <p className="text-sm text-ink-600 mt-2">Score: <span className="font-bold text-ink-900">{test.score}%</span></p>
+                      )}
+                    </Card>
+                 ))}
+              </div>
+            </section>
+          )}
+
+          {/* CAREER RECOMMENDATIONS */}
+          {latestAnalysis.careerRecommendations?.length > 0 && (
+            <section>
+              <SectionHeader
+                description="A short preview of opportunities that fit your analyzed profile."
+                title="Career Recommendations"
+              />
+              <div className="grid gap-4 xl:grid-cols-3">
+                {latestAnalysis.careerRecommendations.map((job, idx) => (
+                  <Card className="flex flex-col justify-between p-5" key={idx}>
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <h3 className="font-bold text-ink-900">{job.role || job}</h3>
+                      {job.matchPercentage && (
+                        <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 whitespace-nowrap">
+                          {job.matchPercentage}% match
+                        </span>
+                      )}
                     </div>
-                  ))}
-                  {!analysis.extracted?.education?.length && (
-                    <p className="text-sm text-ink-500">No education extracted.</p>
-                  )}
-                </div>
-             </Card>
-          </section>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
         </>
       ) : null}
     </div>
