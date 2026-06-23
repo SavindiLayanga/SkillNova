@@ -14,6 +14,7 @@ import { CVAnalysis } from "./models/CVAnalysis.js";
 import { ManualAnalysis } from "./models/ManualAnalysis.js";
 import { SkillTest } from "./models/SkillTest.js";
 import { LearningPath } from "./models/LearningPath.js";
+import { UserSettings } from "./models/UserSettings.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,8 +31,8 @@ console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 // Connect MongoDB
 connectDB();
 
-// Firebase later enable කරන්න
-// initializeFirebaseAdmin();
+// Firebase initialize
+initializeFirebaseAdmin();
 
 app.get("/", (req, res) => {
   res.send("SkillNova Backend is running");
@@ -61,18 +62,24 @@ app.get("/api/user/profile", verifyAuth, async (req, res) => {
 
 app.post("/api/user/profile", verifyAuth, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, targetRole, location, experience } = req.body;
 
     let user = await User.findOne({ uid: req.user.uid });
 
     if (user) {
-      user.name = name || user.name;
+      if (name !== undefined) user.name = name;
+      if (targetRole !== undefined) user.targetRole = targetRole;
+      if (location !== undefined) user.location = location;
+      if (experience !== undefined) user.experience = experience;
       await user.save();
     } else {
       user = new User({
         uid: req.user.uid,
         email: req.user.email,
         name: name || req.user.name || "User",
+        targetRole: targetRole || "",
+        location: location || "",
+        experience: experience || "",
       });
       await user.save();
     }
@@ -135,6 +142,47 @@ app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
     res.json(tests);
   } catch (error) {
     console.error("Skill tests fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Settings
+app.get("/api/settings", verifyAuth, async (req, res) => {
+  try {
+    let settings = await UserSettings.findOne({ userId: req.user.uid });
+    if (!settings) {
+      settings = new UserSettings({ userId: req.user.uid });
+      await settings.save();
+    }
+    res.json(settings);
+  } catch (error) {
+    console.error("Settings fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.patch("/api/settings", verifyAuth, async (req, res) => {
+  try {
+    const updates = req.body;
+    // Validate boolean values
+    for (const key in updates) {
+      if (typeof updates[key] !== "boolean") {
+        return res.status(400).json({ error: `Value for ${key} must be a boolean.` });
+      }
+    }
+
+    let settings = await UserSettings.findOne({ userId: req.user.uid });
+    if (!settings) {
+      settings = new UserSettings({ userId: req.user.uid, ...updates });
+    } else {
+      for (const key in updates) {
+        settings[key] = updates[key];
+      }
+    }
+    await settings.save();
+    res.json(settings);
+  } catch (error) {
+    console.error("Settings update error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -386,6 +434,112 @@ Return ONLY JSON array:
   } catch (error) {
     console.error("Learning Path Error:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Dashboard APIs ---
+
+// Dashboard Summary
+app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    
+    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
+    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
+    
+    let latestAnalysis = null;
+    if (latestCV && latestManual) {
+      latestAnalysis = latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
+    } else {
+      latestAnalysis = latestCV || latestManual;
+    }
+
+    let totalSkills = 0;
+    if (latestAnalysis) {
+      if (latestAnalysis.skills && Array.isArray(latestAnalysis.skills)) {
+        totalSkills = latestAnalysis.skills.length;
+      } else if (latestAnalysis.extractedSkills && Array.isArray(latestAnalysis.extractedSkills)) {
+        totalSkills = latestAnalysis.extractedSkills.length;
+      }
+    }
+
+    const skillGapCount = latestAnalysis && latestAnalysis.missingSkills ? latestAnalysis.missingSkills.length : 0;
+    const completedTests = await SkillTest.countDocuments({ userId: uid, isCompleted: true });
+    const careerMatch = latestAnalysis ? (latestAnalysis.skillMatchScore || latestAnalysis.cvScore || 0) : 0;
+
+    res.json({
+      totalSkills,
+      skillGapCount,
+      completedTests,
+      careerMatch
+    });
+  } catch (error) {
+    console.error("Dashboard summary error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Latest Analysis
+app.get("/api/dashboard/latest-analysis", verifyAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
+    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
+    
+    let latestAnalysis = null;
+    if (latestCV && latestManual) {
+      latestAnalysis = latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
+    } else {
+      latestAnalysis = latestCV || latestManual;
+    }
+
+    res.json(latestAnalysis || {});
+  } catch (error) {
+    console.error("Dashboard latest analysis error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Skill Gaps
+app.get("/api/dashboard/skill-gaps", verifyAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
+    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
+    
+    let latestAnalysis = null;
+    if (latestCV && latestManual) {
+      latestAnalysis = latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
+    } else {
+      latestAnalysis = latestCV || latestManual;
+    }
+
+    res.json({ missingSkills: latestAnalysis ? (latestAnalysis.missingSkills || []) : [] });
+  } catch (error) {
+    console.error("Dashboard skill gaps error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Learning Path
+app.get("/api/dashboard/learning-path", verifyAuth, async (req, res) => {
+  try {
+    const latestPath = await LearningPath.findOne({ userId: req.user.uid }).sort({ createdAt: -1 });
+    res.json(latestPath || {});
+  } catch (error) {
+    console.error("Dashboard learning path error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Recent Tests
+app.get("/api/dashboard/recent-tests", verifyAuth, async (req, res) => {
+  try {
+    const recentTests = await SkillTest.find({ userId: req.user.uid }).sort({ createdAt: -1 }).limit(5);
+    res.json(recentTests || []);
+  } catch (error) {
+    console.error("Dashboard recent tests error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
