@@ -102,9 +102,8 @@ export default function Chatbot({ isOpen, onClose }) {
           ))}
           
           {isTyping && (
-            <div className="self-start rounded-2xl rounded-tl-sm bg-ink-50 border border-ink-100 px-4 py-3 text-sm text-ink-500 flex items-center gap-3 max-w-[85%]">
-              <Loader variant="dots" size="md" />
-              AI is typing...
+            <div className="self-start max-w-[85%]">
+              <Loader size="sm" text="AI is typing..." />
             </div>
           )}
         </div>

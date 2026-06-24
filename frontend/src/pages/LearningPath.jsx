@@ -162,11 +162,10 @@ export default function LearningPath() {
             
             {isGenerating ? (
               <div className="flex flex-col items-center justify-center py-8">
-                <Loader variant="glass" size="xl" className="mb-6" />
-                <h3 className="text-xl font-bold text-ink-900 animate-pulse">Building your custom roadmap...</h3>
-                <p className="text-sm text-ink-500 mt-2 max-w-sm">
-                  SkillNova is analyzing your gaps in {missingSkills.slice(0, 3).join(", ")} to create actionable milestones.
-                </p>
+                <Loader 
+                  text="Building your custom roadmap..." 
+                  secondaryText={`SkillNova is analyzing your gaps in ${missingSkills.slice(0, 3).join(", ")} to create actionable milestones.`} 
+                />
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-4">

@@ -114,13 +114,11 @@ export default function CVUpload() {
                     <UploadCloud className="h-8 w-8" />
                   )}
                 </div>
-                <h2 className="mt-5 text-xl font-bold text-ink-900">
-                  {status === "uploading"
-                    ? "Processing Input"
-                    : status === "analyzing"
-                      ? "Analyzing with Gemini AI"
-                      : "Skill analysis completed"}
-                </h2>
+                {!isProcessing && (
+                  <h2 className="mt-5 text-xl font-bold text-ink-900">
+                    Skill analysis completed
+                  </h2>
+                )}
                 {error && <p className="mt-2 text-sm text-rose-600 font-medium">{error}</p>}
                 <p className="mt-2 max-w-md text-sm leading-6 text-ink-500">
                   {fileName ? `Source: ${fileName}` : ""}
@@ -128,23 +126,17 @@ export default function CVUpload() {
 
                 {isProcessing ? (
                   <div className="mt-6 w-full max-w-md">
-                    <ProgressBar value={status === "uploading" ? 38 : 74} />
-                    <div className="mt-4 grid gap-3 text-left sm:grid-cols-2">
-                      <div className="rounded-lg bg-primary-50 p-3">
-                        <p className="text-sm font-semibold text-primary-700">Uploading</p>
-                        <p className="mt-1 text-xs text-primary-800">Reading data</p>
-                      </div>
-                      <div className="rounded-lg bg-ink-50 p-3">
-                        <p className="text-sm font-semibold text-ink-700">Skill analysis</p>
-                        <p className="mt-1 text-xs text-ink-500">Matching skills to roles</p>
-                      </div>
-                    </div>
+                    <Loader 
+                      text={status === "uploading" ? "Uploading your CV..." : "Analyzing your CV with AI..."}
+                      secondaryText="This may take a few seconds."
+                    />
                     <div className="mt-8 flex justify-center">
                       <Button 
                         icon={Trash2} 
                         onClick={() => setShowConfirmModal(true)} 
                         variant="secondary" 
-                        className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm"
+                        disabled={isProcessing}
+                        className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm disabled:opacity-50"
                       >
                         Remove CV
                       </Button>

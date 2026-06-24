@@ -153,11 +153,7 @@ export default function Settings() {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader size="3xl" />
-      </div>
-    );
+    return <Loader text="Loading settings..." secondaryText="Please wait." />;
   }
 
   return (

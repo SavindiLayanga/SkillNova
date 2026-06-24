@@ -605,16 +605,11 @@ export default function SkillTests() {
 
   if (isGeneratingTest) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 animate-fade-in-slide-up">
-        <Loader variant="glass" size="xl" />
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-ink-900 to-ink-600 bg-clip-text text-transparent">
-            AI is generating your custom test...
-          </h2>
-          <p className="text-ink-500 max-w-md mx-auto">
-            SkillNova is using Gemini to write 5 targeted questions specific to this missing skill. This usually takes a few seconds.
-          </p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-slide-up">
+        <Loader 
+          text="AI is generating your custom test..." 
+          secondaryText="SkillNova is using Gemini to write 5 targeted questions specific to this missing skill. This usually takes a few seconds." 
+        />
       </div>
     );
   }

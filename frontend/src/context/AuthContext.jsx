@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Loader from "../components/ui/Loader.jsx";
 import { auth } from "../config/firebase.js";
 import { 
   createUserWithEmailAndPassword, 
@@ -84,7 +85,11 @@ export function AuthProvider({ children }) {
 
   // Don't render children until we have finished checking auth state
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader text="Loading your session..." secondaryText="Please wait..." />
+      </div>
+    );
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -18,6 +18,7 @@ import { UserSettings } from "./models/UserSettings.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
@@ -29,10 +30,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 
-// Connect MongoDB
 connectDB();
-
-// Firebase initialize
 initializeFirebaseAdmin();
 
 app.get("/", (req, res) => {
@@ -97,7 +95,6 @@ app.get("/api/user/cv-analyses", verifyAuth, async (req, res) => {
     const analyses = await CVAnalysis.find({ userId: req.user.uid }).sort({
       createdAt: -1,
     });
-
     res.json(analyses);
   } catch (error) {
     console.error("CV analyses fetch error:", error);
@@ -126,7 +123,6 @@ app.get("/api/user/manual-analyses", verifyAuth, async (req, res) => {
     const analyses = await ManualAnalysis.find({ userId: req.user.uid }).sort({
       createdAt: -1,
     });
-
     res.json(analyses);
   } catch (error) {
     console.error("Manual analyses fetch error:", error);
@@ -139,7 +135,6 @@ app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
     const tests = await SkillTest.find({ userId: req.user.uid }).sort({
       createdAt: -1,
     });
-
     res.json(tests);
   } catch (error) {
     console.error("Skill tests fetch error:", error);
@@ -151,10 +146,12 @@ app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
 app.get("/api/settings", verifyAuth, async (req, res) => {
   try {
     let settings = await UserSettings.findOne({ userId: req.user.uid });
+
     if (!settings) {
       settings = new UserSettings({ userId: req.user.uid });
       await settings.save();
     }
+
     res.json(settings);
   } catch (error) {
     console.error("Settings fetch error:", error);
@@ -165,14 +162,17 @@ app.get("/api/settings", verifyAuth, async (req, res) => {
 app.patch("/api/settings", verifyAuth, async (req, res) => {
   try {
     const updates = req.body;
-    // Validate boolean values
+
     for (const key in updates) {
       if (typeof updates[key] !== "boolean") {
-        return res.status(400).json({ error: `Value for ${key} must be a boolean.` });
+        return res.status(400).json({
+          error: `Value for ${key} must be a boolean.`,
+        });
       }
     }
 
     let settings = await UserSettings.findOne({ userId: req.user.uid });
+
     if (!settings) {
       settings = new UserSettings({ userId: req.user.uid, ...updates });
     } else {
@@ -180,6 +180,7 @@ app.patch("/api/settings", verifyAuth, async (req, res) => {
         settings[key] = updates[key];
       }
     }
+
     await settings.save();
     res.json(settings);
   } catch (error) {
@@ -190,9 +191,12 @@ app.patch("/api/settings", verifyAuth, async (req, res) => {
 
 // Analyze CV
 app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
+  const { text } = req.body;
+
   try {
-    const { text } = req.body;
-    if (!text) return res.status(400).json({ error: "CV text is required" });
+    if (!text || typeof text !== "string" || text.trim() === "") {
+      return res.status(400).json({ error: "CV text is required" });
+    }
 
     const ai = getAI();
 
@@ -237,65 +241,103 @@ ${text}
     });
 
     await newAnalysis.save();
-    data._id = newAnalysis._id;
 
-    res.json(data);
+    return res.json({
+      ...data,
+      _id: newAnalysis._id,
+    });
   } catch (error) {
     console.error("CV Analysis Error:", error);
-    
+
     const errorMessage = error?.message || "";
-    const isQuotaError = 
-      error?.status === 429 || 
-      errorMessage.includes("429") || 
-      errorMessage.includes("RESOURCE_EXHAUSTED") || 
+    const isQuotaError =
+      error?.status === 429 ||
+      errorMessage.includes("429") ||
+      errorMessage.includes("RESOURCE_EXHAUSTED") ||
       errorMessage.toLowerCase().includes("quota exceeded");
 
-    if (isQuotaError) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log("Using mock CV data due to Gemini quota error in development.");
-        const mockData = {
-          name: "Jane Doe (Mock)",
-          email: "jane.doe@example.com",
-          skills: ["JavaScript", "React", "Node.js", "MongoDB"],
-          education: ["BSc Computer Science, Mock University"],
-          experience: ["Frontend Developer at MockCorp (2020 - Present)", "Intern at WebStudio (2019)"],
-          projects: ["Portfolio Website", "E-commerce App"],
-          certifications: ["AWS Certified Developer"],
-          targetRole: "Full Stack Developer",
-          careerRecommendations: ["Focus on Backend architecture", "Learn Cloud deployment"],
-          missingSkills: ["Docker", "Kubernetes", "GraphQL"],
-          jobMatches: ["Full Stack Developer at TechSolutions", "React Developer at Webify"],
-          skillMatchScore: 85,
-          cvScore: 78,
-          learningPath: ["Complete a Docker course", "Build a microservices project"],
-          aiInsights: "This is a mock insight generated because the AI quota was exceeded. Your CV shows strong frontend skills."
-        };
+    if (isQuotaError && process.env.NODE_ENV !== "production") {
+      console.log("Using mock CV data due to Gemini quota error in development.");
 
-        try {
-          const newAnalysis = new CVAnalysis({
-            userId: req.user.uid,
-            originalText: text,
-            ...mockData,
-          });
-          await newAnalysis.save();
-          mockData._id = newAnalysis._id;
-          return res.json(mockData);
-        } catch (dbError) {
-          console.error("Mock data DB Error:", dbError);
-          return res.status(500).json({ error: "Failed to save mock data." });
-        }
-      } else {
-        return res.status(429).json({ error: "AI quota exceeded. Please try again later." });
+      const mockData = {
+        name: "Jane Doe (Mock)",
+        email: "jane.doe@example.com",
+        skills: [
+          { name: "JavaScript", level: "Advanced" },
+          { name: "React", level: "Advanced" },
+          { name: "Node.js", level: "Intermediate" },
+          { name: "MongoDB", level: "Intermediate" },
+        ],
+        education: [
+          {
+            institution: "Mock University",
+            degree: "BSc Computer Science",
+            year: "2020",
+          },
+        ],
+        experience: [
+          {
+            company: "MockCorp",
+            role: "Frontend Developer",
+            duration: "2020 - Present",
+            description: "Built frontend features.",
+          },
+        ],
+        projects: [
+          {
+            name: "Portfolio Website",
+            description: "Personal portfolio",
+            technologies: ["React", "Tailwind"],
+          },
+        ],
+        certifications: ["AWS Certified Developer"],
+        targetRole: "Full Stack Developer",
+        careerRecommendations: [
+          "Focus on backend architecture",
+          "Learn cloud deployment",
+        ],
+        missingSkills: ["Docker", "Kubernetes", "GraphQL"],
+        jobMatches: ["Full Stack Developer", "React Developer"],
+        skillMatchScore: 85,
+        cvScore: 78,
+        learningPath: [
+          "Complete a Docker course",
+          "Build a microservices project",
+        ],
+        aiInsights:
+          "Mock data generated because Gemini quota was exceeded.",
+      };
+
+      try {
+        const newAnalysis = new CVAnalysis({
+          userId: req.user.uid,
+          originalText: text || "Mock CV Text",
+          ...mockData,
+        });
+
+        await newAnalysis.save();
+
+        return res.json({
+          ...mockData,
+          _id: newAnalysis._id,
+        });
+      } catch (dbError) {
+        console.error("Mock data DB Error:", dbError);
+        return res.status(500).json({
+          error: `Failed to save mock data: ${dbError.message}`,
+        });
       }
     }
 
-    // Clean error message instead of raw JSON
-    let cleanError = "Failed to analyze CV. Please try again.";
-    if (errorMessage && !errorMessage.includes("{") && !errorMessage.includes("[")) {
-      cleanError = errorMessage;
+    if (isQuotaError) {
+      return res.status(429).json({
+        error: "AI quota exceeded. Please try again later.",
+      });
     }
 
-    res.status(500).json({ error: cleanError });
+    return res.status(500).json({
+      error: "Failed to analyze CV. Please try again.",
+    });
   }
 });
 
@@ -343,7 +385,9 @@ Return ONLY valid JSON:
     const newAnalysis = new ManualAnalysis({
       userId: req.user.uid,
       name,
-      skills: Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim()),
+      skills: Array.isArray(skills)
+        ? skills
+        : skills.split(",").map((s) => s.trim()),
       targetRole,
       experience,
       education,
@@ -351,9 +395,11 @@ Return ONLY valid JSON:
     });
 
     await newAnalysis.save();
-    data._id = newAnalysis._id;
 
-    res.json(data);
+    res.json({
+      ...data,
+      _id: newAnalysis._id,
+    });
   } catch (error) {
     console.error("Manual Analysis Error:", error);
     res.status(500).json({ error: error.message });
@@ -491,41 +537,60 @@ Return ONLY JSON array:
   }
 });
 
-// --- Dashboard APIs ---
-
 // Dashboard Summary
 app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
-    
-    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
-    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
-    
+
+    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({
+      createdAt: -1,
+    });
+
+    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({
+      createdAt: -1,
+    });
+
     let latestAnalysis = null;
+
     if (latestCV && latestManual) {
-      latestAnalysis = latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
+      latestAnalysis =
+        latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
     } else {
       latestAnalysis = latestCV || latestManual;
     }
 
     let totalSkills = 0;
+
     if (latestAnalysis) {
       if (latestAnalysis.skills && Array.isArray(latestAnalysis.skills)) {
         totalSkills = latestAnalysis.skills.length;
-      } else if (latestAnalysis.extractedSkills && Array.isArray(latestAnalysis.extractedSkills)) {
+      } else if (
+        latestAnalysis.extractedSkills &&
+        Array.isArray(latestAnalysis.extractedSkills)
+      ) {
         totalSkills = latestAnalysis.extractedSkills.length;
       }
     }
 
-    const skillGapCount = latestAnalysis && latestAnalysis.missingSkills ? latestAnalysis.missingSkills.length : 0;
-    const completedTests = await SkillTest.countDocuments({ userId: uid, isCompleted: true });
-    const careerMatch = latestAnalysis ? (latestAnalysis.skillMatchScore || latestAnalysis.cvScore || 0) : 0;
+    const skillGapCount =
+      latestAnalysis && latestAnalysis.missingSkills
+        ? latestAnalysis.missingSkills.length
+        : 0;
+
+    const completedTests = await SkillTest.countDocuments({
+      userId: uid,
+      isCompleted: true,
+    });
+
+    const careerMatch = latestAnalysis
+      ? latestAnalysis.skillMatchScore || latestAnalysis.cvScore || 0
+      : 0;
 
     res.json({
       totalSkills,
       skillGapCount,
       completedTests,
-      careerMatch
+      careerMatch,
     });
   } catch (error) {
     console.error("Dashboard summary error:", error);
@@ -537,12 +602,20 @@ app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
 app.get("/api/dashboard/latest-analysis", verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
-    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
-    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
-    
+
+    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({
+      createdAt: -1,
+    });
+
+    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({
+      createdAt: -1,
+    });
+
     let latestAnalysis = null;
+
     if (latestCV && latestManual) {
-      latestAnalysis = latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
+      latestAnalysis =
+        latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
     } else {
       latestAnalysis = latestCV || latestManual;
     }
@@ -558,17 +631,27 @@ app.get("/api/dashboard/latest-analysis", verifyAuth, async (req, res) => {
 app.get("/api/dashboard/skill-gaps", verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
-    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
-    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({ createdAt: -1 });
-    
+
+    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({
+      createdAt: -1,
+    });
+
+    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({
+      createdAt: -1,
+    });
+
     let latestAnalysis = null;
+
     if (latestCV && latestManual) {
-      latestAnalysis = latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
+      latestAnalysis =
+        latestCV.createdAt > latestManual.createdAt ? latestCV : latestManual;
     } else {
       latestAnalysis = latestCV || latestManual;
     }
 
-    res.json({ missingSkills: latestAnalysis ? (latestAnalysis.missingSkills || []) : [] });
+    res.json({
+      missingSkills: latestAnalysis ? latestAnalysis.missingSkills || [] : [],
+    });
   } catch (error) {
     console.error("Dashboard skill gaps error:", error);
     res.status(500).json({ error: "Server error" });
@@ -578,7 +661,12 @@ app.get("/api/dashboard/skill-gaps", verifyAuth, async (req, res) => {
 // Learning Path
 app.get("/api/dashboard/learning-path", verifyAuth, async (req, res) => {
   try {
-    const latestPath = await LearningPath.findOne({ userId: req.user.uid }).sort({ createdAt: -1 });
+    const latestPath = await LearningPath.findOne({
+      userId: req.user.uid,
+    }).sort({
+      createdAt: -1,
+    });
+
     res.json(latestPath || {});
   } catch (error) {
     console.error("Dashboard learning path error:", error);
@@ -589,7 +677,12 @@ app.get("/api/dashboard/learning-path", verifyAuth, async (req, res) => {
 // Recent Tests
 app.get("/api/dashboard/recent-tests", verifyAuth, async (req, res) => {
   try {
-    const recentTests = await SkillTest.find({ userId: req.user.uid }).sort({ createdAt: -1 }).limit(5);
+    const recentTests = await SkillTest.find({
+      userId: req.user.uid,
+    })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
     res.json(recentTests || []);
   } catch (error) {
     console.error("Dashboard recent tests error:", error);
