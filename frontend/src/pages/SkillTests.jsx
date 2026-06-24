@@ -916,19 +916,36 @@ export default function SkillTests() {
             </div>
             
             <div className="md:w-2/3 grid gap-4 sm:grid-cols-2">
-               <div className="space-y-3">
+                <div className="space-y-3">
                   <div>
                      <h3 className="text-sm font-bold text-ink-900 mb-1">Strong Areas</h3>
                      <div className="flex flex-wrap gap-1.5">
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">React Fundamentals</span>
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">API Integration</span>
+                        {hasAnalysis && analysis?.technicalSkills?.length > 0 ? (
+                          analysis.technicalSkills.slice(0, 2).map((skill, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">{skill.name || skill}</span>
+                          ))
+                        ) : (
+                          <>
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">React Fundamentals</span>
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">API Integration</span>
+                          </>
+                        )}
                      </div>
                   </div>
                   <div>
                      <h3 className="text-sm font-bold text-ink-900 mb-1">Weak Areas</h3>
                      <div className="flex flex-wrap gap-1.5">
-                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">System Design</span>
-                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">Advanced State</span>
+                        {missingSkills.length > 0 ? (
+                          missingSkills.slice(0, 2).map((skill, idx) => {
+                            const skillName = typeof skill === 'string' ? skill : skill.skill || skill.name;
+                            return <span key={idx} className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">{skillName}</span>
+                          })
+                        ) : (
+                          <>
+                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">System Design</span>
+                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">Advanced State</span>
+                          </>
+                        )}
                      </div>
                   </div>
                </div>
@@ -938,11 +955,23 @@ export default function SkillTests() {
                      <div className="flex items-start gap-2">
                         <BookOpen className="h-4 w-4 text-primary-600 mt-0.5 shrink-0" />
                         <div>
-                           <p className="text-xs font-bold text-ink-900">System Design Patterns</p>
+                           <p className="text-xs font-bold text-ink-900">
+                             {missingSkills.length > 0 ? (typeof missingSkills[0] === 'string' ? missingSkills[0] : missingSkills[0].skill || missingSkills[0].name) : "System Design Patterns"}
+                           </p>
                            <p className="text-[10px] text-ink-500">Take the related conceptual quiz.</p>
                         </div>
                      </div>
-                     <Button size="sm" variant="secondary" className="w-full text-xs">Start Practice</Button>
+                     <Button 
+                       size="sm" 
+                       variant="secondary" 
+                       className="w-full text-xs"
+                       onClick={() => {
+                         const topWeakness = missingSkills.length > 0 ? (typeof missingSkills[0] === 'string' ? missingSkills[0] : missingSkills[0].skill || missingSkills[0].name) : "System Design";
+                         handleStartPathTest(topWeakness, 'quiz');
+                       }}
+                     >
+                       Start Practice
+                     </Button>
                   </div>
                </div>
             </div>
