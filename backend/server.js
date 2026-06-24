@@ -130,6 +130,39 @@ app.get("/api/user/manual-analyses", verifyAuth, async (req, res) => {
   }
 });
 
+app.delete("/api/user/manual-analyses/:id", verifyAuth, async (req, res) => {
+  try {
+    const result = await ManualAnalysis.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.uid,
+    });
+
+    if (!result) return res.status(404).json({ error: "Analysis not found" });
+
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Manual analysis delete error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/api/user/all-analyses", verifyAuth, async (req, res) => {
+  try {
+    const cvAnalyses = await CVAnalysis.find({ userId: req.user.uid }).lean();
+    const manualAnalyses = await ManualAnalysis.find({ userId: req.user.uid }).lean();
+    
+    const cvWithType = cvAnalyses.map(a => ({ ...a, analysisType: 'cv' }));
+    const manualWithType = manualAnalyses.map(a => ({ ...a, analysisType: 'manual' }));
+    
+    const combined = [...cvWithType, ...manualWithType].sort((a, b) => b.createdAt - a.createdAt);
+    
+    res.json(combined);
+  } catch (error) {
+    console.error("All analyses fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
   try {
     const tests = await SkillTest.find({ userId: req.user.uid }).sort({
@@ -202,11 +235,14 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
 
     const prompt = `
 Analyze this CV and return ONLY valid JSON.
+Identify and cleanly separate technical skills (e.g. React, Node.js, Python, Figma) from soft skills (e.g. Communication, Leadership, Problem Solving). Include all skills in the combined 'skills' array as well.
 
 Return this structure:
 {
   "name": "",
   "email": "",
+  "technicalSkills": [],
+  "softSkills": [],
   "skills": [],
   "education": [],
   "experience": [],
@@ -215,7 +251,19 @@ Return this structure:
   "targetRole": "",
   "careerRecommendations": [],
   "missingSkills": [],
-  "jobMatches": [],
+  "jobMatches": [
+    {
+      "role": "",
+      "company": "",
+      "type": "Full-time/Remote",
+      "location": "",
+      "salary": "",
+      "skills": [],
+      "match": 0,
+      "source": "",
+      "url": ""
+    }
+  ],
   "skillMatchScore": 0,
   "cvScore": 0,
   "learningPath": [],
@@ -256,79 +304,6 @@ ${text}
       errorMessage.includes("RESOURCE_EXHAUSTED") ||
       errorMessage.toLowerCase().includes("quota exceeded");
 
-    if (isQuotaError && process.env.NODE_ENV !== "production") {
-      console.log("Using mock CV data due to Gemini quota error in development.");
-
-      const mockData = {
-        name: "Jane Doe (Mock)",
-        email: "jane.doe@example.com",
-        skills: [
-          { name: "JavaScript", level: "Advanced" },
-          { name: "React", level: "Advanced" },
-          { name: "Node.js", level: "Intermediate" },
-          { name: "MongoDB", level: "Intermediate" },
-        ],
-        education: [
-          {
-            institution: "Mock University",
-            degree: "BSc Computer Science",
-            year: "2020",
-          },
-        ],
-        experience: [
-          {
-            company: "MockCorp",
-            role: "Frontend Developer",
-            duration: "2020 - Present",
-            description: "Built frontend features.",
-          },
-        ],
-        projects: [
-          {
-            name: "Portfolio Website",
-            description: "Personal portfolio",
-            technologies: ["React", "Tailwind"],
-          },
-        ],
-        certifications: ["AWS Certified Developer"],
-        targetRole: "Full Stack Developer",
-        careerRecommendations: [
-          "Focus on backend architecture",
-          "Learn cloud deployment",
-        ],
-        missingSkills: ["Docker", "Kubernetes", "GraphQL"],
-        jobMatches: ["Full Stack Developer", "React Developer"],
-        skillMatchScore: 85,
-        cvScore: 78,
-        learningPath: [
-          "Complete a Docker course",
-          "Build a microservices project",
-        ],
-        aiInsights:
-          "Mock data generated because Gemini quota was exceeded.",
-      };
-
-      try {
-        const newAnalysis = new CVAnalysis({
-          userId: req.user.uid,
-          originalText: text || "Mock CV Text",
-          ...mockData,
-        });
-
-        await newAnalysis.save();
-
-        return res.json({
-          ...mockData,
-          _id: newAnalysis._id,
-        });
-      } catch (dbError) {
-        console.error("Mock data DB Error:", dbError);
-        return res.status(500).json({
-          error: `Failed to save mock data: ${dbError.message}`,
-        });
-      }
-    }
-
     if (isQuotaError) {
       return res.status(429).json({
         error: "AI quota exceeded. Please try again later.",
@@ -366,7 +341,19 @@ Return ONLY valid JSON:
   "extracted": { "skills": [] },
   "careerRecommendations": [],
   "missingSkills": [],
-  "jobMatches": [],
+  "jobMatches": [
+    {
+      "role": "",
+      "company": "",
+      "type": "Full-time/Remote",
+      "location": "",
+      "salary": "",
+      "skills": [],
+      "match": 0,
+      "source": "",
+      "url": ""
+    }
+  ],
   "skillMatchScore": 0,
   "cvScore": 0,
   "learningPath": [],
@@ -560,6 +547,8 @@ app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
     }
 
     let totalSkills = 0;
+    let totalTechnicalSkills = 0;
+    let totalSoftSkills = 0;
 
     if (latestAnalysis) {
       if (latestAnalysis.skills && Array.isArray(latestAnalysis.skills)) {
@@ -569,6 +558,13 @@ app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
         Array.isArray(latestAnalysis.extractedSkills)
       ) {
         totalSkills = latestAnalysis.extractedSkills.length;
+      }
+      
+      if (latestAnalysis.technicalSkills && Array.isArray(latestAnalysis.technicalSkills)) {
+        totalTechnicalSkills = latestAnalysis.technicalSkills.length;
+      }
+      if (latestAnalysis.softSkills && Array.isArray(latestAnalysis.softSkills)) {
+        totalSoftSkills = latestAnalysis.softSkills.length;
       }
     }
 
@@ -588,9 +584,15 @@ app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
 
     res.json({
       totalSkills,
+      totalTechnicalSkills,
+      totalSoftSkills,
       skillGapCount,
       completedTests,
       careerMatch,
+      cvScore: latestAnalysis?.cvScore || 0,
+      targetRole: latestAnalysis?.targetRole || "Unknown Role",
+      aiInsights: latestAnalysis?.aiInsights || "",
+      latestAnalysisDate: latestAnalysis?.createdAt || null,
     });
   } catch (error) {
     console.error("Dashboard summary error:", error);

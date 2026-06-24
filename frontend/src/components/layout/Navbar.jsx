@@ -27,7 +27,7 @@ export default function Navbar({ onMenuClick, onChatClick }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { analysis } = useCVAnalysis();
-  const displayName = analysis?.name && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
+  const displayName = analysis?.name && !analysis.name.includes("Mock") && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
     ? analysis.name 
     : user?.name || "SkillNova User";
   const track = analysis?.targetRole && analysis.targetRole !== "Unknown Role" 

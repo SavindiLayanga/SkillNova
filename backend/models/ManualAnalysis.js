@@ -5,6 +5,18 @@ const skillSchema = new mongoose.Schema({
   level: String,
 });
 
+const jobMatchSchema = new mongoose.Schema({
+  role: String,
+  company: String,
+  type: String,
+  location: String,
+  salary: String,
+  skills: [String],
+  match: Number,
+  source: String,
+  url: String
+});
+
 const manualAnalysisSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
   name: { type: String, default: '' },
@@ -15,9 +27,11 @@ const manualAnalysisSchema = new mongoose.Schema({
   
   // Analysis Output
   extractedSkills: [skillSchema],
+  technicalSkills: [skillSchema],
+  softSkills: [skillSchema],
   careerRecommendations: [String],
   missingSkills: [String],
-  jobMatches: [String],
+  jobMatches: [jobMatchSchema],
   skillMatchScore: { type: Number, default: 0 },
   cvScore: { type: Number, default: 0 },
   learningPath: [String],

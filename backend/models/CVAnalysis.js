@@ -24,11 +24,25 @@ const projectSchema = new mongoose.Schema({
   technologies: [String],
 });
 
+const jobMatchSchema = new mongoose.Schema({
+  role: String,
+  company: String,
+  type: String,
+  location: String,
+  salary: String,
+  skills: [String],
+  match: Number,
+  source: String,
+  url: String
+});
+
 const cvAnalysisSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
   originalText: { type: String, required: true },
   name: { type: String, default: '' },
   email: { type: String, default: '' },
+  technicalSkills: [skillSchema],
+  softSkills: [skillSchema],
   skills: [skillSchema],
   education: [educationSchema],
   experience: [experienceSchema],
@@ -37,7 +51,7 @@ const cvAnalysisSchema = new mongoose.Schema({
   targetRole: { type: String, default: '' },
   careerRecommendations: [String],
   missingSkills: [String],
-  jobMatches: [String],
+  jobMatches: [jobMatchSchema],
   skillMatchScore: { type: Number, default: 0 },
   cvScore: { type: Number, default: 0 },
   learningPath: [String],

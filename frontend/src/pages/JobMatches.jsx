@@ -10,7 +10,13 @@ import useCVAnalysis from "../hooks/useCVAnalysis.js";
 export default function JobMatches() {
   const { analysis, hasAnalysis, status } = useCVAnalysis();
   
-  const jobMatches = analysis?.jobMatches || [];
+  let jobMatches = analysis?.jobMatches || [];
+  
+  // Filter out completely empty objects that might have been returned by Gemini's default structure
+  jobMatches = jobMatches.filter(job => {
+    if (typeof job === 'string') return job.trim().length > 0;
+    return job && (job.role || job.company);
+  });
 
   return (
     <div className="space-y-6">
@@ -34,15 +40,29 @@ export default function JobMatches() {
 
       {hasAnalysis && jobMatches.length > 0 ? (
       <section className="grid gap-5">
-        {jobMatches.map((job) => (
-          <Card key={`${job.company}-${job.role}`}>
+        {jobMatches.map((job, idx) => {
+          if (typeof job === 'string') {
+            return (
+              <Card key={`${job}-${idx}`}>
+                 <div className="flex flex-col gap-2">
+                   <h2 className="text-xl font-bold text-ink-900">{job}</h2>
+                   <p className="text-sm text-ink-500">Please run a new analysis to see full job details like company, salary, and match score.</p>
+                 </div>
+              </Card>
+            );
+          }
+
+          return (
+          <Card key={`${job.company}-${job.role}-${idx}`}>
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
                   <h2 className="text-xl font-bold text-ink-900">{job.role}</h2>
-                  <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
-                    {job.type}
-                  </span>
+                  {job.type && (
+                    <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
+                      {job.type}
+                    </span>
+                  )}
                   {job.source && (
                     <span className="flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-2.5 py-1 text-xs font-bold text-green-700">
                       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" xmlns="http://www.w3.org/2000/svg">
@@ -52,11 +72,13 @@ export default function JobMatches() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 font-semibold text-ink-700">{job.company}</p>
-                <p className="mt-2 flex items-center gap-2 text-sm text-ink-500">
-                  <MapPin className="h-4 w-4" />
-                  {job.location} - {job.salary}
-                </p>
+                {job.company && <p className="mt-2 font-semibold text-ink-700">{job.company}</p>}
+                {(job.location || job.salary) && (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-ink-500">
+                    <MapPin className="h-4 w-4" />
+                    {[job.location, job.salary].filter(Boolean).join(" - ")}
+                  </p>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   {job.skills && job.skills.map((skill) => (
                     <span
@@ -71,19 +93,20 @@ export default function JobMatches() {
               <div className="w-full lg:w-64">
                 <div className="mb-2 flex justify-between text-sm font-semibold">
                   <span className="text-ink-700">Match score</span>
-                  <span className="text-primary-700">{job.match}%</span>
+                  <span className="text-primary-700">{job.match || 0}%</span>
                 </div>
                 <ProgressBar value={job.match || 0} />
                 <Button 
                   className="mt-5 w-full" 
                   onClick={() => job.url && window.open(job.url, "_blank")}
+                  disabled={!job.url}
                 >
-                  View details
+                  {job.url ? "View details" : "Details not available"}
                 </Button>
               </div>
             </div>
           </Card>
-        ))}
+        )})}
       </section>
       ) : hasAnalysis && jobMatches.length === 0 ? (
         <Card className="text-center p-8">

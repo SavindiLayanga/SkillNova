@@ -16,6 +16,7 @@ import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import CVUpload from "./pages/CVUpload.jsx";
+import CVAnalysisHistory from "./pages/CVAnalysisHistory.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import JobMatches from "./pages/JobMatches.jsx";
 import Login from "./pages/Login.jsx";
@@ -64,6 +65,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cv-upload" element={<CVUpload />} />
+          <Route path="/cv-history" element={<CVAnalysisHistory />} />
           <Route path="/settings" element={<Settings />} />
 
           <Route element={<RequireCVRoute />}>

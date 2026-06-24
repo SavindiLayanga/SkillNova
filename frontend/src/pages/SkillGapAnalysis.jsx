@@ -1,4 +1,5 @@
 import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -21,7 +22,11 @@ export default function SkillGapAnalysis() {
     <div className="space-y-6">
       <PageHeader
         action={
-          hasAnalysis ? <Button icon={BookOpen}>Generate learning path</Button> : null
+          hasAnalysis ? (
+            <Link to="/learning-path">
+              <Button icon={BookOpen}>Generate learning path</Button>
+            </Link>
+          ) : null
         }
         description={`Skill gap analysis for the target role: ${analysis?.targetRole || "your target role"}.`}
         eyebrow="Skill Gap Analysis"

@@ -157,7 +157,10 @@ export default function Dashboard() {
 
   const hasAnalysis = latestAnalysis && Object.keys(latestAnalysis).length > 0;
   
-  const displayName = latestAnalysis?.name && latestAnalysis.name !== "User" && latestAnalysis.name !== "Candidate's full name" 
+  const displayName = latestAnalysis?.name && 
+    !latestAnalysis.name.includes("Mock") && 
+    latestAnalysis.name !== "User" && 
+    latestAnalysis.name !== "Candidate's full name" 
     ? latestAnalysis.name 
     : user?.name || "SkillNova User";
   const firstName = displayName.split(" ")[0];
@@ -174,32 +177,32 @@ export default function Dashboard() {
 
   const summaryCards = [
     {
-      label: "Total Skills",
-      value: summary?.totalSkills || 0,
-      caption: "Identified from your profile.",
+      label: "Technical Skills",
+      value: summary?.totalTechnicalSkills || 0,
+      caption: "Hard skills identified from CV.",
       icon: BarChart3,
-      tone: "orange",
+      tone: "blue",
     },
     {
-      label: "Skill Gaps",
-      value: summary?.skillGapCount || 0,
-      caption: "Priority gaps detected for your target role.",
+      label: "Soft Skills",
+      value: summary?.totalSoftSkills || 0,
+      caption: "Interpersonal skills detected.",
       icon: Target,
+      tone: "teal",
+    },
+    {
+      label: "Missing Skills",
+      value: summary?.skillGapCount || 0,
+      caption: "Gaps detected for target role.",
+      icon: AlertCircle,
       tone: "rose",
     },
     {
       label: "Career Match",
       value: `${summary?.careerMatch || 0}%`,
-      caption: "Best current job match confidence.",
+      caption: "Best job match confidence.",
       icon: TrendingUp,
-      tone: "teal",
-    },
-    {
-      label: "Completed Tests",
-      value: summary?.completedTests || 0,
-      caption: "Skill tests taken.",
-      icon: BookOpen,
-      tone: "blue",
+      tone: "orange",
     },
   ];
 
@@ -307,22 +310,22 @@ export default function Dashboard() {
               </div>
               <div className="space-y-5">
                 <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">82%</span></div>
-                  <ProgressBar value={82} className="h-2 opacity-90" />
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Total Skills Extracted</span><span className="font-bold text-ink-900">{summary?.totalSkills || 0}</span></div>
+                  <ProgressBar value={summary?.totalSkills ? 100 : 0} className="h-2 opacity-90" />
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">70%</span></div>
-                  <ProgressBar value={70} className="h-2 opacity-90" />
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">{summary?.totalTechnicalSkills || 0}</span></div>
+                  <ProgressBar value={summary?.totalSkills ? ((summary.totalTechnicalSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Job Match</span><span className="font-bold text-ink-900">{latestAnalysis.skillMatchScore || 0}%</span></div>
-                  <ProgressBar value={latestAnalysis.skillMatchScore || 0} className="h-2 opacity-90" />
+                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">{summary?.totalSoftSkills || 0}</span></div>
+                  <ProgressBar value={summary?.totalSkills ? ((summary.totalSoftSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
                 </div>
               </div>
             </Card>
           </section>
 
-          {latestAnalysis.aiInsights && (
+          {summary?.aiInsights && (
             <section>
               <SectionHeader
                 description="Human-readable feedback generated from your profile."
@@ -332,7 +335,7 @@ export default function Dashboard() {
                 <div className="flex items-start gap-4">
                   <Sparkles className="h-6 w-6 text-primary-600 mt-1 shrink-0" />
                   <p className="text-sm leading-6 text-ink-700">
-                    {latestAnalysis.aiInsights}
+                    {summary.aiInsights}
                   </p>
                 </div>
               </Card>
@@ -367,12 +370,12 @@ export default function Dashboard() {
           </section>
 
           {/* SKILL GAPS SECTION */}
-          {skillGaps?.missingSkills?.length > 0 && (
-            <section>
-              <SectionHeader
-                description="Skills you need to acquire to match your target role."
-                title="Skill Gaps"
-              />
+          <section>
+            <SectionHeader
+              description="Skills you need to acquire to match your target role."
+              title="Skill Gaps"
+            />
+            {skillGaps?.missingSkills?.length > 0 ? (
               <Card className="p-5 sm:p-6">
                   <div className="flex flex-wrap gap-2">
                       {skillGaps.missingSkills.map((skill, idx) => (
@@ -386,16 +389,22 @@ export default function Dashboard() {
                       ))}
                   </div>
               </Card>
-            </section>
-          )}
+            ) : (
+              <Card className="p-8 text-center border-dashed border-2">
+                <Target className="h-10 w-10 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-600 font-medium">No skill gaps detected yet.</p>
+                <p className="text-sm text-ink-500 mt-1">Complete an analysis to see what you're missing.</p>
+              </Card>
+            )}
+          </section>
 
           {/* LEARNING PATH SECTION */}
-          {learningPath?.modules?.length > 0 && (
-            <section>
-              <SectionHeader
-                description="Personalized learning roadmap to fill your skill gaps."
-                title="Learning Path"
-              />
+          <section>
+            <SectionHeader
+              description="Personalized learning roadmap to fill your skill gaps."
+              title="Learning Path"
+            />
+            {learningPath?.modules?.length > 0 ? (
               <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
                 {learningPath.modules.map((module, idx) => (
                   <Card className="p-5 flex flex-col justify-between" key={idx}>
@@ -412,16 +421,22 @@ export default function Dashboard() {
                   </Card>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <Card className="p-8 text-center border-dashed border-2">
+                <BookOpen className="h-10 w-10 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-600 font-medium">No active learning path.</p>
+                <p className="text-sm text-ink-500 mt-1">Generate a learning path from your skill gaps to get started.</p>
+              </Card>
+            )}
+          </section>
 
           {/* RECENT TESTS SECTION */}
-          {recentTests && recentTests.length > 0 && (
-            <section>
-              <SectionHeader
-                description="Your latest skill assessment results."
-                title="Recent Tests"
-              />
+          <section>
+            <SectionHeader
+              description="Your latest skill assessment results."
+              title="Recent Tests"
+            />
+            {recentTests && recentTests.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                  {recentTests.map((test) => (
                     <Card key={test._id} className="p-5 border-l-4 border-l-blue-500">
@@ -437,8 +452,14 @@ export default function Dashboard() {
                     </Card>
                  ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <Card className="p-8 text-center border-dashed border-2">
+                <AlertCircle className="h-10 w-10 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-600 font-medium">No recent tests taken.</p>
+                <p className="text-sm text-ink-500 mt-1">Take a skill test to evaluate your proficiency.</p>
+              </Card>
+            )}
+          </section>
 
           {/* CAREER RECOMMENDATIONS */}
           {latestAnalysis.careerRecommendations?.length > 0 && (

@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CVAnalysisContext } from "./cvAnalysisContextValue.js";
 import { extractTextFromPDF } from "../utils/pdfParser.js";
 import { extractTextFromDOCX } from "../utils/docxParser.js";
 import { analyzeCV, analyzeManualSkills } from "../services/geminiService.js";
+import useAuth from "../hooks/useAuth.js";
+import { fetchLatestAnalysis } from "../services/dashboardService.js";
 
 const STORAGE_KEY = "skillnova_cv_analysis";
 
@@ -13,13 +15,22 @@ function readStoredAnalysis() {
       return null;
     }
     const parsed = JSON.parse(stored);
-    return parsed?.analysisData ? parsed.analysisData : null;
+    const data = parsed?.analysisData ? parsed.analysisData : null;
+    
+    // Purge residual mock data from local storage
+    if (data && data.name && typeof data.name === "string" && data.name.includes("Mock")) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    
+    return data;
   } catch {
     return null;
   }
 }
 
 export function CVAnalysisProvider({ children }) {
+  const { user, getToken } = useAuth();
   const [storedAnalysis] = useState(() => readStoredAnalysis());
   const [status, setStatus] = useState(storedAnalysis ? "analyzed" : "noCV");
   const [analysis, setAnalysis] = useState(() => {
@@ -28,6 +39,27 @@ export function CVAnalysisProvider({ children }) {
   });
   const [fileName, setFileName] = useState(storedAnalysis?.fileName ?? "");
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function syncAnalysis() {
+      if (!user) return;
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const latest = await fetchLatestAnalysis(token);
+        if (isMounted && latest && Object.keys(latest).length > 0) {
+          setAnalysis(latest);
+          setStatus("analyzed");
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysisData: latest }));
+        }
+      } catch (err) {
+        console.error("Failed to sync analysis from backend", err);
+      }
+    }
+    syncAnalysis();
+    return () => { isMounted = false; };
+  }, [user, getToken]);
 
   const startAnalysis = useCallback(async (file) => {
     if (!file) {
@@ -64,6 +96,8 @@ export function CVAnalysisProvider({ children }) {
         targetRole: extractedData.targetRole || "Software Developer",
         name: extractedData.name || "",
         email: extractedData.email || "",
+        technicalSkills: extractedData.technicalSkills || [],
+        softSkills: extractedData.softSkills || [],
         extracted: {
           experience: extractedData.experience || [],
           education: extractedData.education || [],
@@ -120,6 +154,8 @@ export function CVAnalysisProvider({ children }) {
         targetRole: extractedData.targetRole || targetRole,
         name: extractedData.name || name || "SkillNova User",
         email: "",
+        technicalSkills: extractedData.technicalSkills || [],
+        softSkills: extractedData.softSkills || [],
         extracted: {
           experience: [],
           education: [],

@@ -11,6 +11,7 @@ import {
   Sparkles,
   Target,
   User,
+  History,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth.js";
@@ -19,6 +20,7 @@ import clsx from "../../utils/clsx.js";
 const navigation = [
   { label: "Dashboard", path: "/dashboard", icon: House },
   { label: "CV Upload", path: "/cv-upload", icon: FileText },
+  { label: "Analysis History", path: "/cv-history", icon: History },
   { label: "Skill Gap Analysis", path: "/skill-gap", icon: Target },
   { label: "Job Recommendations", path: "/job-matches", icon: BriefcaseBusiness },
   { label: "Learning Path", path: "/learning-path", icon: Map },
