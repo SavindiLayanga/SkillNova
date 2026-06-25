@@ -23,7 +23,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
-import { generateSkillTest } from "../services/geminiService.js";
+import { generateSkillTest } from "../services/aiService.js";
 
 const generalTests = [
   {
@@ -432,7 +432,8 @@ export default function SkillTests() {
     if (!questions) {
       setIsGeneratingTest(true);
       try {
-        questions = await generateSkillTest(skillName, type);
+        const response = await generateSkillTest(skillName, type);
+        questions = response.questions; // extract array from response object
         
         const newCache = {
           ...dynamicTestsCache,
@@ -443,8 +444,8 @@ export default function SkillTests() {
         };
         setDynamicTestsCache(newCache);
         localStorage.setItem("skillnova_dynamic_tests", JSON.stringify(newCache));
-      } catch {
-        alert("Failed to generate test. Please try again.");
+      } catch (err) {
+        alert("Failed to generate test: " + (err.message || "Unknown error"));
         setIsGeneratingTest(false);
         return;
       }
@@ -608,7 +609,7 @@ export default function SkillTests() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-slide-up">
         <Loader 
           text="AI is generating your custom test..." 
-          secondaryText="SkillNova is using Gemini to write 5 targeted questions specific to this missing skill. This usually takes a few seconds." 
+          secondaryText="SkillNova is using AI to write 5 targeted questions specific to this missing skill. This usually takes a few seconds." 
         />
       </div>
     );

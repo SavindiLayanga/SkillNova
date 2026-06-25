@@ -1,7 +1,7 @@
 import { Bot, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import useCVAnalysis from "../../hooks/useCVAnalysis.js";
-import { chatWithGemini } from "../../services/geminiService.js";
+import { chatWithAI } from "../../services/aiService.js";
 import clsx from "../../utils/clsx.js";
 import Loader from "./Loader.jsx";
 
@@ -32,7 +32,7 @@ export default function Chatbot({ isOpen, onClose }) {
     setIsTyping(true);
 
     try {
-      const responseText = await chatWithGemini(newMessages, null, cvContext);
+      const responseText = await chatWithAI(newMessages, null, cvContext);
       setMessages((prev) => [...prev, { role: "ai", text: responseText }]);
     } catch (err) {
       setMessages((prev) => [

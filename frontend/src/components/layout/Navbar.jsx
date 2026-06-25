@@ -20,7 +20,7 @@ const SEARCH_INDEX = [
   { id: "skill-tests", title: "Skill Assessments", icon: CheckSquare, path: "/skill-tests", description: "Take quizzes to validate skills" },
   { id: "learning-path", title: "Learning Path", icon: GraduationCap, path: "/learning-path", description: "View your personalized AI roadmap" },
   { id: "job-matches", title: "Job Recommendations", icon: Briefcase, path: "/job-matches", description: "Find jobs matching your verified skills" },
-  { id: "ai-chat", title: "Ask AI Assistant", icon: MessageSquare, action: "open_chat", description: "Get career advice from Gemini" },
+  { id: "ai-chat", title: "Ask AI Assistant", icon: MessageSquare, action: "open_chat", description: "Get career advice from AI" },
 ];
 
 export default function Navbar({ onMenuClick, onChatClick }) {

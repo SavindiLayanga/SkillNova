@@ -12,7 +12,7 @@ export default function JobMatches() {
   
   let jobMatches = analysis?.jobMatches || [];
   
-  // Filter out completely empty objects that might have been returned by Gemini's default structure
+  // Filter out completely empty objects that might have been returned by AI's default structure
   jobMatches = jobMatches.filter(job => {
     if (typeof job === 'string') return job.trim().length > 0;
     return job && (job.role || job.company);

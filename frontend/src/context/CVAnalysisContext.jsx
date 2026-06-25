@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CVAnalysisContext } from "./cvAnalysisContextValue.js";
 import { extractTextFromPDF } from "../utils/pdfParser.js";
 import { extractTextFromDOCX } from "../utils/docxParser.js";
-import { analyzeCV, analyzeManualSkills } from "../services/geminiService.js";
+import { analyzeCV, analyzeManualSkills } from "../services/aiService.js";
 import useAuth from "../hooks/useAuth.js";
 import { fetchLatestAnalysis } from "../services/dashboardService.js";
 
@@ -86,10 +86,10 @@ export function CVAnalysisProvider({ children }) {
       
       setStatus("analyzing");
       
-      // 2. Analyze with Gemini
+      // 2. Analyze with AI
       const extractedData = await analyzeCV(text);
 
-      // 3. Create full analysis object directly using the Gemini output
+      // 3. Create full analysis object directly using the AI output
       const fullAnalysis = {
         analyzedAt: new Date().toISOString(),
         fileName: file.name,

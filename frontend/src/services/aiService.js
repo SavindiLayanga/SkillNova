@@ -60,7 +60,7 @@ export async function generateSkillTest(skillName, type) {
   }
 }
 
-export async function chatWithGemini(messages, apiKey_unused, cvContext) {
+export async function chatWithAI(messages, apiKey_unused, cvContext) {
   try {
     const data = await fetchWithAuth('/api/chat', {
       method: 'POST',

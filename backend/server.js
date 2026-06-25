@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import { connectDB } from "./db.js";
 import { initializeFirebaseAdmin } from "./firebase.js";
 import { verifyAuth } from "./middleware/auth.js";
+import { AI_API_KEY, AI_MODEL } from "./aiConfig.js";
 
 import { User } from "./models/User.js";
 import { CVAnalysis } from "./models/CVAnalysis.js";
@@ -38,10 +39,10 @@ app.get("/", (req, res) => {
 });
 
 const getAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = AI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("Gemini API key is missing in .env file");
+    throw new Error("AI API key is missing in .env file");
   }
 
   return new GoogleGenAI({ apiKey });
@@ -275,7 +276,7 @@ ${text}
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: AI_MODEL,
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -362,7 +363,7 @@ Return ONLY valid JSON:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: AI_MODEL,
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -420,12 +421,14 @@ Return ONLY JSON array:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: AI_MODEL,
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
 
-    const questions = JSON.parse(response.text);
+    let questionsData = JSON.parse(response.text);
+    // AI sometimes returns { questions: [...] } instead of directly returning the array
+    const questions = Array.isArray(questionsData) ? questionsData : (questionsData.questions || []);
 
     const newTest = new SkillTest({
       userId: req.user.uid,
@@ -462,7 +465,7 @@ app.post("/api/chat", verifyAuth, async (req, res) => {
     }));
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: AI_MODEL,
       contents: formattedContents,
     });
 
@@ -501,7 +504,7 @@ Return ONLY JSON array:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: AI_MODEL,
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
