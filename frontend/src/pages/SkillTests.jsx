@@ -435,12 +435,23 @@ export default function SkillTests() {
   const handleStartPathTest = async (skillName, type) => {
     let questions = dynamicTestsCache[skillName]?.[type];
     
-    if (!questions) {
+    // Clear old error toast if possible
+    setToast({ message: "", type: "" });
+
+    if (!questions || questions.length === 0) {
       setIsGeneratingTest(true);
       try {
         const response = await generateSkillTest(skillName, type);
-        questions = response.questions; // extract array from response object
         
+        // Safely extract questions to support various response structures
+        questions = response?.questions || response?.test?.questions || (Array.isArray(response) ? response : []);
+        
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
+          showToast("AI returned an empty set of questions. Please try again.", "error");
+          setIsGeneratingTest(false);
+          return;
+        }
+
         const newCache = {
           ...dynamicTestsCache,
           [skillName]: {
