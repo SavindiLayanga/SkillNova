@@ -354,6 +354,12 @@ export default function SkillTests() {
   const { analysis, hasAnalysis } = useCVAnalysis();
   const missingSkills = hasAnalysis ? (analysis.missingSkills || []) : [];
 
+  const [toast, setToast] = useState({ message: "", type: "" });
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "" }), 5000);
+  };
+
   useEffect(() => {
     if (location.state?.autoStartPath) {
       setActiveCategory("path");
@@ -445,7 +451,7 @@ export default function SkillTests() {
         setDynamicTestsCache(newCache);
         localStorage.setItem("skillnova_dynamic_tests", JSON.stringify(newCache));
       } catch (err) {
-        alert("Failed to generate test: " + (err.message || "Unknown error"));
+        showToast("Failed to generate test: " + (err.message || "Unknown error"), "error");
         setIsGeneratingTest(false);
         return;
       }
@@ -1270,6 +1276,27 @@ export default function SkillTests() {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.message && (
+        <div className={`fixed bottom-4 right-4 max-w-sm p-4 rounded-xl shadow-xl transition-all duration-300 z-50 transform ${
+          toast.type === "error" 
+            ? "bg-red-50 text-red-800 border border-red-200" 
+            : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+        }`}>
+          {toast.type === "error" ? (
+            <div className="flex items-center gap-2">
+              <AlertCircle size={18} className="text-red-500 shrink-0" />
+              <p className="text-sm font-semibold">{toast.message}</p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+              <p className="text-sm font-semibold">{toast.message}</p>
+            </div>
+          )}
         </div>
       )}
     </div>

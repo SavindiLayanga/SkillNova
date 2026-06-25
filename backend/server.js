@@ -444,7 +444,71 @@ Return ONLY JSON array:
     });
   } catch (error) {
     console.error("Skill Test Error:", error);
-    res.status(500).json({ error: error.message });
+    const errMessage = error.message || "";
+    const isQuotaError = error.status === 429 || 
+                         errMessage.includes("429") || 
+                         errMessage.toLowerCase().includes("resource_exhausted") || 
+                         errMessage.toLowerCase().includes("quota exceeded") || 
+                         errMessage.toLowerCase().includes("too many requests");
+
+    if (isQuotaError) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Quota exceeded, returning mock data (Dev Mode)");
+        const mockQuestions = [
+          {
+            question: `What is the primary purpose of ${skillName}?`,
+            options: ["To optimize performance", "To manage state", "To define structure", "To handle asynchronous operations"],
+            correctAnswer: 0,
+            explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded in development mode.`
+          },
+          {
+            question: `Which of the following is a key feature of ${skillName}?`,
+            options: ["Feature A", "Feature B", "Feature C", "Feature D"],
+            correctAnswer: 1,
+            explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded in development mode.`
+          },
+          {
+            question: `How do you typically initialize ${skillName}?`,
+            options: ["Initialization method 1", "Initialization method 2", "Initialization method 3", "Initialization method 4"],
+            correctAnswer: 2,
+            explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded in development mode.`
+          },
+          {
+            question: `What is a common pitfall when using ${skillName}?`,
+            options: ["Pitfall X", "Pitfall Y", "Pitfall Z", "None of the above"],
+            correctAnswer: 3,
+            explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded in development mode.`
+          },
+          {
+            question: `Which version of ${skillName} introduced major breaking changes?`,
+            options: ["Version 1.0", "Version 2.0", "Version 3.0", "Version 4.0"],
+            correctAnswer: 0,
+            explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded in development mode.`
+          }
+        ];
+        
+        try {
+          const newTest = new SkillTest({
+            userId: req.user.uid,
+            skillName,
+            questions: mockQuestions,
+          });
+
+          await newTest.save();
+
+          return res.json({
+            _id: newTest._id,
+            questions: mockQuestions,
+          });
+        } catch (dbError) {
+          return res.status(500).json({ error: "Failed to save mock test: " + dbError.message });
+        }
+      } else {
+        return res.status(429).json({ error: "AI service quota exceeded. Please try again later." });
+      }
+    }
+
+    res.status(500).json({ error: errMessage });
   }
 });
 
