@@ -23,7 +23,14 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
-import { generateSkillTest } from "../services/aiService.js";
+import { generateSkillTest, submitSkillTest } from "../services/aiService.js";
+
+const getMasteryBadge = (level) => {
+  if (level === "Excellent") return "⭐ Excellent Mastery";
+  if (level === "Good") return "✅ Good Mastery";
+  if (level === "Basic") return "🟡 Basic Mastery";
+  return "🔴 Needs Improvement";
+};
 
 const generalTests = [
   {
@@ -381,6 +388,7 @@ export default function SkillTests() {
   const [completedTests, setCompletedTests] = useState({}); // General test results { [title]: score }
   const [pathScores, setPathScores] = useState({}); // Path subtest results { [skillName]: { quiz: score, debugging: score } }
   const [dynamicTestsCache, setDynamicTestsCache] = useState({}); // AI generated tests
+  const [submissionData, setSubmissionData] = useState(null);
 
   // Load from local storage on mount
   useEffect(() => {
@@ -430,10 +438,12 @@ export default function SkillTests() {
     setCurrentQuestionIndex(0);
     setUserAnswers({});
     setIsFinished(false);
+    setSubmissionData(null);
   };
 
-  const handleStartPathTest = async (skillName, type) => {
-    let questions = dynamicTestsCache[skillName]?.[type];
+  const handleStartPathTest = async (skillName, type, forceRegenerate = false) => {
+    let testData = !forceRegenerate ? dynamicTestsCache[skillName]?.[type] : null;
+    let questions = testData?.questions;
     
     // Clear old error toast if possible
     setToast({ message: "", type: "" });
@@ -456,7 +466,7 @@ export default function SkillTests() {
           ...dynamicTestsCache,
           [skillName]: {
             ...dynamicTestsCache[skillName],
-            [type]: questions
+            [type]: response
           }
         };
         setDynamicTestsCache(newCache);
@@ -478,6 +488,7 @@ export default function SkillTests() {
     setCurrentQuestionIndex(0);
     setUserAnswers({});
     setIsFinished(false);
+    setSubmissionData(null);
   };
 
   const handleSelectOption = (optionIndex) => {
@@ -499,12 +510,12 @@ export default function SkillTests() {
     }
   };
 
-  const handleSubmitTest = () => {
+  const handleSubmitTest = async () => {
     setIsFinished(true);
 
     let questions = [];
     if (selectedTest.isPath) {
-      questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType] || [];
+      questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType]?.questions || [];
     } else {
       questions = generalQuestionsData[selectedTest.title];
     }
@@ -519,19 +530,29 @@ export default function SkillTests() {
     const scorePercentage = Math.round((correctCount / questions.length) * 100);
 
     if (selectedTest.isPath) {
-      // Save Path test score
-      const updatedPathScores = {
-        ...pathScores,
-        [selectedTest.pathSkill]: {
-          ...(pathScores[selectedTest.pathSkill] || {}),
-          [selectedTest.pathType]: scorePercentage,
-        },
-      };
-      setPathScores(updatedPathScores);
-      localStorage.setItem("skillnova_path_scores", JSON.stringify(updatedPathScores));
-      
-      // Update overall profile stats based on score averages if needed
-      updateProfileImprovements(updatedPathScores);
+      // Save Path test score via backend
+      const testData = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType];
+      if (testData && testData._id) {
+        try {
+          const answersArray = questions.map((_, i) => userAnswers[i] ?? -1);
+          const result = await submitSkillTest(testData._id, answersArray);
+          setSubmissionData(result);
+          
+          const updatedPathScores = {
+            ...pathScores,
+            [selectedTest.pathSkill]: {
+              ...(pathScores[selectedTest.pathSkill] || {}),
+              [selectedTest.pathType]: result.score,
+            },
+          };
+          setPathScores(updatedPathScores);
+          localStorage.setItem("skillnova_path_scores", JSON.stringify(updatedPathScores));
+          
+          updateProfileImprovements(updatedPathScores);
+        } catch (e) {
+          showToast("Failed to submit test to server.", "error");
+        }
+      }
     } else {
       // Save General test score
       const updatedGeneral = {
@@ -635,7 +656,7 @@ export default function SkillTests() {
   if (selectedTest) {
     let questions = [];
     if (selectedTest.isPath) {
-      questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType] || [];
+      questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType]?.questions || [];
     } else {
       questions = generalQuestionsData[selectedTest.title] || [];
     }
@@ -696,22 +717,28 @@ export default function SkillTests() {
               <div className="py-2">
                 <div className="inline-block rounded-2xl bg-ink-50 px-6 py-4 ring-1 ring-ink-100">
                   <span className="block text-4xl font-black text-ink-900">
-                    {score}%
+                    {submissionData ? submissionData.score : score}%
                   </span>
                   <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-ink-500">
                     {correctCount} of {totalQuestions} Correct
                   </span>
                 </div>
+                {submissionData && (
+                  <div className="mt-4 flex flex-col items-center gap-1">
+                    <span className="text-sm font-bold text-ink-900">{getMasteryBadge(submissionData.masteryLevel)}</span>
+                    <span className="text-xs text-ink-500 font-medium">Attempts: {submissionData.attempts}</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
                 {isPassed ? (
                   <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-emerald-800 text-xs font-medium leading-relaxed">
-                    🎉 Excellent work! You completed this test with a score of {score}%. This boosts your targeted sub-average to help unlock your Endorsement.
+                    {submissionData ? submissionData.message : `🎉 Excellent work! You completed this test with a score of ${score}%.`}
                   </div>
                 ) : (
                   <div className="rounded-xl bg-orange-50 border border-orange-200 p-3 text-orange-800 text-xs font-medium leading-relaxed">
-                    💡 Nice attempt! You scored {score}%. Try to target a higher score next time to ensure your overall average reaches the 90%+ qualification threshold.
+                    {submissionData ? submissionData.message : `💡 Nice attempt! You scored ${score}%. Try to target a higher score next time.`}
                   </div>
                 )}
 
@@ -719,7 +746,7 @@ export default function SkillTests() {
                   <Button
                     onClick={() => {
                       if (selectedTest.isPath) {
-                        handleStartPathTest(selectedTest.pathSkill, selectedTest.pathType);
+                        handleStartPathTest(selectedTest.pathSkill, selectedTest.pathType, true);
                       } else {
                         handleStartGeneralTest({ title: selectedTest.title, level: selectedTest.level });
                       }
