@@ -32,7 +32,7 @@ function readStoredAnalysis() {
 export function CVAnalysisProvider({ children }) {
   const { user, getToken } = useAuth();
   const [storedAnalysis] = useState(() => readStoredAnalysis());
-  const [status, setStatus] = useState(storedAnalysis ? "analyzed" : "noCV");
+  const [status, setStatus] = useState(storedAnalysis ? "analyzed" : "initializing");
   const [analysis, setAnalysis] = useState(() => {
     if (!storedAnalysis) return null;
     return storedAnalysis;
@@ -43,23 +43,36 @@ export function CVAnalysisProvider({ children }) {
   useEffect(() => {
     let isMounted = true;
     async function syncAnalysis() {
-      if (!user) return;
+      if (!user) {
+        if (isMounted && !storedAnalysis) setStatus("noCV");
+        return;
+      }
       try {
         const token = await getToken();
-        if (!token) return;
+        if (!token) {
+          if (isMounted && !storedAnalysis) setStatus("noCV");
+          return;
+        }
         const latest = await fetchLatestAnalysis(token);
-        if (isMounted && latest && Object.keys(latest).length > 0) {
-          setAnalysis(latest);
-          setStatus("analyzed");
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysisData: latest }));
+        if (isMounted) {
+          if (latest && Object.keys(latest).length > 0) {
+            setAnalysis(latest);
+            setStatus("analyzed");
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysisData: latest }));
+          } else if (!storedAnalysis) {
+            setStatus("noCV");
+          }
         }
       } catch (err) {
         console.error("Failed to sync analysis from backend", err);
+        if (isMounted && !storedAnalysis) {
+          setStatus("noCV");
+        }
       }
     }
     syncAnalysis();
     return () => { isMounted = false; };
-  }, [user, getToken]);
+  }, [user, getToken, storedAnalysis]);
 
   const startAnalysis = useCallback(async (file) => {
     if (!file) {
