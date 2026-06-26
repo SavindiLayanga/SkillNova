@@ -16,6 +16,7 @@ import { ManualAnalysis } from "./models/ManualAnalysis.js";
 import { SkillTest } from "./models/SkillTest.js";
 import { LearningPath } from "./models/LearningPath.js";
 import { UserSettings } from "./models/UserSettings.js";
+import { PracticeSession } from "./models/PracticeSession.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -658,6 +659,54 @@ app.post("/api/chat", verifyAuth, async (req, res) => {
   } catch (error) {
     console.error("Chat Error:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== PRACTICE SESSION ====================
+
+app.get("/api/user/current-practice", verifyAuth, async (req, res) => {
+  try {
+    let session = await PracticeSession.findOne({ userId: req.user.uid });
+    if (!session) {
+      session = new PracticeSession({ userId: req.user.uid });
+      await session.save();
+    }
+    res.json(session);
+  } catch (error) {
+    console.error("Fetch Practice Session Error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/user/current-practice", verifyAuth, async (req, res) => {
+  try {
+    const { selectedTest, currentQuestionIndex, userAnswers, timeLeft, isFinished } = req.body;
+    let session = await PracticeSession.findOne({ userId: req.user.uid });
+    if (!session) {
+      session = new PracticeSession({ userId: req.user.uid });
+    }
+    
+    if (selectedTest !== undefined) session.selectedTest = selectedTest;
+    if (currentQuestionIndex !== undefined) session.currentQuestionIndex = currentQuestionIndex;
+    if (userAnswers !== undefined) session.userAnswers = userAnswers;
+    if (timeLeft !== undefined) session.timeLeft = timeLeft;
+    if (isFinished !== undefined) session.isFinished = isFinished;
+    
+    await session.save();
+    res.json(session);
+  } catch (error) {
+    console.error("Update Practice Session Error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.delete("/api/user/current-practice", verifyAuth, async (req, res) => {
+  try {
+    await PracticeSession.findOneAndDelete({ userId: req.user.uid });
+    res.json({ message: "Practice session cleared" });
+  } catch (error) {
+    console.error("Clear Practice Session Error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
