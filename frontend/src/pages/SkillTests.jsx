@@ -23,6 +23,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
+import { PracticeContext } from "../context/practiceContextValue.js";
 import { generateSkillTest, submitSkillTest } from "../services/aiService.js";
 
 const getMasteryBadge = (level) => {
@@ -376,68 +377,52 @@ export default function SkillTests() {
     }
   }, [location.state]);
 
-  // Active quiz state
-  const [selectedTest, setSelectedTest] = useState(null); // { title: string, level?: string, isPath?: boolean, pathSkill?: string, pathType?: string }
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState({});
-  const [isFinished, setIsFinished] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300);
+  // Use PracticeContext instead of local persistence
+  const { 
+    completedTests, pathScores, dynamicTestsCache, activeSession,
+    updateSession, clearSession, refreshTests, loading: isPracticeLoading 
+  } = useContext(PracticeContext);
+  
+  // Use activeSession from context or fallback to local state if no session
+  const selectedTest = activeSession?.selectedTest || null;
+  const currentQuestionIndex = activeSession?.currentQuestionIndex || 0;
+  const userAnswers = activeSession?.userAnswers || {};
+  const isFinished = activeSession?.isFinished || false;
+  const timeLeft = activeSession?.timeLeft ?? 300;
+  
   const [isGeneratingTest, setIsGeneratingTest] = useState(false);
-
-  // Persistence
-  const [completedTests, setCompletedTests] = useState({}); // General test results { [title]: score }
-  const [pathScores, setPathScores] = useState({}); // Path subtest results { [skillName]: { quiz: score, debugging: score } }
-  const [dynamicTestsCache, setDynamicTestsCache] = useState({}); // AI generated tests
   const [submissionData, setSubmissionData] = useState(null);
-
-  // Load from local storage on mount
-  useEffect(() => {
-    const storedGeneral = localStorage.getItem("skillnova_completed_tests");
-    if (storedGeneral) {
-      try { setCompletedTests(JSON.parse(storedGeneral)); } catch(e) { console.error(e); }
-    }
-
-    const storedPath = localStorage.getItem("skillnova_path_scores");
-    if (storedPath) {
-      try { setPathScores(JSON.parse(storedPath)); } catch(e) { console.error(e); }
-    }
-    
-    const storedTests = localStorage.getItem("skillnova_dynamic_tests");
-    if (storedTests) {
-      try { setDynamicTestsCache(JSON.parse(storedTests)); } catch(e) { console.error(e); }
-    }
-  }, []);
 
   // Timer effect
   useEffect(() => {
     if (!selectedTest || isFinished) return;
 
-    setTimeLeft(300); // Reset timer for new test
-
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmitTest();
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (timeLeft <= 1) {
+        clearInterval(timer);
+        handleSubmitTest();
+      } else {
+        // Debounce actual server updates here if needed, but for now just update context state
+        updateSession({ timeLeft: timeLeft - 1 });
+      }
     }, 1000);
 
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTest, isFinished]);
+  }, [selectedTest, isFinished, timeLeft, updateSession]);
 
   const handleStartGeneralTest = (test) => {
-    setSelectedTest({
-      title: test.title,
-      level: test.level,
-      isPath: false,
+    updateSession({
+      selectedTest: {
+        title: test.title,
+        level: test.level,
+        isPath: false,
+      },
+      currentQuestionIndex: 0,
+      userAnswers: {},
+      isFinished: false,
+      timeLeft: 300
     });
-    setCurrentQuestionIndex(0);
-    setUserAnswers({});
-    setIsFinished(false);
     setSubmissionData(null);
   };
 
@@ -462,15 +447,8 @@ export default function SkillTests() {
           return;
         }
 
-        const newCache = {
-          ...dynamicTestsCache,
-          [skillName]: {
-            ...dynamicTestsCache[skillName],
-            [type]: response
-          }
-        };
-        setDynamicTestsCache(newCache);
-        localStorage.setItem("skillnova_dynamic_tests", JSON.stringify(newCache));
+        // Force a refresh of the tests to populate the cache
+        await refreshTests();
       } catch (err) {
         showToast("Failed to generate test: " + (err.message || "Unknown error"), "error");
         setIsGeneratingTest(false);
@@ -479,39 +457,41 @@ export default function SkillTests() {
       setIsGeneratingTest(false);
     }
 
-    setSelectedTest({
-      title: `${skillName} - ${type === "quiz" ? "Conceptual Quiz" : "Error Handling"}`,
-      isPath: true,
-      pathSkill: skillName,
-      pathType: type,
+    updateSession({
+      selectedTest: {
+        title: `${skillName} - ${type === "quiz" ? "Conceptual Quiz" : "Error Handling"}`,
+        isPath: true,
+        pathSkill: skillName,
+        pathType: type,
+      },
+      currentQuestionIndex: 0,
+      userAnswers: {},
+      isFinished: false,
+      timeLeft: 300
     });
-    setCurrentQuestionIndex(0);
-    setUserAnswers({});
-    setIsFinished(false);
     setSubmissionData(null);
   };
 
   const handleSelectOption = (optionIndex) => {
-    setUserAnswers((prev) => ({
-      ...prev,
-      [currentQuestionIndex]: optionIndex,
-    }));
+    updateSession({
+      userAnswers: { ...userAnswers, [currentQuestionIndex]: optionIndex }
+    });
   };
 
   const handleNextQuestion = (totalQuestions) => {
     if (currentQuestionIndex < totalQuestions - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+      updateSession({ currentQuestionIndex: currentQuestionIndex + 1 });
     }
   };
 
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+      updateSession({ currentQuestionIndex: currentQuestionIndex - 1 });
     }
   };
 
   const handleSubmitTest = async () => {
-    setIsFinished(true);
+    updateSession({ isFinished: true });
 
     let questions = [];
     if (selectedTest.isPath) {
@@ -538,30 +518,18 @@ export default function SkillTests() {
           const result = await submitSkillTest(testData._id, answersArray);
           setSubmissionData(result);
           
-          const updatedPathScores = {
-            ...pathScores,
-            [selectedTest.pathSkill]: {
-              ...(pathScores[selectedTest.pathSkill] || {}),
-              [selectedTest.pathType]: result.score,
-            },
-          };
-          setPathScores(updatedPathScores);
-          localStorage.setItem("skillnova_path_scores", JSON.stringify(updatedPathScores));
-          
-          updateProfileImprovements(updatedPathScores);
+          await refreshTests(); // refresh from backend
+          updateProfileImprovements();
         } catch (e) {
           showToast("Failed to submit test to server.", "error");
         }
       }
     } else {
-      // Save General test score
-      const updatedGeneral = {
-        ...completedTests,
-        [selectedTest.title]: scorePercentage,
-      };
-      setCompletedTests(updatedGeneral);
-      localStorage.setItem("skillnova_completed_tests", JSON.stringify(updatedGeneral));
+      // General test score (Not tracked in mongo currently)
     }
+    
+    // Clear practice session now that it is finished
+    await clearSession();
   };
 
   const updateProfileImprovements = () => {
@@ -653,6 +621,15 @@ export default function SkillTests() {
     );
   }
 
+  if (isPracticeLoading) {
+    return (
+      <div className="flex h-[calc(100vh-100px)] items-center justify-center">
+        <Loader text="Restoring your practice session..." />
+      </div>
+    );
+  }
+
+  // If a test is selected and active, render the Quiz UI
   if (selectedTest) {
     let questions = [];
     if (selectedTest.isPath) {
