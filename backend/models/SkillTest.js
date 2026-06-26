@@ -13,7 +13,11 @@ const skillTestSchema = new mongoose.Schema({
   questions: [questionSchema],
   userAnswers: { type: [Number], default: [] },
   score: { type: Number, default: 0 },
-  isCompleted: { type: Boolean, default: false }
+  isCompleted: { type: Boolean, default: false },
+  masteryLevel: { type: String, enum: ['Excellent', 'Good', 'Basic', 'Needs Improvement', 'None'], default: 'None' },
+  difficulty: { type: String, default: 'Intermediate' },
+  attempts: { type: Number, default: 1 },
+  completedAt: { type: Date }
 }, { timestamps: true });
 
 export const SkillTest = mongoose.model('SkillTest', skillTestSchema);
