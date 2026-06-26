@@ -28,6 +28,13 @@ import {
   fetchRecentTests
 } from "../services/dashboardService.js";
 
+const getMasteryBadge = (level) => {
+  if (level === "Excellent") return "⭐ Excellent Mastery";
+  if (level === "Good") return "✅ Good Mastery";
+  if (level === "Basic") return "🟡 Basic Mastery";
+  return "🔴 Needs Improvement";
+};
+
 const quickActions = [
   {
     title: "Upload new CV",
@@ -438,17 +445,15 @@ export default function Dashboard() {
             />
             {recentTests && recentTests.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                 {recentTests.map((test) => (
+                  {recentTests.map((test) => (
                     <Card key={test._id} className="p-5 border-l-4 border-l-blue-500">
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-bold text-ink-900">{test.skillName}</h4>
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${test.isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                          {test.isCompleted ? 'Completed' : 'Pending'}
-                        </span>
                       </div>
-                      {test.isCompleted && (
-                        <p className="text-sm text-ink-600 mt-2">Score: <span className="font-bold text-ink-900">{test.score}%</span></p>
-                      )}
+                      <p className="text-sm text-ink-600 mt-1">Score: <span className="font-bold text-ink-900">{test.score}%</span></p>
+                      <p className="text-sm text-ink-600 mt-1">Mastery: <span className="font-bold text-ink-900">{getMasteryBadge(test.masteryLevel)}</span></p>
+                      <p className="text-sm text-ink-600 mt-1">Attempts: <span className="font-bold text-ink-900">{test.attempts || 1}</span></p>
+                      <p className="text-sm text-ink-600 mt-1">Completed: <span className="font-bold text-ink-900">{test.isCompleted && test.completedAt ? new Date(test.completedAt).toISOString().split('T')[0] : "Not completed yet"}</span></p>
                     </Card>
                  ))}
               </div>
