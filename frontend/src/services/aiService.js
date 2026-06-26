@@ -135,3 +135,36 @@ export async function deleteCVAnalysis(id) {
     throw error;
   }
 }
+
+// Practice Session Endpoints
+export async function fetchCurrentPractice() {
+  try {
+    return await fetchWithAuth('/api/user/current-practice');
+  } catch (error) {
+    console.error('API Error (Fetch Current Practice):', error);
+    return null;
+  }
+}
+
+export async function updateCurrentPractice(data) {
+  try {
+    return await fetchWithAuth('/api/user/current-practice', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  } catch (error) {
+    console.error('API Error (Update Current Practice):', error);
+    throw error;
+  }
+}
+
+export async function clearCurrentPractice() {
+  try {
+    return await fetchWithAuth('/api/user/current-practice', {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('API Error (Clear Current Practice):', error);
+    throw error;
+  }
+}
