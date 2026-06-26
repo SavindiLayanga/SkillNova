@@ -404,11 +404,40 @@ app.post("/api/generate-test", verifyAuth, async (req, res) => {
       return res.status(400).json({ error: "Skill name is required" });
     }
 
+    const previousTest = await SkillTest.findOne({ userId: req.user.uid, skillName }).sort({ createdAt: -1 });
+    let difficultyContext = "";
+    let targetDifficulty = "Intermediate";
+    let attemptsCount = 1;
+
+    if (previousTest) {
+      attemptsCount = previousTest.attempts + 1;
+      if (previousTest.masteryLevel === "Needs Improvement") {
+        difficultyContext = "The user previously struggled with this skill. Generate easier, beginner-level questions to build confidence.";
+        targetDifficulty = "Beginner";
+      } else if (previousTest.masteryLevel === "Basic") {
+        difficultyContext = "The user has basic knowledge. Generate intermediate-level questions.";
+        targetDifficulty = "Intermediate";
+      } else if (previousTest.masteryLevel === "Good") {
+        difficultyContext = "The user has good mastery. Generate intermediate to advanced questions to challenge them.";
+        targetDifficulty = "Intermediate-Advanced";
+      } else if (previousTest.masteryLevel === "Excellent") {
+        difficultyContext = "The user has excellent mastery. Generate advanced-level, complex problem-solving questions.";
+        targetDifficulty = "Advanced";
+      }
+    }
+
     const ai = getAI();
 
     const prompt = `
-Generate 5 multiple choice questions for ${skillName}.
+Generate 5 unique multiple choice questions for ${skillName}.
 Type: ${type || "quiz"}
+Target Difficulty: ${targetDifficulty}
+${difficultyContext ? `Context: ${difficultyContext}` : ""}
+
+CRITICAL REQUIREMENTS:
+- Each question must test a distinctly different concept, feature, or aspect of ${skillName}.
+- Do NOT repeat the same phrasing, question structure, or similar answer options.
+- Ensure high variety in topics (e.g., syntax, best practices, troubleshooting, architecture).
 
 Return ONLY JSON array:
 [
@@ -456,6 +485,8 @@ Return ONLY JSON array:
       userId: req.user.uid,
       skillName,
       questions,
+      difficulty: targetDifficulty,
+      attempts: attemptsCount
     });
 
     await newTest.save();
@@ -463,6 +494,8 @@ Return ONLY JSON array:
     res.json({
       _id: newTest._id,
       questions,
+      difficulty: targetDifficulty,
+      attempts: attemptsCount
     });
   } catch (error) {
     console.error("Skill Test Error:", error);
@@ -484,32 +517,32 @@ Return ONLY JSON array:
       console.log("AI Generation failed, quota exceeded, or invalid JSON. Returning mock data.");
       const mockQuestions = [
         {
-          question: `What is the primary purpose of ${skillName}?`,
+          question: `What is a core advantage of using ${skillName} in modern development?`,
           options: ["To optimize performance", "To manage state", "To define structure", "To handle asynchronous operations"],
           correctAnswer: 0,
           explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
         },
         {
-          question: `Which of the following is a key feature of ${skillName}?`,
-          options: ["Feature A", "Feature B", "Feature C", "Feature D"],
-          correctAnswer: 1,
-          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
-        },
-        {
-          question: `How do you typically initialize ${skillName}?`,
-          options: ["Initialization method 1", "Initialization method 2", "Initialization method 3", "Initialization method 4"],
+          question: `When implementing ${skillName}, which of the following is considered a best practice?`,
+          options: ["Ignoring error boundaries", "Hardcoding configuration values", "Modularizing components", "Bypassing security checks"],
           correctAnswer: 2,
           explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
         },
         {
-          question: `What is a common pitfall when using ${skillName}?`,
-          options: ["Pitfall X", "Pitfall Y", "Pitfall Z", "None of the above"],
-          correctAnswer: 3,
+          question: `How does ${skillName} typically handle data flow or execution context?`,
+          options: ["Through global mutable state", "Via strict unidirectional flow or scoped contexts", "By randomizing memory allocation", "It does not handle data flow"],
+          correctAnswer: 1,
           explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
         },
         {
-          question: `Which version of ${skillName} introduced major breaking changes?`,
-          options: ["Version 1.0", "Version 2.0", "Version 3.0", "Version 4.0"],
+          question: `Which common error or bottleneck is frequently encountered when scaling ${skillName}?`,
+          options: ["Memory leaks from unclosed connections", "Syntax highlighting failures", "CSS styling conflicts", "IDE rendering bugs"],
+          correctAnswer: 0,
+          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
+        },
+        {
+          question: `In the ecosystem of ${skillName}, what is the primary method for extending its functionality?`,
+          options: ["Using plugins or middleware", "Recompiling the kernel", "Downgrading the version", "Disabling the network"],
           correctAnswer: 0,
           explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
         }
@@ -520,6 +553,8 @@ Return ONLY JSON array:
           userId: req.user.uid,
           skillName,
           questions: mockQuestions,
+          difficulty: targetDifficulty,
+          attempts: attemptsCount
         });
 
         await newTest.save();
@@ -527,6 +562,8 @@ Return ONLY JSON array:
         return res.json({
           _id: newTest._id,
           questions: mockQuestions,
+          difficulty: targetDifficulty,
+          attempts: attemptsCount
         });
       } catch (dbError) {
         return res.status(500).json({ error: "Failed to save mock test: " + dbError.message });
@@ -534,6 +571,65 @@ Return ONLY JSON array:
     } else {
       return res.status(429).json({ error: "AI service quota exceeded. Please try again later." });
     }
+  }
+});
+
+// Submit Skill Test
+app.post("/api/user/skill-tests/:id/submit", verifyAuth, async (req, res) => {
+  try {
+    const { userAnswers } = req.body;
+    const testId = req.params.id;
+
+    if (!userAnswers || !Array.isArray(userAnswers)) {
+      return res.status(400).json({ error: "userAnswers array is required" });
+    }
+
+    const test = await SkillTest.findOne({ _id: testId, userId: req.user.uid });
+    if (!test) {
+      return res.status(404).json({ error: "Test not found" });
+    }
+
+    let correctCount = 0;
+    test.questions.forEach((q, index) => {
+      if (userAnswers[index] === q.correctAnswer) {
+        correctCount++;
+      }
+    });
+
+    const score = Math.round((correctCount / test.questions.length) * 100);
+    
+    let masteryLevel = "Needs Improvement";
+    if (score >= 95) {
+      masteryLevel = "Excellent";
+    } else if (score >= 90) {
+      masteryLevel = "Good";
+    } else if (score >= 80) {
+      masteryLevel = "Basic";
+    }
+
+    const isCompleted = score >= 80;
+
+    test.userAnswers = userAnswers;
+    test.score = score;
+    test.masteryLevel = masteryLevel;
+    test.isCompleted = isCompleted;
+    test.completedAt = new Date();
+    
+    // If this test was already completed or attempted, maybe they are re-submitting the same document instead of generating a new one
+    // But since the generation endpoint handles attempts, we just save this as the submission for this document.
+    await test.save();
+
+    res.json({
+      score: test.score,
+      masteryLevel: test.masteryLevel,
+      isCompleted: test.isCompleted,
+      attempts: test.attempts,
+      completedAt: test.completedAt,
+      message: isCompleted ? `${masteryLevel} mastery achieved!` : "Keep practicing and try again!"
+    });
+  } catch (error) {
+    console.error("Submit Skill Test Error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
