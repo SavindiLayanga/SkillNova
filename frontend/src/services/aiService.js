@@ -60,6 +60,18 @@ export async function generateSkillTest(skillName, type) {
   }
 }
 
+export async function submitSkillTest(id, userAnswers) {
+  try {
+    return await fetchWithAuth(`/api/user/skill-tests/${id}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ userAnswers }),
+    });
+  } catch (error) {
+    console.error('API Error (Test Submission):', error);
+    throw error;
+  }
+}
+
 export async function chatWithAI(messages, apiKey_unused, cvContext) {
   try {
     const data = await fetchWithAuth('/api/chat', {
