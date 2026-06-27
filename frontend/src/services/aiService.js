@@ -48,11 +48,11 @@ export async function analyzeManualSkills(name, skills, targetRole, experience, 
   }
 }
 
-export async function generateSkillTest(skillName, type) {
+export async function generateSkillTest(skillName, type, topic) {
   try {
     return await fetchWithAuth('/api/generate-test', {
       method: 'POST',
-      body: JSON.stringify({ skillName, type }),
+      body: JSON.stringify({ skillName, type, topic }),
     });
   } catch (error) {
     console.error('API Error (Test Generation):', error);

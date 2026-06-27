@@ -433,8 +433,8 @@ export default function SkillTests() {
     setSubmissionData(null);
   };
 
-  const handleStartPathTest = async (skillName, type, forceRegenerate = false) => {
-    let testData = !forceRegenerate ? dynamicTestsCache[skillName]?.[type] : null;
+  const handleStartPathTest = async (skillName, topic, forceRegenerate = false) => {
+    let testData = !forceRegenerate ? dynamicTestsCache[skillName]?.[topic] : null;
     let questions = testData?.questions;
     
     // Clear old error toast if possible
@@ -443,7 +443,7 @@ export default function SkillTests() {
     if (!questions || questions.length === 0) {
       setIsGeneratingTest(true);
       try {
-        const response = await generateSkillTest(skillName, type);
+        const response = await generateSkillTest(skillName, topic, topic);
         
         // Safely extract questions to support various response structures
         questions = response?.questions || response?.test?.questions || (Array.isArray(response) ? response : []);
@@ -466,10 +466,10 @@ export default function SkillTests() {
 
     updateSession({
       selectedTest: {
-        title: `${skillName} - ${type === "quiz" ? "Conceptual Quiz" : "Error Handling"}`,
+        title: `${skillName} - ${topic}`,
         isPath: true,
         pathSkill: skillName,
-        pathType: type,
+        pathType: topic,
       },
       currentQuestionIndex: 0,
       userAnswers: {},
@@ -482,7 +482,7 @@ export default function SkillTests() {
   useEffect(() => {
     if (location.state?.startQuiz && location.state?.filterSkill && !hasAutoStarted.current && !activeSession?.selectedTest) {
       hasAutoStarted.current = true;
-      handleStartPathTest(location.state.filterSkill, "quiz");
+      handleStartPathTest(location.state.filterSkill, "Conceptual Quiz");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state?.startQuiz, location.state?.filterSkill]);
@@ -584,17 +584,29 @@ export default function SkillTests() {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  // Calculations for targeted weakness endorsement path
-  const getSubtestScore = (skillName, type) => {
-    return pathScores[skillName]?.[type];
+  const getSubtestScore = (skillName, topic) => {
+    return pathScores[skillName]?.[topic];
+  };
+
+  const DEFAULT_TEST_TOPICS = [
+    "Conceptual Quiz",
+    "Error Handling & Debugging",
+    "Best Practices & Optimization",
+    "Architecture & System Design",
+    "Real-world Scenarios",
+    "Security & Configuration"
+  ];
+
+  const getSkillTopics = (skillName) => {
+    const customTopics = Object.keys(dynamicTestsCache[skillName] || {});
+    return [...new Set([...DEFAULT_TEST_TOPICS, ...customTopics])];
   };
 
   const getSkillAverage = (skillName) => {
     const scores = pathScores[skillName];
     if (!scores) return 0;
-    const values = [];
-    if (scores.quiz !== undefined) values.push(scores.quiz);
-    if (scores.debugging !== undefined) values.push(scores.debugging);
+    const topics = getSkillTopics(skillName);
+    const values = topics.map(t => scores[t]).filter(v => v !== undefined);
     if (values.length === 0) return 0;
     return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
   };
@@ -609,21 +621,20 @@ export default function SkillTests() {
     pathSkills = [filterSkill];
   }
 
-  const totalSubtests = pathSkills.length * 2; // Skills * 2 types (quiz, debugging)
-  
   let completedSubtestsCount = 0;
+  let totalSubtests = 0;
   let totalScoresSum = 0;
+
   pathSkills.forEach((s) => {
-    const qScore = getSubtestScore(s, "quiz");
-    const dScore = getSubtestScore(s, "debugging");
-    if (qScore !== undefined) {
-      completedSubtestsCount++;
-      totalScoresSum += qScore;
-    }
-    if (dScore !== undefined) {
-      completedSubtestsCount++;
-      totalScoresSum += dScore;
-    }
+    const topics = getSkillTopics(s);
+    totalSubtests += topics.length;
+    topics.forEach(topic => {
+      const score = getSubtestScore(s, topic);
+      if (score !== undefined) {
+        completedSubtestsCount++;
+        totalScoresSum += score;
+      }
+    });
   });
 
   const overallAverage = completedSubtestsCount > 0 
@@ -633,12 +644,23 @@ export default function SkillTests() {
   // Rule: Must complete ALL tests AND average must be >= 90%
   const isEndorsedForTargetRole = completedSubtestsCount === totalSubtests && overallAverage >= 90 && totalSubtests > 0;
 
+  const handleGenerateMoreTests = async (skillName) => {
+    const currentTopics = getSkillTopics(skillName);
+    const newTopicIndex = currentTopics.length - DEFAULT_TEST_TOPICS.length + 1;
+    const newTopic = `Advanced Challenge Level ${newTopicIndex}`;
+    
+    // Instead of auto-starting, we just generate and cache it, then it appears in the list.
+    // Wait, the user wants it to load ("thawa test auto load wenna ona").
+    // We can just call handleStartPathTest with the new topic to auto-start it.
+    await handleStartPathTest(skillName, newTopic, true);
+  };
+
   if (isGeneratingTest) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-slide-up">
         <Loader 
           text="AI is generating your custom test..." 
-          secondaryText="SkillNova is using AI to write 5 targeted questions specific to this missing skill. This usually takes a few seconds." 
+          secondaryText="SkillNova is using AI to write 10 targeted questions specific to this topic. This usually takes a few seconds." 
         />
       </div>
     );
@@ -1021,7 +1043,7 @@ export default function SkillTests() {
                        className="w-full text-xs"
                        onClick={() => {
                          const topWeakness = missingSkills.length > 0 ? (typeof missingSkills[0] === 'string' ? missingSkills[0] : missingSkills[0].skill || missingSkills[0].name) : "System Design";
-                         handleStartPathTest(topWeakness, 'quiz');
+                         handleStartPathTest(topWeakness, 'Conceptual Quiz');
                        }}
                      >
                        Start Practice
@@ -1228,95 +1250,87 @@ export default function SkillTests() {
               Weakness Improvement Path Modules
             </h3>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="space-y-8">
               {pathSkills.map((skill) => {
                 const skillAvg = getSkillAverage(skill);
-                const quizScore = getSubtestScore(skill, "quiz");
-                const debuggingScore = getSubtestScore(skill, "debugging");
-                
-                // Fallback UI progress metrics since we are dynamically loading skills
                 const current = skillAvg > 0 ? skillAvg : 0;
                 const required = 90;
+                
+                const activeTopics = getSkillTopics(skill);
 
                 return (
-                  <Card key={skill} className="flex flex-col justify-between p-5 space-y-4">
+                  <Card key={skill} className="flex flex-col p-6 space-y-6 bg-ink-50/20 border-ink-100">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-extrabold text-ink-900 text-lg">{skill}</h4>
-                          <span className="text-xs font-semibold text-ink-400">
-                            Current: {current}% (Required: {required}%)
+                          <h4 className="font-extrabold text-ink-900 text-2xl">{skill} Master Class</h4>
+                          <span className="text-sm font-semibold text-ink-500 mt-1 block">
+                            Complete all sub-topics to demonstrate complete mastery of this weakness.
                           </span>
                         </div>
-                        <div className="text-right">
-                          <span className="block text-xs font-bold text-ink-400">Average</span>
-                          <span className={`text-lg font-black ${
+                        <div className="text-right shrink-0">
+                          <span className="block text-xs font-bold text-ink-400 uppercase tracking-wide">Average Score</span>
+                          <span className={`text-2xl font-black ${
                             skillAvg >= 90 ? "text-emerald-600" : skillAvg > 0 ? "text-orange-500" : "text-ink-400"
                           }`}>
                             {skillAvg > 0 ? `${skillAvg}%` : "N/A"}
                           </span>
                         </div>
                       </div>
-
-                      {/* Custom Progress bar for current score vs benchmark */}
-                      <ProgressBar value={current} />
-                    </div>
-
-                    <div className="space-y-3 pt-2 border-t border-ink-100/60">
-                      {/* Conceptual Quiz */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-primary-500 shrink-0" />
-                          <span className="font-semibold text-ink-700">Conceptual Quiz</span>
-                        </div>
-                        {quizScore !== undefined ? (
-                          <span className={`font-bold px-2 py-0.5 rounded text-xs ${
-                            quizScore >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-orange-50 text-orange-700"
-                          }`}>
-                            {quizScore}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-ink-400 font-semibold">Not taken</span>
-                        )}
-                      </div>
-
-                      {/* Code Error Handling */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <Code className="h-4 w-4 text-primary-500 shrink-0" />
-                          <span className="font-semibold text-ink-700">Error Handling</span>
-                        </div>
-                        {debuggingScore !== undefined ? (
-                          <span className={`font-bold px-2 py-0.5 rounded text-xs ${
-                            debuggingScore >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-orange-50 text-orange-700"
-                          }`}>
-                            {debuggingScore}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-ink-400 font-semibold">Not taken</span>
-                        )}
+                      <div className="max-w-md pt-2">
+                         <div className="flex justify-between text-xs font-bold mb-2">
+                            <span className="text-ink-600">Total Completion Score</span>
+                            <span className="text-ink-900">{current}% / {required}%</span>
+                         </div>
+                         <ProgressBar value={current} />
                       </div>
                     </div>
 
-                    <div className="grid gap-2 pt-2">
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleStartPathTest(skill, "quiz")}
-                          variant={quizScore !== undefined ? "secondary" : "primary"}
-                          className="flex-1"
-                          size="sm"
-                        >
-                          {quizScore !== undefined ? "Retake Quiz" : "Start Quiz"}
-                        </Button>
-                        <Button
-                          onClick={() => handleStartPathTest(skill, "debugging")}
-                          variant={debuggingScore !== undefined ? "secondary" : "primary"}
-                          className="flex-1"
-                          size="sm"
-                        >
-                          {debuggingScore !== undefined ? "Retake Debug" : "Start Debug"}
-                        </Button>
-                      </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pt-4 border-t border-ink-100">
+                      {activeTopics.map((topic, idx) => {
+                        const score = getSubtestScore(skill, topic);
+                        const isTaken = score !== undefined;
+                        return (
+                          <div key={idx} className="bg-white rounded-xl border border-ink-100 p-4 flex flex-col justify-between hover:border-primary-200 transition-colors">
+                            <div>
+                               <div className="flex items-center gap-2 mb-2">
+                                  <BookOpen className="h-4 w-4 text-primary-500" />
+                                  <span className="font-bold text-ink-900 text-sm line-clamp-1">{topic}</span>
+                               </div>
+                               {isTaken ? (
+                                  <div className="flex items-center gap-2">
+                                     <span className={`font-bold px-2.5 py-1 rounded-md text-xs ${
+                                       score >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-orange-50 text-orange-700"
+                                     }`}>
+                                       {score}%
+                                     </span>
+                                     <span className="text-xs text-ink-500 font-medium">Completed</span>
+                                  </div>
+                               ) : (
+                                  <span className="text-xs text-ink-400 font-medium px-2.5 py-1 bg-ink-50 rounded-md">10 Questions</span>
+                               )}
+                            </div>
+                            <Button
+                              onClick={() => handleStartPathTest(skill, topic)}
+                              variant={isTaken ? "secondary" : "primary"}
+                              className="w-full mt-4"
+                              size="sm"
+                            >
+                              {isTaken ? "Retake Test" : "Start Test"}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    <div className="pt-4 flex justify-center">
+                       <Button 
+                         variant="secondary" 
+                         onClick={() => handleGenerateMoreTests(skill)}
+                         className="border-dashed border-2 hover:border-primary-300 w-full sm:w-auto"
+                       >
+                         ✨ Generate More Tests using AI
+                       </Button>
                     </div>
                   </Card>
                 );
