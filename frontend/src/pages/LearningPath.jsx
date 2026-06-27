@@ -189,7 +189,7 @@ export default function LearningPath() {
         )}
 
         {/* Render Generated Path */}
-        {customPath && (
+        {customPath && customPath.modules && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-ink-900">Your Action Plan</h3>
@@ -199,7 +199,7 @@ export default function LearningPath() {
             </div>
             
             <section className="grid gap-4 lg:grid-cols-2">
-              {customPath.map((milestone, idx) => (
+              {customPath.modules.map((milestone, idx) => (
                 <Card className="min-h-36 border border-ink-100/60 hover:border-primary-200 transition-colors" key={idx}>
                   <div className="flex items-start gap-4">
                     <div className="rounded-xl bg-primary-50 p-3 text-primary-600 shrink-0 shadow-sm border border-primary-100">

@@ -12,6 +12,8 @@ const learningPathSchema = new mongoose.Schema({
   targetRole: { type: String, required: true },
   missingSkills: { type: [String], required: true },
   modules: [moduleSchema],
+  status: { type: String, default: 'active' },
+  progress: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export const LearningPath = mongoose.model('LearningPath', learningPathSchema);
