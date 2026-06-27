@@ -502,7 +502,6 @@ Return ONLY JSON array:
       attempts: attemptsCount
     });
   } catch (error) {
-    console.error("Skill Test Error:", error);
     const errMessage = error.message || "";
     
     // Fallback to mock data on ANY AI error in development, or if specifically quota error, OR if it's invalid JSON
@@ -514,11 +513,17 @@ Return ONLY JSON array:
 
     const isParseError = errMessage.includes("Invalid JSON") || error instanceof SyntaxError;
 
+    if (!isQuotaError) {
+      console.error("Skill Test Error:", error);
+    } else {
+      console.warn(`[AI Quota Exceeded]: ${errMessage.split('\\n')[0]}`);
+    }
+
     // Trigger fallback for ANY error to ensure the user is not blocked, 
     // especially since we had issues with silent UI failures.
     // If it's a parse error/invalid JSON, ALWAYS return the fallback instead of 500
     if (process.env.NODE_ENV !== "production" || isQuotaError || isParseError) {
-      console.log("AI Generation failed, quota exceeded, or invalid JSON. Returning mock data.");
+      console.log("Returning mock data fallback to prevent UI crash...");
       
       const mockQuestions = Array.from({ length: 10 }).map((_, idx) => ({
         question: `Mock Question ${idx + 1} for ${skillName} (${actualTopic}): Which of the following is correct?`,
