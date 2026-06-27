@@ -397,7 +397,8 @@ Return ONLY valid JSON:
 
 // Generate Skill Test
 app.post("/api/generate-test", verifyAuth, async (req, res) => {
-  const { skillName, type } = req.body;
+  const { skillName, type, topic } = req.body;
+  const actualTopic = topic || type || "Conceptual Quiz";
 
   try {
 
@@ -405,7 +406,7 @@ app.post("/api/generate-test", verifyAuth, async (req, res) => {
       return res.status(400).json({ error: "Skill name is required" });
     }
 
-    const previousTest = await SkillTest.findOne({ userId: req.user.uid, skillName }).sort({ createdAt: -1 });
+    const previousTest = await SkillTest.findOne({ userId: req.user.uid, skillName, topic: actualTopic }).sort({ createdAt: -1 });
     let difficultyContext = "";
     let targetDifficulty = "Intermediate";
     let attemptsCount = 1;
@@ -430,7 +431,8 @@ app.post("/api/generate-test", verifyAuth, async (req, res) => {
     const ai = getAI();
 
     const prompt = `
-Generate 5 unique multiple choice questions for ${skillName}.
+Generate 10 unique multiple choice questions for ${skillName}.
+Topic/Focus: ${actualTopic}
 Type: ${type || "quiz"}
 Target Difficulty: ${targetDifficulty}
 ${difficultyContext ? `Context: ${difficultyContext}` : ""}
@@ -485,6 +487,7 @@ Return ONLY JSON array:
     const newTest = new SkillTest({
       userId: req.user.uid,
       skillName,
+      topic: actualTopic,
       questions,
       difficulty: targetDifficulty,
       attempts: attemptsCount
@@ -516,43 +519,19 @@ Return ONLY JSON array:
     // If it's a parse error/invalid JSON, ALWAYS return the fallback instead of 500
     if (process.env.NODE_ENV !== "production" || isQuotaError || isParseError) {
       console.log("AI Generation failed, quota exceeded, or invalid JSON. Returning mock data.");
-      const mockQuestions = [
-        {
-          question: `What is a core advantage of using ${skillName} in modern development?`,
-          options: ["To optimize performance", "To manage state", "To define structure", "To handle asynchronous operations"],
-          correctAnswer: 0,
-          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
-        },
-        {
-          question: `When implementing ${skillName}, which of the following is considered a best practice?`,
-          options: ["Ignoring error boundaries", "Hardcoding configuration values", "Modularizing components", "Bypassing security checks"],
-          correctAnswer: 2,
-          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
-        },
-        {
-          question: `How does ${skillName} typically handle data flow or execution context?`,
-          options: ["Through global mutable state", "Via strict unidirectional flow or scoped contexts", "By randomizing memory allocation", "It does not handle data flow"],
-          correctAnswer: 1,
-          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
-        },
-        {
-          question: `Which common error or bottleneck is frequently encountered when scaling ${skillName}?`,
-          options: ["Memory leaks from unclosed connections", "Syntax highlighting failures", "CSS styling conflicts", "IDE rendering bugs"],
-          correctAnswer: 0,
-          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
-        },
-        {
-          question: `In the ecosystem of ${skillName}, what is the primary method for extending its functionality?`,
-          options: ["Using plugins or middleware", "Recompiling the kernel", "Downgrading the version", "Disabling the network"],
-          correctAnswer: 0,
-          explanation: `This is a mock question for ${skillName} generated because the AI quota was exceeded or an error occurred.`
-        }
-      ];
+      
+      const mockQuestions = Array.from({ length: 10 }).map((_, idx) => ({
+        question: `Mock Question ${idx + 1} for ${skillName} (${actualTopic}): Which of the following is correct?`,
+        options: ["Option A (Correct)", "Option B", "Option C", "Option D"],
+        correctAnswer: 0,
+        explanation: `This is a mock explanation for question ${idx + 1} generated because the AI quota was exceeded or an error occurred.`
+      }));
       
       try {
         const newTest = new SkillTest({
           userId: req.user.uid,
           skillName,
+          topic: actualTopic,
           questions: mockQuestions,
           difficulty: targetDifficulty,
           attempts: attemptsCount

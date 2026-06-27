@@ -10,6 +10,7 @@ const questionSchema = new mongoose.Schema({
 const skillTestSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
   skillName: { type: String, required: true },
+  topic: { type: String, required: true, default: "Conceptual Quiz" },
   questions: [questionSchema],
   userAnswers: { type: [Number], default: [] },
   score: { type: Number, default: 0 },
