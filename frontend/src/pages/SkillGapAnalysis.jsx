@@ -54,45 +54,69 @@ export default function SkillGapAnalysis() {
               const current = gap.current || 0;
               const required = gap.required || 100;
               
+              const radius = 20;
+              const circumference = radius * 2 * Math.PI;
+              const offset = circumference - (current / 100) * circumference;
+
               return (
-              <div
-                className="rounded-lg border border-ink-100 p-4"
+              <Link 
+                to="/skill-tests" 
+                state={{ autoStartPath: true, filterSkill: skillName, startQuiz: true }}
+                className="block"
                 key={idx}
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="rounded-lg border border-ink-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-colors hover:border-primary-200 hover:bg-ink-50/30 cursor-pointer">
                   <div>
-                    <h3 className="font-semibold text-ink-900">{skillName}</h3>
-                    {gap.recommendation && (
-                      <p className="mt-1 text-sm text-ink-500">
-                        {gap.recommendation}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-ink-900 text-base group-hover:text-primary-600 transition-colors">{skillName}</h3>
+                      {gap.priority && (
+                        <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[10px] font-bold text-primary-700 uppercase tracking-wide">
+                          {gap.priority}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-ink-500 max-w-lg leading-relaxed">
+                      {gap.recommendation || `Essential skill for your target role. Click to take a test and close this gap.`}
+                    </p>
                   </div>
-                  {gap.priority && (
-                    <span className="w-fit rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
-                      {gap.priority}
-                    </span>
-                  )}
+                  
+                  <div className="shrink-0 flex items-center gap-4 bg-ink-50/50 p-2.5 rounded-lg border border-ink-100/50">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs font-bold text-ink-900">Current Mastery</p>
+                      <p className="text-[10px] font-medium text-ink-500">Target: {required}%</p>
+                    </div>
+                    
+                    <div className="relative flex items-center justify-center w-[50px] h-[50px]">
+                      <svg className="transform -rotate-90 w-full h-full">
+                        <circle
+                          className="text-ink-100"
+                          strokeWidth="5"
+                          stroke="currentColor"
+                          fill="transparent"
+                          r={radius}
+                          cx="25"
+                          cy="25"
+                        />
+                        <circle
+                          className="text-primary-500 transition-all duration-1000 ease-in-out"
+                          strokeWidth="5"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={offset}
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="transparent"
+                          r={radius}
+                          cx="25"
+                          cy="25"
+                        />
+                      </svg>
+                      <div className="absolute flex flex-col items-center justify-center text-ink-900">
+                        <span className="text-xs font-bold">{Math.round((current / 100) * 100)}%</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {gap.required && (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <div className="mb-2 flex justify-between text-xs font-semibold text-ink-500">
-                        <span>Current</span>
-                        <span>{current}%</span>
-                      </div>
-                      <ProgressBar value={current} />
-                    </div>
-                    <div>
-                      <div className="mb-2 flex justify-between text-xs font-semibold text-ink-500">
-                        <span>Required</span>
-                        <span>{required}%</span>
-                      </div>
-                      <ProgressBar value={required} />
-                    </div>
-                  </div>
-                )}
-              </div>
+              </Link>
             )})}
           </div>
         </Card>

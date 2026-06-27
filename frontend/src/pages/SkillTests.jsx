@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -377,6 +377,13 @@ export default function SkillTests() {
     }
   }, [location.state]);
 
+  const hasAutoStarted = useRef(false);
+  
+  // Need to extract handleStartPathTest out or place it inside if we don't want dependency warnings, 
+  // but we can just use an effect that calls it.
+  // Wait, handleStartPathTest is defined below. 
+  // We can just define the effect AFTER handleStartPathTest.
+
   // Use PracticeContext instead of local persistence
   const { 
     completedTests, pathScores, dynamicTestsCache, activeSession,
@@ -471,6 +478,14 @@ export default function SkillTests() {
     });
     setSubmissionData(null);
   };
+
+  useEffect(() => {
+    if (location.state?.startQuiz && location.state?.filterSkill && !hasAutoStarted.current && !activeSession?.selectedTest) {
+      hasAutoStarted.current = true;
+      handleStartPathTest(location.state.filterSkill, "quiz");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.startQuiz, location.state?.filterSkill]);
 
   const handleSelectOption = (optionIndex) => {
     updateSession({
@@ -585,7 +600,15 @@ export default function SkillTests() {
   };
 
   // Overall path metrics
-  const pathSkills = missingSkills.length > 0 ? missingSkills : ["TypeScript", "API Integration", "Testing"];
+  let pathSkills = missingSkills.length > 0 
+    ? missingSkills.map(s => typeof s === 'string' ? s : s.skill || s.name)
+    : ["TypeScript", "API Integration", "Testing"];
+  
+  const filterSkill = location.state?.filterSkill;
+  if (filterSkill) {
+    pathSkills = [filterSkill];
+  }
+
   const totalSubtests = pathSkills.length * 2; // Skills * 2 types (quiz, debugging)
   
   let completedSubtestsCount = 0;
@@ -918,6 +941,15 @@ export default function SkillTests() {
         eyebrow="Assessment Hub"
         title="Skill assessment center"
       />
+      
+      {location.state?.filterSkill && (
+        <div className="animate-fade-in-slide-up -mt-4 mb-2">
+          <Link to="/skill-gap" className="inline-flex items-center gap-2 text-ink-600 hover:text-primary-700 font-bold transition-colors bg-white px-4 py-2 rounded-lg border border-ink-200 shadow-sm hover:shadow hover:border-primary-200">
+            <ArrowLeft className="h-4 w-4" /> Back to Skill Gap Analysis
+          </Link>
+        </div>
+      )}
+      
       {/* Interview Readiness Predictor */}
       <section className="animate-fade-in-slide-up">
         <Card className="bg-gradient-to-br from-primary-50/50 to-white border-primary-100 p-6">
