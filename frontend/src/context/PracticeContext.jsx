@@ -38,16 +38,14 @@ export function PracticeProvider({ children }) {
           if (!test.skillName) return;
           
           // Reconstruct dynamicTestsCache
-          const type = test.difficulty || "quiz"; // naive mapping, adjust if needed
+          const topic = test.topic || "Conceptual Quiz";
           if (!newDynamicCache[test.skillName]) newDynamicCache[test.skillName] = {};
-          newDynamicCache[test.skillName][type] = test;
+          newDynamicCache[test.skillName][topic] = test;
           
           if (test.isCompleted) {
-            // Assume it's a general test if no pathType is easily derived, or map based on your app's logic
-            // For now, we will store them. 
-            // In SkillTests.jsx, pathScores uses [skillName][type] = score
+            // In SkillTests.jsx, pathScores uses [skillName][topic] = score
             if (!newPathScores[test.skillName]) newPathScores[test.skillName] = {};
-            newPathScores[test.skillName][type] = test.score;
+            newPathScores[test.skillName][topic] = test.score;
             
             // Also store in general completed just in case
             newCompleted[test.skillName] = test.score;
