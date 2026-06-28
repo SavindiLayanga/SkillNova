@@ -200,26 +200,32 @@ const FALLBACK_TOPICS = [
   "Optimization Techniques"
 ];
 
-const generateFallbackTests = (skill, count, existingTitles = []) => {
-  const normalizedExisting = existingTitles.map(t => t.toLowerCase());
+const generateFallbackTests = (skill, count, existingTests = []) => {
+  const existingTitles = existingTests.map(t => typeof t === 'string' ? t.toLowerCase() : (t.title || '').toLowerCase());
+  const existingTopics = existingTests.flatMap(t => typeof t === 'object' && t.coveredTopics ? t.coveredTopics.map(ct => ct.toLowerCase()) : []);
+  
+  const normalizedExisting = [...existingTitles, ...existingTopics];
   
   const availableTopics = FALLBACK_TOPICS.filter(topic => {
-    const title = `${skill} ${topic}`;
-    return !normalizedExisting.some(ex => ex.includes(topic.toLowerCase()) || ex === title.toLowerCase());
+    return !normalizedExisting.some(ex => ex.includes(topic.toLowerCase()));
   });
 
   const generated = [];
   for (let i = 0; i < count; i++) {
-    const topic = availableTopics[i] || `Extended Concepts ${existingTitles.length + i + 1}`;
-    const title = availableTopics[i] ? `${skill} ${topic}` : `${skill} ${topic}`;
+    const topic = availableTopics[i] || `Extended Concepts ${existingTests.length + i + 1}`;
+    const difficulty = "Intermediate";
+    const levelFocus = `${difficulty} Practice`;
+    const title = `${skill}: ${topic} - ${levelFocus}`;
+    
+    const concepts = [`basics of ${topic}`, `practical application`, `common patterns`];
     
     generated.push({
       title,
-      description: `Practice test covering ${topic} for ${skill}.`,
-      difficulty: "Intermediate",
+      description: `Practice ${concepts.join(", ")}, best practices, and common mistakes in this comprehensive test.`,
+      difficulty,
       estimatedMinutes: 10,
       questionCount: 5,
-      coveredTopics: [skill, topic],
+      coveredTopics: [skill, topic, ...concepts],
       questions: Array.from({ length: 5 }).map((_, q) => ({
         question: `Sample question ${q + 1} regarding ${topic} in ${skill}?`,
         options: [
@@ -247,8 +253,8 @@ app.get("/api/skill-tests/library/:skill", verifyAuth, async (req, res) => {
       const ai = getAI();
       const prompt = `Generate exactly 6 unique AI-generated practice test topics for the skill: ${skill}.
 For each topic, provide:
-- title: A short title for the test (e.g., "React Fundamentals", "Hooks Mastery").
-- description: A short description of what it covers.
+- title: A title EXACTLY following this format: "{Skill}: {Specific Topic} - {Level or Focus}" (e.g., "React: Hooks & State - Intermediate Quiz"). DO NOT use vague titles.
+- description: A short description of what it covers. MUST explicitly mention 3-5 specific concepts covered in the test (e.g., "Practice useState, useEffect, custom hooks, state updates, and common React hook mistakes.").
 - difficulty: One of ["Beginner", "Intermediate", "Advanced"].
 - estimatedMinutes: 5 to 15.
 - questionCount: exactly 5.
@@ -311,14 +317,16 @@ app.post("/api/skill-tests/library/generate-more", verifyAuth, async (req, res) 
     const { skill, existingTests, count = 3 } = req.body;
     
     const existingTitles = (existingTests || []).map(t => t.title).join(", ");
+    const existingTopics = (existingTests || []).flatMap(t => t.coveredTopics || []).join(", ");
     
     const ai = getAI();
     const prompt = `Generate exactly ${count} NEW unique AI-generated practice test topics for the skill: ${skill}.
-Already generated topics to AVOID: ${existingTitles}.
+Already generated titles to AVOID: ${existingTitles}.
+Already covered concepts to AVOID: ${existingTopics}.
 
 For each new topic, provide:
-- title: A short title for the test.
-- description: A short description of what it covers.
+- title: A title EXACTLY following this format: "{Skill}: {Specific Topic} - {Level or Focus}" (e.g., "Docker: Volumes & Networks - Intermediate Quiz"). DO NOT use vague titles.
+- description: A short description of what it covers. MUST explicitly mention 3-5 specific concepts covered in the test.
 - difficulty: One of ["Beginner", "Intermediate", "Advanced"].
 - estimatedMinutes: 5 to 15.
 - questionCount: exactly 5.
@@ -342,13 +350,13 @@ CRITICAL REQUIREMENTS:
       });
       
       let cleanText = response.text ? response.text.trim() : "";
-      if (cleanText.startsWith("\`\`\`")) {
-        cleanText = cleanText.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/i, "").trim();
+      if (cleanText.startsWith("```")) {
+        cleanText = cleanText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
       }
       generatedData = JSON.parse(cleanText);
     } catch (genError) {
       console.error("AI Generation failed for 'generate-more', falling back to mock tests:", genError);
-      generatedData = generateFallbackTests(skill, count, existingTests.map(t => t.title));
+      generatedData = generateFallbackTests(skill, count, existingTests);
     }
 
     const newTests = generatedData.map(testData => ({
