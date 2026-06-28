@@ -179,6 +179,63 @@ app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
 });
 
 
+const FALLBACK_TOPICS = [
+  "Fundamentals",
+  "Core Concepts",
+  "Practical Usage",
+  "Error Handling",
+  "Best Practices",
+  "Debugging",
+  "Performance",
+  "Security",
+  "Testing",
+  "Real-world Scenarios",
+  "Interview Preparation",
+  "Mini Project Practice",
+  "Architecture",
+  "State Management",
+  "Data Flow",
+  "API Integration",
+  "Advanced Patterns",
+  "Optimization Techniques"
+];
+
+const generateFallbackTests = (skill, count, existingTitles = []) => {
+  const normalizedExisting = existingTitles.map(t => t.toLowerCase());
+  
+  const availableTopics = FALLBACK_TOPICS.filter(topic => {
+    const title = `${skill} ${topic}`;
+    return !normalizedExisting.some(ex => ex.includes(topic.toLowerCase()) || ex === title.toLowerCase());
+  });
+
+  const generated = [];
+  for (let i = 0; i < count; i++) {
+    const topic = availableTopics[i] || `Extended Concepts ${existingTitles.length + i + 1}`;
+    const title = availableTopics[i] ? `${skill} ${topic}` : `${skill} ${topic}`;
+    
+    generated.push({
+      title,
+      description: `Practice test covering ${topic} for ${skill}.`,
+      difficulty: "Intermediate",
+      estimatedMinutes: 10,
+      questionCount: 5,
+      coveredTopics: [skill, topic],
+      questions: Array.from({ length: 5 }).map((_, q) => ({
+        question: `Sample question ${q + 1} regarding ${topic} in ${skill}?`,
+        options: [
+          `Incorrect assumption about ${topic}`,
+          `Correct application of ${topic}`,
+          `Common anti-pattern in ${topic}`,
+          `Outdated approach to ${topic}`
+        ],
+        correctAnswer: 1,
+        explanation: `This is a placeholder explanation for ${topic}.`
+      }))
+    });
+  }
+  return generated;
+};
+
 // Skill Test Library API
 app.get("/api/skill-tests/library/:skill", verifyAuth, async (req, res) => {
   try {
@@ -221,21 +278,8 @@ CRITICAL REQUIREMENTS:
         }
         generatedData = JSON.parse(cleanText);
       } catch (genError) {
-        console.error("AI Generation failed, falling back to mock tests:", genError);
-        generatedData = Array.from({ length: 6 }).map((_, i) => ({
-          title: `${skill} Mock Test ${i + 1}`,
-          description: `Fallback test generated because AI rate limit was exceeded.`,
-          difficulty: "Intermediate",
-          estimatedMinutes: 10,
-          questionCount: 5,
-          coveredTopics: [skill, "Fundamentals"],
-          questions: Array.from({ length: 5 }).map((_, q) => ({
-            question: `Sample question ${q + 1} for ${skill}?`,
-            options: ["Option A", "Option B (Correct)", "Option C", "Option D"],
-            correctAnswer: 1,
-            explanation: "Fallback explanation."
-          }))
-        }));
+        console.error("AI Generation failed, falling back to dynamic mock tests:", genError);
+        generatedData = generateFallbackTests(skill, 6, []);
       }
 
       const newTests = generatedData.map(testData => ({
@@ -304,20 +348,7 @@ CRITICAL REQUIREMENTS:
       generatedData = JSON.parse(cleanText);
     } catch (genError) {
       console.error("AI Generation failed for 'generate-more', falling back to mock tests:", genError);
-      generatedData = Array.from({ length: count }).map((_, i) => ({
-        title: `${skill} Mock Extension Test ${Date.now() + i}`,
-        description: `Fallback test generated because AI rate limit was exceeded.`,
-        difficulty: "Intermediate",
-        estimatedMinutes: 10,
-        questionCount: 5,
-        coveredTopics: [skill, "More Topics"],
-        questions: Array.from({ length: 5 }).map((_, q) => ({
-          question: `Sample extension question ${q + 1} for ${skill}?`,
-          options: ["Wrong", "Wrong", "Correct", "Wrong"],
-          correctAnswer: 2,
-          explanation: "Fallback explanation for extension."
-        }))
-      }));
+      generatedData = generateFallbackTests(skill, count, existingTests.map(t => t.title));
     }
 
     const newTests = generatedData.map(testData => ({
