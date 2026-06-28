@@ -28,6 +28,7 @@ import Register from "./pages/Register.jsx";
 import Settings from "./pages/Settings.jsx";
 import SkillTests from "./pages/SkillTests.jsx";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis.jsx";
+import SkillTestLibrary from "./pages/SkillTestLibrary.jsx";
 
 export default function App() {
   return (
@@ -70,6 +71,7 @@ export default function App() {
 
           <Route element={<RequireCVRoute />}>
             <Route path="/skill-gap" element={<SkillGapAnalysis />} />
+            <Route path="/skill-library/:skillName" element={<SkillTestLibrary />} />
             <Route path="/job-matches" element={<JobMatches />} />
             <Route path="/learning-path" element={<LearningPath />} />
             <Route path="/skill-tests" element={<SkillTests />} />

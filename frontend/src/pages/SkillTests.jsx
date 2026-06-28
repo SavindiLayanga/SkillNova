@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getAuth } from "firebase/auth";
 import {
   ArrowLeft,
   Check,
@@ -358,6 +359,7 @@ const generalQuestionsData = {
 
 export default function SkillTests() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState(location.state?.autoStartPath ? "path" : "standard"); // "standard" or "path"
   const { analysis, hasAnalysis } = useCVAnalysis();
   const missingSkills = hasAnalysis ? (analysis.missingSkills || []) : [];
@@ -378,6 +380,39 @@ export default function SkillTests() {
   }, [location.state]);
 
   const hasAutoStarted = useRef(false);
+
+  const handleStartLibraryTest = async (testId) => {
+    setIsGeneratingTest(true);
+    try {
+      const auth = getAuth();
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/skill-tests/library/test/${testId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const testData = await res.json();
+        updateSession({
+          selectedTest: {
+            isLibraryTest: true,
+            libraryTestId: testData._id,
+            skill: testData.skill,
+            title: testData.title,
+            questions: testData.questions,
+            level: testData.difficulty
+          },
+          currentQuestionIndex: 0,
+          userAnswers: {},
+          isFinished: false,
+          timeLeft: (testData.estimatedMinutes || 15) * 60
+        });
+      } else {
+        showToast("Failed to load library test", "error");
+      }
+    } catch (e) {
+      showToast("Failed to load library test", "error");
+    }
+    setIsGeneratingTest(false);
+  };
   
   // Need to extract handleStartPathTest out or place it inside if we don't want dependency warnings, 
   // but we can just use an effect that calls it.
@@ -480,12 +515,15 @@ export default function SkillTests() {
   };
 
   useEffect(() => {
-    if (location.state?.startQuiz && location.state?.filterSkill && !hasAutoStarted.current && !activeSession?.selectedTest) {
+    if (location.state?.libraryTestId && !hasAutoStarted.current && !activeSession?.selectedTest) {
+      hasAutoStarted.current = true;
+      handleStartLibraryTest(location.state.libraryTestId);
+    } else if (location.state?.startQuiz && location.state?.filterSkill && !hasAutoStarted.current && !activeSession?.selectedTest) {
       hasAutoStarted.current = true;
       handleStartPathTest(location.state.filterSkill, "Conceptual Quiz");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state?.startQuiz, location.state?.filterSkill]);
+  }, [location.state?.startQuiz, location.state?.filterSkill, location.state?.libraryTestId]);
 
   const handleSelectOption = (optionIndex) => {
     updateSession({
@@ -509,7 +547,9 @@ export default function SkillTests() {
     updateSession({ isFinished: true });
 
     let questions = [];
-    if (selectedTest.isPath) {
+    if (selectedTest.isLibraryTest) {
+      questions = selectedTest.questions || [];
+    } else if (selectedTest.isPath) {
       questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType]?.questions || [];
     } else {
       questions = generalQuestionsData[selectedTest.title];
@@ -524,7 +564,26 @@ export default function SkillTests() {
 
     const scorePercentage = Math.round((correctCount / questions.length) * 100);
 
-    if (selectedTest.isPath) {
+    if (selectedTest.isLibraryTest) {
+      try {
+        const auth = getAuth();
+        const token = await auth.currentUser?.getIdToken();
+        await fetch(`/api/skill-tests/library/${selectedTest.libraryTestId}/complete`, {
+          method: "PUT",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ score: scorePercentage })
+        });
+        
+        await clearSession();
+        navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`);
+        return;
+      } catch (e) {
+        showToast("Failed to submit library test.", "error");
+      }
+    } else if (selectedTest.isPath) {
       // Save Path test score via backend
       const testData = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType];
       if (testData && testData._id) {
@@ -573,8 +632,11 @@ export default function SkillTests() {
       "Are you sure you want to quit this test? Your progress will not be saved."
     );
     if (confirmQuit) {
-      setSelectedTest(null);
-      setIsFinished(false);
+      if (selectedTest?.isLibraryTest) {
+        clearSession().then(() => navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`));
+      } else {
+        clearSession();
+      }
     }
   };
 
@@ -645,14 +707,29 @@ export default function SkillTests() {
   const isEndorsedForTargetRole = completedSubtestsCount === totalSubtests && overallAverage >= 90 && totalSubtests > 0;
 
   const handleGenerateMoreTests = async (skillName) => {
-    const currentTopics = getSkillTopics(skillName);
-    const newTopicIndex = currentTopics.length - DEFAULT_TEST_TOPICS.length + 1;
-    const newTopic = `Advanced Challenge Level ${newTopicIndex}`;
-    
-    // Instead of auto-starting, we just generate and cache it, then it appears in the list.
-    // Wait, the user wants it to load ("thawa test auto load wenna ona").
-    // We can just call handleStartPathTest with the new topic to auto-start it.
-    await handleStartPathTest(skillName, newTopic, true);
+    setIsGeneratingTest(true);
+    try {
+      const currentTopics = getSkillTopics(skillName);
+      const newTopicIndex = currentTopics.length - DEFAULT_TEST_TOPICS.length + 1;
+      
+      const newTopics = [
+        `Advanced Challenge Level ${newTopicIndex}`,
+        `Advanced Challenge Level ${newTopicIndex + 1}`,
+        `Advanced Challenge Level ${newTopicIndex + 2}`
+      ];
+
+      for (const topic of newTopics) {
+        await generateSkillTest(skillName, topic, topic);
+        // Small delay to help prevent rate limits
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      await refreshTests();
+    } catch (err) {
+      showToast("Failed to generate tests: " + (err.message || "Unknown error"), "error");
+    } finally {
+      setIsGeneratingTest(false);
+    }
   };
 
   if (isGeneratingTest) {
@@ -677,7 +754,9 @@ export default function SkillTests() {
   // If a test is selected and active, render the Quiz UI
   if (selectedTest) {
     let questions = [];
-    if (selectedTest.isPath) {
+    if (selectedTest.isLibraryTest) {
+      questions = selectedTest.questions || [];
+    } else if (selectedTest.isPath) {
       questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType]?.questions || [];
     } else {
       questions = generalQuestionsData[selectedTest.title] || [];
@@ -702,7 +781,13 @@ export default function SkillTests() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-ink-900">Assessment Results</h1>
             <Button
-              onClick={() => setSelectedTest(null)}
+              onClick={() => {
+                if (selectedTest.isLibraryTest) {
+                  clearSession().then(() => navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`));
+                } else {
+                  clearSession();
+                }
+              }}
               variant="secondary"
               size="sm"
             >

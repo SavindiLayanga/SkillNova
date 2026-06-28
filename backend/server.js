@@ -17,6 +17,7 @@ import { SkillTest } from "./models/SkillTest.js";
 import { LearningPath } from "./models/LearningPath.js";
 import { UserSettings } from "./models/UserSettings.js";
 import { PracticeSession } from "./models/PracticeSession.js";
+import { LibraryTest } from "./models/LibraryTest.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -173,6 +174,203 @@ app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
     res.json(tests);
   } catch (error) {
     console.error("Skill tests fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+// Skill Test Library API
+app.get("/api/skill-tests/library/:skill", verifyAuth, async (req, res) => {
+  try {
+    const skill = req.params.skill;
+    let tests = await LibraryTest.find({ userId: req.user.uid, skill }).sort({ createdAt: 1 });
+    
+    if (tests.length === 0) {
+      // Generate 6 initial tests
+      const ai = getAI();
+      const prompt = `Generate exactly 6 unique AI-generated practice test topics for the skill: ${skill}.
+For each topic, provide:
+- title: A short title for the test (e.g., "React Fundamentals", "Hooks Mastery").
+- description: A short description of what it covers.
+- difficulty: One of ["Beginner", "Intermediate", "Advanced"].
+- estimatedMinutes: 5 to 15.
+- questionCount: exactly 5.
+- coveredTopics: An array of 2-4 string topics covered.
+- questions: An array of exactly 5 questions. Each question must have:
+  - "question": string
+  - "options": array of 4 string options
+  - "correctAnswer": integer (0-3)
+  - "explanation": string
+
+CRITICAL REQUIREMENTS:
+- Every generated test must focus on a unique aspect of ${skill}.
+- Avoid duplicate concepts across the 6 tests.
+- Format the response as a JSON array of 6 objects. Do not wrap in markdown or any other text.`;
+
+      let generatedData;
+      try {
+        const response = await ai.models.generateContent({
+          model: AI_MODEL,
+          contents: prompt,
+          config: { responseMimeType: "application/json" },
+        });
+        
+        let cleanText = response.text ? response.text.trim() : "";
+        if (cleanText.startsWith("\`\`\`")) {
+          cleanText = cleanText.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/i, "").trim();
+        }
+        generatedData = JSON.parse(cleanText);
+      } catch (genError) {
+        console.error("AI Generation failed, falling back to mock tests:", genError);
+        generatedData = Array.from({ length: 6 }).map((_, i) => ({
+          title: `${skill} Mock Test ${i + 1}`,
+          description: `Fallback test generated because AI rate limit was exceeded.`,
+          difficulty: "Intermediate",
+          estimatedMinutes: 10,
+          questionCount: 5,
+          coveredTopics: [skill, "Fundamentals"],
+          questions: Array.from({ length: 5 }).map((_, q) => ({
+            question: `Sample question ${q + 1} for ${skill}?`,
+            options: ["Option A", "Option B (Correct)", "Option C", "Option D"],
+            correctAnswer: 1,
+            explanation: "Fallback explanation."
+          }))
+        }));
+      }
+
+      const newTests = generatedData.map(testData => ({
+        ...testData,
+        userId: req.user.uid,
+        skill,
+        status: 'Not Started',
+        attempts: 0,
+        score: 0
+      }));
+      
+      const inserted = await LibraryTest.insertMany(newTests);
+      tests = inserted;
+    }
+    
+    res.json(tests);
+  } catch (error) {
+    console.error("Skill test library fetch/generate error:", error);
+    if (error.status === 429) {
+      res.status(429).json({ error: "AI Rate Limit Exceeded. Please try again in a few moments." });
+    } else {
+      res.status(500).json({ error: "Server error while generating tests." });
+    }
+  }
+});
+
+app.post("/api/skill-tests/library/generate-more", verifyAuth, async (req, res) => {
+  try {
+    const { skill, existingTests, count = 3 } = req.body;
+    
+    const existingTitles = (existingTests || []).map(t => t.title).join(", ");
+    
+    const ai = getAI();
+    const prompt = `Generate exactly ${count} NEW unique AI-generated practice test topics for the skill: ${skill}.
+Already generated topics to AVOID: ${existingTitles}.
+
+For each new topic, provide:
+- title: A short title for the test.
+- description: A short description of what it covers.
+- difficulty: One of ["Beginner", "Intermediate", "Advanced"].
+- estimatedMinutes: 5 to 15.
+- questionCount: exactly 5.
+- coveredTopics: An array of 2-4 string topics covered.
+- questions: An array of exactly 5 questions. Each question must have:
+  - "question": string
+  - "options": array of 4 string options
+  - "correctAnswer": integer (0-3)
+  - "explanation": string
+
+CRITICAL REQUIREMENTS:
+- Every generated test must focus on a unique aspect of ${skill} that is DIFFERENT from the ones to AVOID.
+- Format the response as a JSON array of ${count} objects. Do not wrap in markdown or any other text.`;
+
+    let generatedData;
+    try {
+      const response = await ai.models.generateContent({
+        model: AI_MODEL,
+        contents: prompt,
+        config: { responseMimeType: "application/json" },
+      });
+      
+      let cleanText = response.text ? response.text.trim() : "";
+      if (cleanText.startsWith("\`\`\`")) {
+        cleanText = cleanText.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/i, "").trim();
+      }
+      generatedData = JSON.parse(cleanText);
+    } catch (genError) {
+      console.error("AI Generation failed for 'generate-more', falling back to mock tests:", genError);
+      generatedData = Array.from({ length: count }).map((_, i) => ({
+        title: `${skill} Mock Extension Test ${Date.now() + i}`,
+        description: `Fallback test generated because AI rate limit was exceeded.`,
+        difficulty: "Intermediate",
+        estimatedMinutes: 10,
+        questionCount: 5,
+        coveredTopics: [skill, "More Topics"],
+        questions: Array.from({ length: 5 }).map((_, q) => ({
+          question: `Sample extension question ${q + 1} for ${skill}?`,
+          options: ["Wrong", "Wrong", "Correct", "Wrong"],
+          correctAnswer: 2,
+          explanation: "Fallback explanation for extension."
+        }))
+      }));
+    }
+
+    const newTests = generatedData.map(testData => ({
+      ...testData,
+      userId: req.user.uid,
+      skill,
+      status: 'Not Started',
+      attempts: 0,
+      score: 0
+    }));
+    
+    const inserted = await LibraryTest.insertMany(newTests);
+    res.json(inserted);
+  } catch (error) {
+    console.error("Skill test library generate more error:", error);
+    if (error.status === 429) {
+      res.status(429).json({ error: "AI Rate Limit Exceeded. Please try again in a few moments." });
+    } else {
+      res.status(500).json({ error: "Server error while generating tests." });
+    }
+  }
+});
+
+app.get("/api/skill-tests/library/test/:id", verifyAuth, async (req, res) => {
+  try {
+    const test = await LibraryTest.findOne({ _id: req.params.id, userId: req.user.uid });
+    if (!test) return res.status(404).json({ error: "Test not found" });
+    res.json(test);
+  } catch (error) {
+    console.error("Skill test fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.put("/api/skill-tests/library/:id/complete", verifyAuth, async (req, res) => {
+  try {
+    const { score } = req.body;
+    const test = await LibraryTest.findOne({ _id: req.params.id, userId: req.user.uid });
+    
+    if (!test) {
+      return res.status(404).json({ error: "Test not found" });
+    }
+    
+    test.status = "Completed";
+    test.score = score;
+    test.attempts += 1;
+    test.completedAt = new Date();
+    test.lastPlayed = new Date();
+    
+    await test.save();
+    res.json(test);
+  } catch (error) {
+    console.error("Skill test complete error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });

@@ -1,5 +1,5 @@
 import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -9,6 +9,7 @@ import ProgressBar from "../components/ui/ProgressBar.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 
 export default function SkillGapAnalysis() {
+  const navigate = useNavigate();
   const { analysis, hasAnalysis, status } = useCVAnalysis();
 
   const missingSkills = analysis?.missingSkills || [];
@@ -50,7 +51,7 @@ export default function SkillGapAnalysis() {
           </div>
           <div className="mt-6 space-y-5">
             {missingSkills.map((gap, idx) => {
-              const skillName = typeof gap === "string" ? gap : gap.skill;
+              const skillName = typeof gap === "string" ? gap : (gap.name || gap.skill);
               const current = gap.current || 0;
               const required = gap.required || 100;
               
@@ -59,9 +60,8 @@ export default function SkillGapAnalysis() {
               const offset = circumference - (current / 100) * circumference;
 
               return (
-              <Link 
-                to="/skill-tests" 
-                state={{ autoStartPath: true, filterSkill: skillName, startQuiz: true }}
+              <div 
+                onClick={() => navigate(`/skill-library/${encodeURIComponent(skillName)}`)}
                 className="block"
                 key={idx}
               >
@@ -116,7 +116,7 @@ export default function SkillGapAnalysis() {
                     </div>
                   </div>
                 </div>
-              </Link>
+              </div>
             )})}
           </div>
         </Card>
