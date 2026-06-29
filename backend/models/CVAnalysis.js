@@ -48,6 +48,7 @@ const cvAnalysisSchema = new mongoose.Schema({
   name: { type: String, default: '' },
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
+  isActive: { type: Boolean, default: true },
   isITRelated: { type: Boolean, default: true },
   technicalSkills: [skillSchema],
   softSkills: [skillSchema],

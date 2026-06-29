@@ -19,6 +19,7 @@ const jobMatchSchema = new mongoose.Schema({
 
 const manualAnalysisSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
+  isActive: { type: Boolean, default: true },
   name: { type: String, default: '' },
   skills: [String],
   targetRole: { type: String, default: '' },
