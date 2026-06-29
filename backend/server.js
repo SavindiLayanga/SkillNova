@@ -588,9 +588,19 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       data = {
         name: userProfile?.name || "Mock User (Development)",
         email: userProfile?.email || "mock.user@example.com",
+        phone: "+1 234 567 890",
+        isITRelated: true,
+        primaryRole: { role: targetRole, confidence: 95, reason: "Matches target role directly." },
+        topRoles: [
+          { role: targetRole, confidence: 95, reason: "Matches target role." },
+          { role: "Software Engineer", confidence: 80, reason: "General programming skills." }
+        ],
         technicalSkills: extractedSkills.map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), level: "Intermediate" })),
         softSkills: [],
         skills: extractedSkills.map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), level: "Intermediate" })),
+        strongSkills: extractedSkills.slice(0, 3).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+        weakSkills: weakAreas,
+        missingSkills: missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
         education: [
           { institution: "Mock University", degree: "BSc Computer Science", year: "2022" }
         ],
@@ -603,12 +613,12 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
         certifications: ["Mock Certification"],
         targetRole: targetRole,
         careerRecommendations: [targetRole, "Senior " + targetRole],
-        missingSkills: missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
         jobMatches: [],
         skillMatchScore: calculatedMatchPercentage,
         cvScore: Math.min(100, calculatedMatchPercentage + 10),
+        matchPercentage: calculatedMatchPercentage,
+        careerReadinessScore: Math.min(100, calculatedMatchPercentage + 10),
         learningPath: missingSkills.map(s => `Learn ${s.charAt(0).toUpperCase() + s.slice(1)}`),
-        weakAreas: weakAreas,
         aiInsights: `Mock AI: Analyzed CV against ${targetRole}. Found ${extractedSkills.length} skills. Match is ${calculatedMatchPercentage}%.`
       };
       console.log("Mock payload created.");
@@ -617,42 +627,50 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       const ai = getAI();
 
       const prompt = `
-Analyze this CV and return ONLY valid JSON.
-Identify and cleanly separate technical skills (e.g. React, Node.js, Python, Figma) from soft skills (e.g. Communication, Leadership, Problem Solving). Include all skills in the combined 'skills' array as well.
-Determine if this CV is related to the IT / Software Engineering / Technology field. Set "isITRelated" to true if it is, otherwise false.
+Analyze the uploaded CV using intelligent NLP techniques rather than simple keyword matching.
 
-Return this structure:
+Requirements:
+1. Read the entire CV including: Resume headline, Professional summary, Career objective, Work experience, Projects, Technical skills, Education, Certifications
+2. Determine whether the CV belongs to the Information Technology / Software Engineering domain.
+3. If the CV is NOT related to IT:
+   * Return: "isITRelated": false, a confidence score, and a short explanation in the summary. Do NOT continue with skill gap analysis.
+4. If the CV IS related to IT: Set "isITRelated": true.
+5. Automatically identify the candidate's primary job role from the CV (Infer using job titles, professional summary, experience, projects, technologies). Do NOT rely only on exact job titles.
+6. Return the Top 3 most likely job roles. Each role must include "role", "confidence" (0-100), and "reason".
+7. Extract ALL technical skills (programming languages, frameworks, databases, cloud, DevOps, OS, testing).
+8. Extract soft skills. Include all skills in the combined 'skills' array as well.
+9. Compare the extracted skills against the expected skills of the detected PRIMARY role.
+10. Calculate matchPercentage, careerReadinessScore, missingSkills, strongSkills, weakSkills. Calculate percentage accurately based on actual extracted vs expected.
+11. Generate a personalized learningRoadmap.
+12. Recommend suitable jobRecommendations.
+13. Explain WHY every recommendation was made in summary.
+14. Keep extracting the candidate's basic info: name, email, phone, education, experience, projects, certifications.
+
+Return ONLY valid JSON. The JSON should contain:
 {
   "isITRelated": true,
   "name": "",
   "email": "",
+  "phone": "",
+  "primaryRole": { "role": "", "confidence": 0, "reason": "" },
+  "topRoles": [
+    { "role": "", "confidence": 0, "reason": "" }
+  ],
   "technicalSkills": [],
   "softSkills": [],
   "skills": [],
+  "strongSkills": [],
+  "weakSkills": [],
+  "missingSkills": [],
   "education": [],
   "experience": [],
   "projects": [],
   "certifications": [],
-  "targetRole": "",
-  "careerRecommendations": [],
-  "missingSkills": [],
-  "jobMatches": [
-    {
-      "role": "",
-      "company": "",
-      "type": "Full-time/Remote",
-      "location": "",
-      "salary": "",
-      "skills": [],
-      "match": 0,
-      "source": "",
-      "url": ""
-    }
-  ],
-  "skillMatchScore": 0,
-  "cvScore": 0,
-  "learningPath": [],
-  "aiInsights": ""
+  "matchPercentage": 0,
+  "careerReadinessScore": 0,
+  "learningRoadmap": [],
+  "jobRecommendations": [],
+  "summary": ""
 }
 
 CV Text:
@@ -670,6 +688,13 @@ ${text}
       if (data.isITRelated === false) {
         return res.status(400).json({ error: "This CV does not appear to be related to the IT field. Please upload an IT-related CV." });
       }
+
+      // Map new NLP AI schema to existing frontend field names backward compatibility
+      data.aiInsights = data.summary || data.aiInsights || "";
+      data.careerRecommendations = data.jobRecommendations || data.careerRecommendations || [];
+      data.learningPath = data.learningRoadmap || data.learningPath || [];
+      data.skillMatchScore = data.matchPercentage || data.skillMatchScore || 0;
+      data.cvScore = data.careerReadinessScore || data.cvScore || 0;
 
       console.log("Gemini payload created.");
     }
