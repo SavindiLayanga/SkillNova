@@ -36,24 +36,38 @@ const jobMatchSchema = new mongoose.Schema({
   url: String
 });
 
+const roleConfidenceSchema = new mongoose.Schema({
+  role: String,
+  confidence: Number,
+  reason: String,
+});
+
 const cvAnalysisSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
   originalText: { type: String, required: true },
   name: { type: String, default: '' },
   email: { type: String, default: '' },
+  phone: { type: String, default: '' },
+  isITRelated: { type: Boolean, default: true },
   technicalSkills: [skillSchema],
   softSkills: [skillSchema],
   skills: [skillSchema],
+  strongSkills: [String],
+  weakSkills: [String],
   education: [educationSchema],
   experience: [experienceSchema],
   projects: [projectSchema],
   certifications: [String],
   targetRole: { type: String, default: '' },
+  primaryRole: roleConfidenceSchema,
+  topRoles: [roleConfidenceSchema],
   careerRecommendations: [String],
   missingSkills: [String],
   jobMatches: [jobMatchSchema],
   skillMatchScore: { type: Number, default: 0 },
   cvScore: { type: Number, default: 0 },
+  matchPercentage: { type: Number, default: 0 },
+  careerReadinessScore: { type: Number, default: 0 },
   learningPath: [String],
   aiInsights: { type: String, default: '' }
 }, { timestamps: true });
