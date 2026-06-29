@@ -7,6 +7,8 @@ import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import clsx from "../utils/clsx.js";
+import { archiveActiveAnalysis } from "../services/cvAnalysisService.js";
+import useAuth from "../hooks/useAuth.js";
 
 const checklist = [
   "Personal information detected",
@@ -17,6 +19,7 @@ const checklist = [
 
 export default function CVUpload() {
   const fileInputRef = useRef(null);
+  const { getToken } = useAuth();
   const { analysis, fileName, hasAnalysis, resetAnalysis, startAnalysis, startManualAnalysis, status, error } =
     useCVAnalysis();
   
@@ -31,11 +34,23 @@ export default function CVUpload() {
 
   const isProcessing = status === "uploading" || status === "analyzing";
 
-  function handleRemoveCV() {
-    resetAnalysis();
-    setShowConfirmModal(false);
-    setToastMessage("CV removed successfully.");
-    setTimeout(() => setToastMessage(""), 3000);
+  async function handleReplaceCV() {
+    try {
+      const token = await getToken();
+      if (token) {
+        await archiveActiveAnalysis(token);
+      }
+      resetAnalysis();
+      setShowConfirmModal(false);
+      setToastMessage("CV archived successfully. Ready for a new upload.");
+      setTimeout(() => setToastMessage(""), 3000);
+    } catch (err) {
+      console.error("Failed to archive analysis:", err);
+      setToastMessage("Error archiving analysis, but you can still upload a new one.");
+      resetAnalysis();
+      setShowConfirmModal(false);
+      setTimeout(() => setToastMessage(""), 3000);
+    }
   }
 
   function handleFileChange(event) {
@@ -144,16 +159,13 @@ export default function CVUpload() {
                   </div>
                 ) : (
                   <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <Button icon={RotateCcw} onClick={resetAnalysis} variant="secondary">
-                      Analyze another profile
-                    </Button>
                     <Button 
-                      icon={Trash2} 
+                      icon={RotateCcw} 
                       onClick={() => setShowConfirmModal(true)} 
                       variant="secondary" 
-                      className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm"
+                      className="text-primary-700 border-primary-200 hover:bg-primary-50 bg-white shadow-sm"
                     >
-                      Remove CV
+                      Replace Current CV
                     </Button>
                   </div>
                 )}
@@ -317,22 +329,22 @@ export default function CVUpload() {
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mb-4">
-              <Trash2 className="h-6 w-6" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-600 mb-4">
+              <RotateCcw className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-bold text-ink-900">Remove uploaded CV?</h3>
+            <h3 className="text-lg font-bold text-ink-900">Replace Current CV?</h3>
             <p className="mt-2 text-sm text-ink-500">
-              This will remove your current CV analysis and let you upload a new profile.
+              Uploading a new CV will replace your current analysis, skill gap analysis, learning path, dashboard progress, and job recommendations. Previous analyses will be archived in your history.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <Button onClick={() => setShowConfirmModal(false)} variant="secondary">
                 Cancel
               </Button>
               <Button 
-                onClick={handleRemoveCV} 
-                className="bg-rose-600 text-white hover:bg-rose-700 border-transparent"
+                onClick={handleReplaceCV} 
+                className="bg-primary-600 text-white hover:bg-primary-700 border-transparent"
               >
-                Remove CV
+                Replace CV
               </Button>
             </div>
           </div>
