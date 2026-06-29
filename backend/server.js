@@ -581,6 +581,10 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       console.log("matchedSkills:", matchedSkills);
       console.log("calculatedMatchPercentage:", calculatedMatchPercentage);
 
+      if (extractedSkills.length === 0) {
+        return res.status(400).json({ error: "This CV does not appear to be related to the IT field. Please upload an IT-related CV." });
+      }
+
       data = {
         name: userProfile?.name || "Mock User (Development)",
         email: userProfile?.email || "mock.user@example.com",
@@ -615,9 +619,11 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       const prompt = `
 Analyze this CV and return ONLY valid JSON.
 Identify and cleanly separate technical skills (e.g. React, Node.js, Python, Figma) from soft skills (e.g. Communication, Leadership, Problem Solving). Include all skills in the combined 'skills' array as well.
+Determine if this CV is related to the IT / Software Engineering / Technology field. Set "isITRelated" to true if it is, otherwise false.
 
 Return this structure:
 {
+  "isITRelated": true,
   "name": "",
   "email": "",
   "technicalSkills": [],
@@ -660,6 +666,11 @@ ${text}
       });
 
       data = JSON.parse(response.text);
+      
+      if (data.isITRelated === false) {
+        return res.status(400).json({ error: "This CV does not appear to be related to the IT field. Please upload an IT-related CV." });
+      }
+
       console.log("Gemini payload created.");
     }
 
