@@ -104,27 +104,8 @@ export function CVAnalysisProvider({ children }) {
       try {
         extractedData = await analyzeCV(text);
       } catch (aiError) {
-        console.warn("AI Analysis failed (likely quota exceeded). Using fallback mock data.", aiError);
-        // Fallback mock data
-        extractedData = {
-          targetRole: "Full Stack Developer",
-          name: "SkillNova User (Mock)",
-          email: "user@example.com",
-          technicalSkills: ["JavaScript", "React", "Node.js", "MongoDB", "CSS"],
-          softSkills: ["Communication", "Problem Solving", "Teamwork"],
-          experience: ["2 years as Frontend Developer"],
-          education: ["BSc Computer Science"],
-          certifications: ["AWS Certified Practitioner"],
-          skills: ["JavaScript", "React", "Node.js", "MongoDB", "CSS"],
-          projects: ["E-commerce App", "Task Manager"],
-          careerRecommendations: ["Senior Frontend Developer", "Full Stack Developer"],
-          missingSkills: ["System Design", "AWS", "TypeScript"],
-          skillMatchScore: 85,
-          cvScore: 82,
-          learningPath: ["Advanced React", "System Design Patterns"],
-          aiInsights: "Strong frontend skills, but backend experience could be expanded.",
-          jobMatches: []
-        };
+        console.error("AI Analysis failed:", aiError);
+        throw new Error(aiError.message || "Failed to analyze CV using AI. Please try again.");
       }
 
       // 3. Create full analysis object directly using the AI output

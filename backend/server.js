@@ -518,9 +518,46 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       return res.status(400).json({ error: "CV text is required" });
     }
 
-    const ai = getAI();
+    let data;
 
-    const prompt = `
+    if (process.env.NODE_ENV !== "production" && process.env.USE_MOCK_AI === "true") {
+      console.log("Using mock AI analysis because USE_MOCK_AI=true");
+      data = {
+        name: "Mock User (Development)",
+        email: "mock.user@example.com",
+        technicalSkills: ["JavaScript", "React", "Node.js", "Express", "MongoDB"],
+        softSkills: ["Communication", "Teamwork", "Problem Solving"],
+        skills: ["JavaScript", "React", "Node.js", "Express", "MongoDB", "Communication", "Teamwork", "Problem Solving"],
+        education: [
+          { title: "BSc Computer Science", provider: "Mock University", detail: "Graduated with honors" }
+        ],
+        experience: [
+          { role: "Frontend Developer", place: "MockTech Inc", period: "2021-2023", detail: "Developed web applications using React." }
+        ],
+        projects: [
+          { title: "E-Commerce App", detail: "Built a full-stack e-commerce app with MERN stack." }
+        ],
+        certifications: [
+          { name: "AWS Certified Developer" }
+        ],
+        targetRole: "Full Stack Developer",
+        careerRecommendations: [
+          { role: "Senior Frontend Developer", matchPercentage: 90 },
+          { role: "Backend Developer", matchPercentage: 80 }
+        ],
+        missingSkills: [
+          { skill: "Docker", current: 0, required: 80, recommendation: "Learn Docker fundamentals" }
+        ],
+        jobMatches: [],
+        skillMatchScore: 85,
+        cvScore: 88,
+        learningPath: ["Docker for Beginners", "Advanced Node.js"],
+        aiInsights: "This is a mock AI analysis generated because USE_MOCK_AI is enabled in development mode."
+      };
+    } else {
+      const ai = getAI();
+
+      const prompt = `
 Analyze this CV and return ONLY valid JSON.
 Identify and cleanly separate technical skills (e.g. React, Node.js, Python, Figma) from soft skills (e.g. Communication, Leadership, Problem Solving). Include all skills in the combined 'skills' array as well.
 
@@ -561,13 +598,14 @@ CV Text:
 ${text}
 `;
 
-    const response = await ai.models.generateContent({
-      model: AI_MODEL,
-      contents: prompt,
-      config: { responseMimeType: "application/json" },
-    });
+      const response = await ai.models.generateContent({
+        model: AI_MODEL,
+        contents: prompt,
+        config: { responseMimeType: "application/json" },
+      });
 
-    const data = JSON.parse(response.text);
+      data = JSON.parse(response.text);
+    }
 
     const newAnalysis = new CVAnalysis({
       userId: req.user.uid,
