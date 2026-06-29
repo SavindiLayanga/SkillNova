@@ -60,9 +60,17 @@ export default function CVAnalysisViewModal({ analysis, onClose }) {
           <div>
             <h2 className="text-xl font-bold text-ink-900 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-primary-600" />
-              Analysis: {analysis.targetRole || "Unknown Role"}
+              Analysis: {analysis.primaryRole?.role || analysis.targetRole || "Unknown Role"}
             </h2>
-            <p className="text-sm text-ink-500 mt-1">
+            <div className="flex gap-4 mt-2">
+              {analysis.matchPercentage !== undefined && (
+                <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded">Match: {analysis.matchPercentage}%</span>
+              )}
+              {analysis.careerReadinessScore !== undefined && (
+                <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Readiness: {analysis.careerReadinessScore}%</span>
+              )}
+            </div>
+            <p className="text-sm text-ink-500 mt-2">
               {new Date(analysis.createdAt || Date.now()).toLocaleString()}
             </p>
           </div>
@@ -77,23 +85,40 @@ export default function CVAnalysisViewModal({ analysis, onClose }) {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           
+          {analysis.topRoles && analysis.topRoles.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg font-bold text-ink-900 mb-3 flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary-500" /> Top Role Matches
+              </h3>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {analysis.topRoles.map((roleObj, idx) => (
+                  <div key={idx} className="bg-ink-50 p-3 rounded-lg border border-ink-100">
+                    <h4 className="font-bold text-ink-900">{roleObj.role}</h4>
+                    <p className="text-xs font-semibold text-primary-600 mb-1">Confidence: {roleObj.confidence}%</p>
+                    <p className="text-xs text-ink-600">{roleObj.reason}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-6 mb-8">
             <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold text-emerald-900 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" /> Current Skills
+                  <CheckCircle2 className="h-4 w-4" /> Strong Skills
                 </h3>
               </div>
-              {renderList(analysis.skills)}
+              {renderList(analysis.strongSkills?.length ? analysis.strongSkills : analysis.skills)}
             </div>
             
             <div className="bg-rose-50 rounded-xl p-5 border border-rose-100">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-bold text-rose-900 flex items-center gap-2">
-                  <Target className="h-4 w-4" /> Missing Skills
+                  <Target className="h-4 w-4" /> Weak / Missing Skills
                 </h3>
               </div>
-              {renderList(analysis.missingSkills)}
+              {renderList(analysis.weakSkills?.length ? analysis.weakSkills : analysis.missingSkills)}
             </div>
           </div>
 
