@@ -97,11 +97,16 @@ export default function CVAnalysisHistory() {
              return (
                <Card key={analysis._id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:-translate-y-1 transition-transform duration-300">
                  <div className="flex-1">
-                   <h3 className="text-lg font-bold text-ink-900">
+                   <h3 className="text-lg font-bold text-ink-900 flex items-center flex-wrap gap-2">
                      {analysis.targetRole || "Unknown Role"}
-                     <span className="ml-3 text-xs font-semibold bg-ink-100 text-ink-600 px-2 py-1 rounded-full uppercase tracking-wider">
+                     <span className="text-xs font-semibold bg-ink-100 text-ink-600 px-2 py-1 rounded-full uppercase tracking-wider">
                        {analysis.analysisType === 'manual' ? 'Manual' : 'CV'}
                      </span>
+                     {analysis.isActive && (
+                       <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full uppercase tracking-wider">
+                         Active
+                       </span>
+                     )}
                    </h3>
                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-ink-600">
                      <span className="flex items-center gap-1 font-medium"><Clock className="h-4 w-4" /> {date}</span>
