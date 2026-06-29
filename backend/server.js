@@ -18,11 +18,24 @@ import { LearningPath } from "./models/LearningPath.js";
 import { UserSettings } from "./models/UserSettings.js";
 import { PracticeSession } from "./models/PracticeSession.js";
 import { LibraryTest } from "./models/LibraryTest.js";
+import { generateDynamicTitle, generateDynamicDescription } from "./utils/testFallbackHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, ".env") });
+
+function getDeduplicationKey(test) {
+  let topic = test.title || "";
+  const match = topic.match(/:\s*(.*?)\s*-/);
+  if (match) {
+    topic = match[1];
+  } else if (test.coveredTopics && test.coveredTopics.length > 0) {
+    topic = test.coveredTopics.join("");
+  }
+  const cleanTopic = topic.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return `${test.userId}-${test.skill}-${test.difficulty}-Library-${cleanTopic}`;
+}
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -212,16 +225,17 @@ const generateFallbackTests = (skill, count, existingTests = []) => {
 
   const generated = [];
   for (let i = 0; i < count; i++) {
-    const topic = availableTopics[i] || `Extended Concepts ${existingTests.length + i + 1}`;
+    const testNumber = existingTests.length + i + 1;
     const difficulty = "Intermediate";
-    const levelFocus = `${difficulty} Practice`;
-    const title = `${skill}: ${topic} - ${levelFocus}`;
+    const title = generateDynamicTitle(skill, difficulty, testNumber);
     
+    // We can infer the topic generated internally, but for the fallback structure we just need strings
+    const topic = `Extended Concepts ${testNumber}`;
     const concepts = [`basics of ${topic}`, `practical application`, `common patterns`];
     
     generated.push({
       title,
-      description: `Practice ${concepts.join(", ")}, best practices, and common mistakes in this comprehensive test.`,
+      description: generateDynamicDescription(skill, testNumber),
       difficulty,
       estimatedMinutes: 10,
       questionCount: 5,
@@ -297,8 +311,23 @@ CRITICAL REQUIREMENTS:
         score: 0
       }));
       
-      const inserted = await LibraryTest.insertMany(newTests);
-      tests = inserted;
+      const currentTests = await LibraryTest.find({ userId: req.user.uid, skill });
+      const currentKeys = new Set(currentTests.map(getDeduplicationKey));
+      
+      const uniqueNewTests = [];
+      for (const t of newTests) {
+        const key = getDeduplicationKey(t);
+        if (!currentKeys.has(key)) {
+          uniqueNewTests.push(t);
+          currentKeys.add(key);
+        }
+      }
+      
+      if (uniqueNewTests.length > 0) {
+        await LibraryTest.insertMany(uniqueNewTests);
+      }
+      
+      tests = await LibraryTest.find({ userId: req.user.uid, skill }).sort({ createdAt: 1 });
     }
     
     res.json(tests);
@@ -368,8 +397,27 @@ CRITICAL REQUIREMENTS:
       score: 0
     }));
     
-    const inserted = await LibraryTest.insertMany(newTests);
-    res.json(inserted);
+    const currentTests = await LibraryTest.find({ userId: req.user.uid, skill });
+    const currentKeys = new Set(currentTests.map(getDeduplicationKey));
+    
+    const uniqueNewTests = [];
+    let skippedDuplicates = 0;
+    for (const t of newTests) {
+      const key = getDeduplicationKey(t);
+      if (!currentKeys.has(key)) {
+        uniqueNewTests.push(t);
+        currentKeys.add(key);
+      } else {
+        skippedDuplicates++;
+      }
+    }
+    
+    let inserted = [];
+    if (uniqueNewTests.length > 0) {
+      inserted = await LibraryTest.insertMany(uniqueNewTests);
+    }
+    
+    res.json({ newTests: inserted, skippedDuplicates });
   } catch (error) {
     console.error("Skill test library generate more error:", error);
     if (error.status === 429) {

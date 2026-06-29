@@ -60,9 +60,12 @@ export default function SkillTestLibrary() {
     }
   }, [skill]);
 
+    const [skippedMessage, setSkippedMessage] = useState(null);
+
   const handleGenerateMore = async () => {
     setIsGeneratingMore(true);
     setError(null);
+    setSkippedMessage(null);
     try {
       const auth = getAuth();
       const token = await auth.currentUser?.getIdToken();
@@ -88,7 +91,19 @@ export default function SkillTestLibrary() {
         } catch (_) {}
         throw new Error(errMsg);
       }
-      const newTests = await res.json();
+      
+      const responseData = await res.json();
+      // Handle the deduplication payload structure
+      let newTests = [];
+      if (Array.isArray(responseData)) {
+        newTests = responseData; // legacy fallback
+      } else if (responseData.newTests) {
+        newTests = responseData.newTests;
+        if (responseData.skippedDuplicates > 0) {
+          setSkippedMessage(`${responseData.skippedDuplicates} duplicate test(s) were skipped to keep your library clean.`);
+        }
+      }
+      
       setTests(prev => [...prev, ...newTests]);
     } catch (err) {
       console.error(err);
@@ -129,6 +144,15 @@ export default function SkillTestLibrary() {
       {error && (
         <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
           {error}
+        </div>
+      )}
+
+      {skippedMessage && (
+        <div className="p-4 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 flex items-center justify-between">
+          <span>{skippedMessage}</span>
+          <button onClick={() => setSkippedMessage(null)} className="text-amber-500 hover:text-amber-700 font-bold ml-4">
+            ×
+          </button>
         </div>
       )}
 
