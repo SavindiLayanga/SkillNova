@@ -518,43 +518,51 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       return res.status(400).json({ error: "CV text is required" });
     }
 
+    console.log("--- Analyze CV Request ---");
+    console.log("NODE_ENV:", process.env.NODE_ENV);
+    console.log("USE_MOCK_AI:", process.env.USE_MOCK_AI);
+
     let data;
 
     if (process.env.NODE_ENV !== "production" && process.env.USE_MOCK_AI === "true") {
-      console.log("Using mock AI analysis because USE_MOCK_AI=true");
+      console.log("Entering mock AI mode...");
       data = {
         name: "Mock User (Development)",
         email: "mock.user@example.com",
-        technicalSkills: ["JavaScript", "React", "Node.js", "Express", "MongoDB"],
-        softSkills: ["Communication", "Teamwork", "Problem Solving"],
-        skills: ["JavaScript", "React", "Node.js", "Express", "MongoDB", "Communication", "Teamwork", "Problem Solving"],
+        technicalSkills: [
+          { name: "JavaScript", level: "Expert" },
+          { name: "React", level: "Advanced" }
+        ],
+        softSkills: [
+          { name: "Communication", level: "Advanced" }
+        ],
+        skills: [
+          { name: "JavaScript", level: "Expert" },
+          { name: "React", level: "Advanced" },
+          { name: "Communication", level: "Advanced" }
+        ],
         education: [
-          { title: "BSc Computer Science", provider: "Mock University", detail: "Graduated with honors" }
+          { institution: "Mock University", degree: "BSc Computer Science", year: "2022" }
         ],
         experience: [
-          { role: "Frontend Developer", place: "MockTech Inc", period: "2021-2023", detail: "Developed web applications using React." }
+          { company: "MockTech Inc", role: "Frontend Developer", duration: "2021-2023", description: "Developed web applications." }
         ],
         projects: [
-          { title: "E-Commerce App", detail: "Built a full-stack e-commerce app with MERN stack." }
+          { name: "E-Commerce App", description: "Built a full-stack e-commerce app.", technologies: ["React", "Node.js"] }
         ],
-        certifications: [
-          { name: "AWS Certified Developer" }
-        ],
+        certifications: ["AWS Certified Developer"],
         targetRole: "Full Stack Developer",
-        careerRecommendations: [
-          { role: "Senior Frontend Developer", matchPercentage: 90 },
-          { role: "Backend Developer", matchPercentage: 80 }
-        ],
-        missingSkills: [
-          { skill: "Docker", current: 0, required: 80, recommendation: "Learn Docker fundamentals" }
-        ],
+        careerRecommendations: ["Senior Frontend Developer", "Backend Developer"],
+        missingSkills: ["Docker", "Kubernetes"],
         jobMatches: [],
         skillMatchScore: 85,
         cvScore: 88,
         learningPath: ["Docker for Beginners", "Advanced Node.js"],
         aiInsights: "This is a mock AI analysis generated because USE_MOCK_AI is enabled in development mode."
       };
+      console.log("Mock payload created.");
     } else {
+      console.log("Entering real Gemini AI mode...");
       const ai = getAI();
 
       const prompt = `
@@ -605,20 +613,27 @@ ${text}
       });
 
       data = JSON.parse(response.text);
+      console.log("Gemini payload created.");
     }
 
-    const newAnalysis = new CVAnalysis({
-      userId: req.user.uid,
-      originalText: text,
-      ...data,
-    });
+    try {
+      const newAnalysis = new CVAnalysis({
+        userId: req.user.uid,
+        originalText: text,
+        ...data,
+      });
 
-    await newAnalysis.save();
+      await newAnalysis.save();
+      console.log("MongoDB save SUCCESS.");
 
-    return res.json({
-      ...data,
-      _id: newAnalysis._id,
-    });
+      return res.json({
+        ...data,
+        _id: newAnalysis._id,
+      });
+    } catch (saveError) {
+      console.error("MongoDB save FAILURE:", saveError);
+      throw saveError; // Re-throw to be caught by the outer catch
+    }
   } catch (error) {
     console.error("CV Analysis Error:", error);
 
