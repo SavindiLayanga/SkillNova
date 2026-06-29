@@ -526,39 +526,86 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
 
     if (process.env.NODE_ENV !== "production" && process.env.USE_MOCK_AI === "true") {
       console.log("Entering mock AI mode...");
+
+      const userProfile = await User.findOne({ uid: req.user.uid });
+      const targetRole = userProfile?.targetRole || "Software Developer";
+
+      const roleSkillsMap = {
+        "frontend": ["javascript", "react", "html", "css", "vue", "angular", "tailwind", "typescript", "figma"],
+        "backend": ["node.js", "python", "java", "mongodb", "sql", "postgres", "docker", "redis", "express", "go", "c#"],
+        "full stack": ["javascript", "react", "node.js", "mongodb", "express", "git", "html", "css", "docker", "typescript", "postgres"],
+        "data": ["python", "r", "sql", "machine learning", "pandas", "numpy", "tensorflow", "tableau", "power bi"],
+        "devops": ["docker", "kubernetes", "aws", "linux", "ci/cd", "jenkins", "terraform", "bash", "python"],
+        "default": ["javascript", "python", "java", "sql", "git", "communication", "problem solving", "agile", "react", "node.js"]
+      };
+
+      const lowerRole = targetRole.toLowerCase();
+      const matchedKey = Object.keys(roleSkillsMap).find(k => lowerRole.includes(k));
+      const requiredSkills = matchedKey ? roleSkillsMap[matchedKey] : roleSkillsMap["default"];
+
+      const lowerText = text.toLowerCase();
+      
+      const allPossibleSkills = [
+        "javascript", "python", "java", "c++", "c#", "ruby", "php", "go", "rust", "typescript",
+        "react", "angular", "vue", "svelte", "html", "css", "tailwind", "bootstrap",
+        "node.js", "express", "django", "flask", "spring", "asp.net",
+        "sql", "mysql", "postgresql", "mongodb", "redis", "firebase",
+        "docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "jenkins", "git", "terraform", "linux", "bash",
+        "machine learning", "tensorflow", "pytorch", "pandas", "numpy", "r", "tableau", "power bi",
+        "communication", "leadership", "problem solving", "teamwork", "agile", "scrum", "figma"
+      ];
+      
+      const extractedSkills = allPossibleSkills.filter(skill => {
+        try {
+          // Escape special regex characters
+          const escapedSkill = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(?:^|\\W)${escapedSkill}(?:$|\\W)`, 'i');
+          return regex.test(lowerText);
+        } catch (err) {
+          console.error("Regex error for skill:", skill, err);
+          return false;
+        }
+      });
+      
+      const matchedSkills = requiredSkills.filter(skill => extractedSkills.includes(skill));
+      
+      const calculatedMatchPercentage = requiredSkills.length > 0 
+        ? Math.round((matchedSkills.length / requiredSkills.length) * 100) 
+        : 0;
+      
+      const missingSkills = requiredSkills.filter(skill => !extractedSkills.includes(skill));
+      const weakAreas = missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1));
+
+      console.log("extractedSkills:", extractedSkills);
+      console.log("requiredSkills:", requiredSkills);
+      console.log("matchedSkills:", matchedSkills);
+      console.log("calculatedMatchPercentage:", calculatedMatchPercentage);
+
       data = {
-        name: "Mock User (Development)",
-        email: "mock.user@example.com",
-        technicalSkills: [
-          { name: "JavaScript", level: "Expert" },
-          { name: "React", level: "Advanced" }
-        ],
-        softSkills: [
-          { name: "Communication", level: "Advanced" }
-        ],
-        skills: [
-          { name: "JavaScript", level: "Expert" },
-          { name: "React", level: "Advanced" },
-          { name: "Communication", level: "Advanced" }
-        ],
+        name: userProfile?.name || "Mock User (Development)",
+        email: userProfile?.email || "mock.user@example.com",
+        technicalSkills: extractedSkills.map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), level: "Intermediate" })),
+        softSkills: [],
+        skills: extractedSkills.map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), level: "Intermediate" })),
         education: [
           { institution: "Mock University", degree: "BSc Computer Science", year: "2022" }
         ],
         experience: [
-          { company: "MockTech Inc", role: "Frontend Developer", duration: "2021-2023", description: "Developed web applications." }
+          { company: "MockTech Inc", role: "Developer", duration: "2021-2023", description: "Developed applications." }
         ],
         projects: [
-          { name: "E-Commerce App", description: "Built a full-stack e-commerce app.", technologies: ["React", "Node.js"] }
+          { name: "Mock Project", description: "Built a project.", technologies: extractedSkills.slice(0, 3) }
         ],
-        certifications: ["AWS Certified Developer"],
-        targetRole: "Full Stack Developer",
-        careerRecommendations: ["Senior Frontend Developer", "Backend Developer"],
-        missingSkills: ["Docker", "Kubernetes"],
+        certifications: ["Mock Certification"],
+        targetRole: targetRole,
+        careerRecommendations: [targetRole, "Senior " + targetRole],
+        missingSkills: missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
         jobMatches: [],
-        skillMatchScore: 85,
-        cvScore: 88,
-        learningPath: ["Docker for Beginners", "Advanced Node.js"],
-        aiInsights: "This is a mock AI analysis generated because USE_MOCK_AI is enabled in development mode."
+        skillMatchScore: calculatedMatchPercentage,
+        cvScore: Math.min(100, calculatedMatchPercentage + 10),
+        learningPath: missingSkills.map(s => `Learn ${s.charAt(0).toUpperCase() + s.slice(1)}`),
+        weakAreas: weakAreas,
+        aiInsights: `Mock AI: Analyzed CV against ${targetRole}. Found ${extractedSkills.length} skills. Match is ${calculatedMatchPercentage}%.`
       };
       console.log("Mock payload created.");
     } else {
