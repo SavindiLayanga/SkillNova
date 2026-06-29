@@ -33,3 +33,12 @@ export async function deleteManualAnalysis(id, token) {
   if (!res.ok) throw new Error("Failed to delete Manual analysis");
   return res.json();
 }
+
+export async function archiveActiveAnalysis(token) {
+  const res = await fetch(`${API_BASE_URL}/analyses/archive-active`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to archive active analysis");
+  return res.json();
+}
