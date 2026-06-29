@@ -700,8 +700,12 @@ ${text}
     }
 
     try {
+      await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+      await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+
       const newAnalysis = new CVAnalysis({
         userId: req.user.uid,
+        isActive: true,
         originalText: text,
         ...data,
       });
@@ -792,8 +796,16 @@ Return ONLY valid JSON:
 
     const data = JSON.parse(response.text);
 
+    if (Object.keys(data).length === 0) {
+      throw new Error("Failed to extract data or invalid format.");
+    }
+
+    await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+    await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+
     const newAnalysis = new ManualAnalysis({
       userId: req.user.uid,
+      isActive: true,
       name,
       skills: Array.isArray(skills)
         ? skills
@@ -813,6 +825,18 @@ Return ONLY valid JSON:
   } catch (error) {
     console.error("Manual Analysis Error:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Archive Active Analysis
+app.post("/api/user/analyses/archive-active", verifyAuth, async (req, res) => {
+  try {
+    await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+    await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+    res.json({ message: "Active analysis archived." });
+  } catch (error) {
+    console.error("Archive Analysis Error:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -1247,11 +1271,11 @@ app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
 
-    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({
+    const latestCV = await CVAnalysis.findOne({ userId: uid, isActive: true }).sort({
       createdAt: -1,
     });
 
-    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({
+    const latestManual = await ManualAnalysis.findOne({ userId: uid, isActive: true }).sort({
       createdAt: -1,
     });
 
@@ -1323,11 +1347,11 @@ app.get("/api/dashboard/latest-analysis", verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
 
-    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({
+    const latestCV = await CVAnalysis.findOne({ userId: uid, isActive: true }).sort({
       createdAt: -1,
     });
 
-    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({
+    const latestManual = await ManualAnalysis.findOne({ userId: uid, isActive: true }).sort({
       createdAt: -1,
     });
 
@@ -1352,11 +1376,11 @@ app.get("/api/dashboard/skill-gaps", verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
 
-    const latestCV = await CVAnalysis.findOne({ userId: uid }).sort({
+    const latestCV = await CVAnalysis.findOne({ userId: uid, isActive: true }).sort({
       createdAt: -1,
     });
 
-    const latestManual = await ManualAnalysis.findOne({ userId: uid }).sort({
+    const latestManual = await ManualAnalysis.findOne({ userId: uid, isActive: true }).sort({
       createdAt: -1,
     });
 
