@@ -524,8 +524,9 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
 
     let data;
 
+    // USE_MOCK_AI enabled because API quota exceeded
     if (process.env.NODE_ENV !== "production" && process.env.USE_MOCK_AI === "true") {
-      console.log("Entering mock AI mode...");
+      console.log("Entering mock AI mode (Quota Exceeded Fallback)...");
 
       const userProfile = await User.findOne({ uid: req.user.uid });
       const targetRole = userProfile?.targetRole || "Software Developer";
@@ -586,30 +587,43 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       }
 
       data = {
-        name: userProfile?.name || "Mock User (Development)",
-        email: userProfile?.email || "mock.user@example.com",
-        phone: "+1 234 567 890",
+        name: userProfile?.name || "Kavishka Prabashara",
+        email: userProfile?.email || "kavishkaprabashara@gmail.com",
+        phone: "+94 71 599 7463",
+        targetRole: targetRole,
+        professionalSummary: "I am a Frontend Developer with experience in building responsive and user-friendly web applications using JavaScript, React, and modern UI frameworks.",
         isITRelated: true,
         primaryRole: { role: targetRole, confidence: 95, reason: "Matches target role directly." },
         topRoles: [
           { role: targetRole, confidence: 95, reason: "Matches target role." },
           { role: "Software Engineer", confidence: 80, reason: "General programming skills." }
         ],
-        technicalSkills: extractedSkills.map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), level: "Intermediate" })),
-        softSkills: [],
-        skills: extractedSkills.map(s => ({ name: s.charAt(0).toUpperCase() + s.slice(1), level: "Intermediate" })),
+        technicalSkills: extractedSkills.slice(0, 5).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+        softSkills: ["Management Skills", "Creativity", "Leadership", "Critical Thinking"],
+        programmingLanguages: ["JavaScript", "Java"],
+        frameworks: ["React", "Node.js", "Spring Boot", "Tailwind CSS"],
+        databases: ["MySQL", "MongoDB"],
+        tools: ["Git", "Figma"],
+        cloudTechnologies: [],
+        languages: ["Sinhala", "English"],
+        achievements: [],
+        extracted: {
+          experience: [
+            { company: "Studio MI (Pvt) Ltd", jobTitle: "Web Developer - Internship", startDate: "2025", endDate: "2026", description: "Developed versatile frontend designs using Tailwind CSS and React." }
+          ],
+          education: [
+            { institution: "Institute of Software Engineering", degree: "Higher National Diploma", fieldOfStudy: "Computer Science", startYear: "2023", endYear: "2025" }
+          ],
+          projects: [
+            { projectName: "Wadaaz Task Management", description: "Task management web app.", technologies: ["React", "Node.js"] },
+            { projectName: "Movie Explore Web", description: "App for exploring movies.", technologies: ["JavaScript", "HTML"] }
+          ],
+          certifications: [],
+          skills: extractedSkills
+        },
         strongSkills: extractedSkills.slice(0, 3).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
         weakSkills: weakAreas,
         missingSkills: missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        education: [
-          { institution: "Mock University", degree: "BSc Computer Science", year: "2022" }
-        ],
-        experience: [
-          { company: "MockTech Inc", role: "Developer", duration: "2021-2023", description: "Developed applications." }
-        ],
-        projects: [
-          { name: "Mock Project", description: "Built a project.", technologies: extractedSkills.slice(0, 3) }
-        ],
         certifications: ["Mock Certification"],
         targetRole: targetRole,
         careerRecommendations: [targetRole, "Senior " + targetRole],
