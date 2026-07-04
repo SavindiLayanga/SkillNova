@@ -1,5 +1,5 @@
 import { CheckCircle2, FileText, RotateCcw, UploadCloud, Sparkles, Type, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
@@ -8,6 +8,7 @@ import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import clsx from "../utils/clsx.js";
 import { archiveActiveAnalysis } from "../services/cvAnalysisService.js";
+import CVVerificationForm from "../components/CVVerificationForm.jsx";
 import useAuth from "../hooks/useAuth.js";
 
 const checklist = [
@@ -31,6 +32,14 @@ export default function CVUpload() {
   const [manualEducation, setManualEducation] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [showVerificationForm, setShowVerificationForm] = useState(false);
+
+  // Set showVerificationForm when analysis becomes available
+  useEffect(() => {
+    if (hasAnalysis) {
+      setShowVerificationForm(true);
+    }
+  }, [hasAnalysis]);
 
   const isProcessing = status === "uploading" || status === "analyzing";
 
@@ -77,6 +86,14 @@ export default function CVUpload() {
       manualEducation.trim()
     );
   }
+
+  const handleSaveVerifiedData = async (verifiedData) => {
+    console.log("Verified Data to save:", verifiedData);
+    setToastMessage("CV profile saved successfully!");
+    setShowVerificationForm(false);
+    setTimeout(() => setToastMessage(""), 3000);
+    // TODO: Connect this to backend API when ready
+  };
 
   return (
     <div className="space-y-6">
@@ -324,6 +341,16 @@ export default function CVUpload() {
           )}
         </Card>
       </section>
+
+      {hasAnalysis && showVerificationForm && (
+        <section className="mt-8">
+          <CVVerificationForm 
+            initialData={analysis} 
+            onSave={handleSaveVerifiedData}
+            onCancel={() => setShowVerificationForm(false)}
+          />
+        </section>
+      )}
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
