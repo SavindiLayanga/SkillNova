@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Eye, Edit2, Ban, Trash2, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import AdminCard from "../../components/admin/AdminCard.jsx";
@@ -18,13 +18,15 @@ function useDebounce(value, delay) {
 
 export default function AdminUsers() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
   
   const debouncedSearch = useDebounce(searchTerm, 400);
 
@@ -133,7 +135,14 @@ export default function AdminUsers() {
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setSearchParams(prev => {
+                const newParams = new URLSearchParams(prev);
+                newParams.set("status", e.target.value);
+                return newParams;
+              });
+            }}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-100"
           >
             <option value="all">All Status</option>
