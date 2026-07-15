@@ -1,4 +1,5 @@
 import { getFirebaseAuth } from '../firebase.js';
+import { User } from '../models/User.js';
 
 export const verifyAuth = async (req, res, next) => {
   try {
@@ -17,6 +18,18 @@ export const verifyAuth = async (req, res, next) => {
     // this will fail. For local dev without proper service accounts, one might mock this.
     try {
       const decodedToken = await getFirebaseAuth().verifyIdToken(token);
+      
+      // Check MongoDB status
+      const dbUser = await User.findOne({ uid: decodedToken.uid });
+      if (dbUser) {
+        if (dbUser.isDeleted) {
+          return res.status(403).json({ error: 'Your account has been deleted.' });
+        }
+        if (!dbUser.isActive) {
+          return res.status(403).json({ error: 'Your account has been disabled by an administrator.' });
+        }
+      }
+
       req.user = {
         uid: decodedToken.uid,
         email: decodedToken.email,

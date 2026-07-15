@@ -15,6 +15,7 @@ import AdminJobs from "./pages/admin/AdminJobs.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import AdminUserDetails from "./pages/admin/AdminUserDetails.jsx";
 import CVUpload from "./pages/CVUpload.jsx";
 import CVAnalysisHistory from "./pages/CVAnalysisHistory.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -43,6 +44,7 @@ export default function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/users/:id" element={<AdminUserDetails />} />
           <Route path="/admin/cv-reviews" element={<AdminCvReviews />} />
           <Route path="/admin/jobs" element={<AdminJobs />} />
           <Route path="/admin/courses" element={<AdminCourses />} />
