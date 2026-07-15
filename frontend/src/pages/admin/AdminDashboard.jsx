@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   BookOpen,
   BriefcaseBusiness,
@@ -7,11 +9,40 @@ import {
 } from "lucide-react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
-import { adminActivity, adminStats } from "../../data/adminDummyData.js";
+import { adminActivity } from "../../data/adminDummyData.js";
+import { fetchDashboardStats } from "../../services/adminDashboardService.js";
 
 const statIcons = [Users, FileText, ClipboardCheck, BriefcaseBusiness, BookOpen];
+const statLinks = ["/admin/users", "/admin/cv-reviews", "/admin/jobs", "/admin/courses", "/admin/skills"];
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await fetchDashboardStats();
+        setStats(data);
+      } catch (err) {
+        console.error("Failed to fetch stats", err);
+        setError("Failed to load live statistics. Displaying fallback data.");
+        // Fallback data so the cards are always visible
+        setStats([
+          { label: "Total Users", value: 0, change: "Data unavailable" },
+          { label: "Total CV Uploads", value: 0, change: "Data unavailable" },
+          { label: "Total Jobs", value: 0, change: "Data unavailable" },
+          { label: "Total Courses", value: 0, change: "Data unavailable" },
+          { label: "Total Skills", value: 0, change: "Data unavailable" }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, []);
+
   return (
     <div>
       <AdminPageHeader
@@ -19,30 +50,43 @@ export default function AdminDashboard() {
         title="Admin Dashboard"
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {adminStats.map((stat, index) => {
-          const Icon = statIcons[index];
+      {error && (
+        <div className="mb-6 rounded-lg bg-rose-50 p-4 text-sm font-medium text-rose-700">
+          {error}
+        </div>
+      )}
 
-          return (
-            <AdminCard className="min-h-36" key={stat.label}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-500">
-                    {stat.label}
-                  </p>
-                  <p className="mt-3 text-3xl font-bold text-slate-950">
-                    {stat.value}
-                  </p>
-                </div>
-                <span className="rounded-lg bg-primary-50 p-2 text-primary-600">
-                  <Icon className="h-5 w-5" />
-                </span>
-              </div>
-              <p className="mt-4 text-sm text-slate-500">{stat.change}</p>
-            </AdminCard>
-          );
-        })}
-      </section>
+      {loading ? (
+        <div className="py-10 text-center text-slate-500">Loading statistics...</div>
+      ) : (
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {stats.map((stat, index) => {
+            const Icon = statIcons[index % statIcons.length];
+            const linkTarget = statLinks[index % statLinks.length];
+
+            return (
+              <Link to={linkTarget} key={stat.label} className="focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-2xl block transition-transform hover:-translate-y-1">
+                <AdminCard className="min-h-36 h-full hover:bg-slate-50 cursor-pointer transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">
+                        {stat.label}
+                      </p>
+                      <p className="mt-3 text-3xl font-bold text-slate-950">
+                        {stat.value}
+                      </p>
+                    </div>
+                    <span className="rounded-lg bg-primary-50 p-2 text-primary-600">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                  </div>
+                  <p className="mt-4 text-sm text-slate-500">{stat.change}</p>
+                </AdminCard>
+              </Link>
+            );
+          })}
+        </section>
+      )}
 
       <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_0.8fr]">
         <AdminCard>

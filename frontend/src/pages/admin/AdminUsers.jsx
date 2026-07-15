@@ -1,111 +1,324 @@
-import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
-import AdminCard from "../../components/admin/AdminCard.jsx";
+import { useEffect, useState, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Eye, Edit2, Ban, Trash2, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
+import AdminCard from "../../components/admin/AdminCard.jsx";
 import Button from "../../components/ui/Button.jsx";
-import { adminUsers } from "../../data/adminDummyData.js";
+import { fetchAllUsers, updateUserStatus, deleteUser, updateUser } from "../../services/adminUsersService.js";
+
+// Debounce hook
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(adminUsers);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("All");
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  
+  const debouncedSearch = useDebounce(searchTerm, 400);
 
-  const filteredUsers = useMemo(
-    () =>
-      users.filter((user) => {
-        const matchesQuery = `${user.name} ${user.email} ${user.targetRole}`
-          .toLowerCase()
-          .includes(query.toLowerCase());
-        const matchesStatus = status === "All" || user.status === status;
+  // Modals state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [editFormData, setEditFormData] = useState({ name: "", careerGoal: "", targetRole: "" });
 
-        return matchesQuery && matchesStatus;
-      }),
-    [query, status, users]
-  );
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchAllUsers({
+        page,
+        limit: 10,
+        search: debouncedSearch,
+        status: statusFilter
+      });
+      setUsers(data.users);
+      setTotal(data.pagination.total);
+      setTotalPages(data.pagination.totalPages);
+    } catch (error) {
+      console.error("Failed to load users:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, debouncedSearch, statusFilter]);
 
-  function toggleStatus(id) {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === id
-          ? { ...user, status: user.status === "Active" ? "Blocked" : "Active" }
-          : user
-      )
-    );
-  }
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  const handleToggleStatus = async (user) => {
+    if (!window.confirm(`Are you sure you want to ${user.isActive ? 'disable' : 'enable'} ${user.name}?`)) return;
+    setIsActionLoading(true);
+    try {
+      await updateUserStatus(user._id, !user.isActive);
+      loadUsers();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleDelete = async (user) => {
+    if (!window.confirm(`WARNING: Are you sure you want to delete ${user.name}? This action cannot be fully undone.`)) return;
+    setIsActionLoading(true);
+    try {
+      await deleteUser(user._id);
+      loadUsers();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const openEditModal = (user) => {
+    setSelectedUser(user);
+    setEditFormData({
+      name: user.name || "",
+      careerGoal: user.careerGoal || "",
+      targetRole: user.targetRole || ""
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsActionLoading(true);
+    try {
+      await updateUser(selectedUser._id, editFormData);
+      setIsEditModalOpen(false);
+      loadUsers();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   return (
     <div>
       <AdminPageHeader
-        description="Search student accounts and manage active or blocked access status."
-        title="Users"
+        title="User Management"
+        description={`Manage ${total} registered students on the platform.`}
       />
 
-      <AdminCard>
-        <div className="grid gap-3 md:grid-cols-[1fr_180px]">
-          <label className="flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
-            <Search className="h-4 w-4 text-slate-400" />
+      <AdminCard className="mt-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full text-sm outline-none"
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search users by name, email, or role"
-              value={query}
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-100"
             />
-          </label>
+          </div>
           <select
-            className="rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
-            onChange={(event) => setStatus(event.target.value)}
-            value={status}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-100"
           >
-            <option>All</option>
-            <option>Active</option>
-            <option>Blocked</option>
+            <option value="all">All Status</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
           </select>
         </div>
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.12em] text-slate-500">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-slate-600">
+            <thead className="border-b border-slate-100 bg-slate-50 text-slate-500">
               <tr>
-                <th className="py-3">Student</th>
-                <th className="py-3">Target role</th>
-                <th className="py-3">Joined</th>
-                <th className="py-3">Status</th>
-                <th className="py-3 text-right">Action</th>
+                <th className="px-4 py-3 font-medium">User</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Role</th>
+                <th className="px-4 py-3 font-medium">Career Goal</th>
+                <th className="px-4 py-3 font-medium">Joined Date</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td className="py-4">
-                    <p className="font-semibold text-slate-950">{user.name}</p>
-                    <p className="text-slate-500">{user.email}</p>
-                  </td>
-                  <td className="py-4 text-slate-600">{user.targetRole}</td>
-                  <td className="py-4 text-slate-600">{user.joined}</td>
-                  <td className="py-4">
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      user.status === "Active"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-red-50 text-red-700"
-                    }`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="py-4 text-right">
-                    <Button
-                      onClick={() => toggleStatus(user.id)}
-                      size="sm"
-                      variant={user.status === "Active" ? "secondary" : "primary"}
-                    >
-                      {user.status === "Active" ? "Block" : "Unblock"}
-                    </Button>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="py-10 text-center text-slate-500">
+                    Loading users...
                   </td>
                 </tr>
-              ))}
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-10 text-center text-slate-500">
+                    No users found.
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user._id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-lg font-bold text-primary-700">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-medium text-slate-900">{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">{user.email}</td>
+                    <td className="px-4 py-4 capitalize">{user.role}</td>
+                    <td className="px-4 py-4">{user.careerGoal || "-"}</td>
+                    <td className="px-4 py-4">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          user.isActive
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-rose-100 text-rose-800"
+                        }`}
+                      >
+                        {user.isActive ? "Active" : "Disabled"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/admin/users/${user._id}`)}
+                          className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                          title="View Profile"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600"
+                          title="Edit User"
+                          disabled={isActionLoading}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(user)}
+                          className={`rounded p-1.5 ${
+                            user.isActive
+                              ? "text-amber-400 hover:bg-amber-50 hover:text-amber-600"
+                              : "text-emerald-400 hover:bg-emerald-50 hover:text-emerald-600"
+                          }`}
+                          title={user.isActive ? "Disable User" : "Enable User"}
+                          disabled={isActionLoading}
+                        >
+                          {user.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user)}
+                          className="rounded p-1.5 text-rose-400 hover:bg-rose-50 hover:text-rose-600"
+                          title="Delete User"
+                          disabled={isActionLoading}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+            <p className="text-sm text-slate-500">
+              Showing <span className="font-medium">{(page - 1) * 10 + 1}</span> to{" "}
+              <span className="font-medium">{Math.min(page * 10, total)}</span> of{" "}
+              <span className="font-medium">{total}</span> users
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <span className="text-sm font-medium text-slate-700">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
       </AdminCard>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <AdminCard className="w-full max-w-md">
+            <h2 className="mb-4 text-xl font-bold text-slate-900">Edit User</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Name</span>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  required
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Target Role</span>
+                <input
+                  type="text"
+                  value={editFormData.targetRole}
+                  onChange={(e) => setEditFormData({ ...editFormData, targetRole: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Career Goal</span>
+                <textarea
+                  value={editFormData.careerGoal}
+                  onChange={(e) => setEditFormData({ ...editFormData, careerGoal: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  rows={3}
+                />
+              </label>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isActionLoading}>
+                  {isActionLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </AdminCard>
+        </div>
+      )}
     </div>
   );
 }
