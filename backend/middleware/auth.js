@@ -32,3 +32,44 @@ export const verifyAuth = async (req, res, next) => {
     res.status(500).json({ error: 'Internal server error during authentication' });
   }
 };
+
+import jwt from 'jsonwebtoken';
+
+export const authenticateAdmin = async (req, res, next) => {
+  try {
+    // CSRF Protection: Verify Origin/Referer for state-changing requests
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const origin = req.headers.origin;
+      const expectedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+      
+      // Strict origin validation
+      if (origin !== expectedOrigin) {
+        console.warn(`CSRF attempt detected from origin: ${origin}`);
+        return res.status(403).json({ error: 'Forbidden: Invalid Origin' });
+      }
+    }
+
+    const token = req.cookies?.admin_token;
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized: Missing token' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'skillnova_fallback_jwt_secret_dev');
+      req.user = decoded;
+      
+      if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Admin access required.' });
+      }
+
+      next();
+    } catch (err) {
+      console.error('Error verifying Admin JWT token:', err.message);
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+  } catch (error) {
+    console.error('Admin Auth middleware error:', error);
+    res.status(500).json({ error: 'Internal server error during authentication' });
+  }
+};

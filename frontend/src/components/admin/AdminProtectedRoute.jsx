@@ -1,16 +1,15 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import useAdminAuth from "../../hooks/useAdminAuth.js";
 
-export default function AdminProtectedRoute({ allowDefaultPassword = false }) {
-  const { isDefaultPassword, isLoggedIn } = useAdminAuth();
-  const location = useLocation();
+export default function AdminProtectedRoute() {
+  const { isLoggedIn, loading } = useAdminAuth();
 
-  if (!isLoggedIn) {
-    return <Navigate replace state={{ from: location }} to="/admin/login" />;
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Loading admin session...</div>;
   }
 
-  if (isDefaultPassword && !allowDefaultPassword) {
-    return <Navigate replace to="/admin/change-password" />;
+  if (!isLoggedIn) {
+    return <Navigate replace to="/admin/login" />;
   }
 
   return <Outlet />;

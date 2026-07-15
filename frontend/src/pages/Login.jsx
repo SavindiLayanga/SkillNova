@@ -94,6 +94,11 @@ export default function Login() {
           Create account
         </Link>
       </p>
+      <div className="mt-4 text-center">
+        <Link className="text-xs text-ink-400 hover:text-ink-600" to="/admin/login">
+          Administrator Sign In
+        </Link>
+      </div>
     </Card>
   );
 }

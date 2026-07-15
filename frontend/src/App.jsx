@@ -2,12 +2,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute.jsx";
 import AdminPublicRoute from "./components/admin/AdminPublicRoute.jsx";
 import AdminLayout from "./components/admin/AdminLayout.jsx";
+import AdminAuthLayout from "./components/admin/AdminAuthLayout.jsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
 import PublicOnlyRoute from "./components/auth/PublicOnlyRoute.jsx";
 import RequireCVRoute from "./components/auth/RequireCVRoute.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
 import AuthLayout from "./components/layout/AuthLayout.jsx";
-import AdminChangePassword from "./pages/admin/AdminChangePassword.jsx";
 import AdminCourses from "./pages/admin/AdminCourses.jsx";
 import AdminCvReviews from "./pages/admin/AdminCvReviews.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
@@ -34,11 +34,9 @@ export default function App() {
   return (
     <Routes>
       <Route element={<AdminPublicRoute />}>
-        <Route path="/admin/login" element={<AdminLogin />} />
-      </Route>
-
-      <Route element={<AdminProtectedRoute allowDefaultPassword />}>
-        <Route path="/admin/change-password" element={<AdminChangePassword />} />
+        <Route element={<AdminAuthLayout />}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+        </Route>
       </Route>
 
       <Route element={<AdminProtectedRoute />}>

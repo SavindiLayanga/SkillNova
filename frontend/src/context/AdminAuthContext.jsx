@@ -1,118 +1,54 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminAuthContext } from "./adminAuthContextValue.js";
-
-const ADMIN_USERNAME = "admin";
-const DEFAULT_PASSWORD = "";
-const ADMIN_PASSWORD_KEY = "skillnova_admin_password";
-const ADMIN_PASSWORD_CHANGED_KEY = "skillnova_admin_password_changed";
-const ADMIN_SESSION_KEY = "skillnova_admin_session";
-
-function readAdminPassword() {
-  return localStorage.getItem(ADMIN_PASSWORD_KEY) ?? DEFAULT_PASSWORD;
-}
-
-function readPasswordChanged() {
-  const storedFlag = localStorage.getItem(ADMIN_PASSWORD_CHANGED_KEY);
-
-  if (storedFlag !== null) {
-    return storedFlag === "true";
-  }
-
-  const storedPassword = localStorage.getItem(ADMIN_PASSWORD_KEY);
-  return Boolean(storedPassword && storedPassword !== DEFAULT_PASSWORD);
-}
-
-function readAdminSession() {
-  try {
-    const session = localStorage.getItem(ADMIN_SESSION_KEY);
-    return session ? JSON.parse(session) : null;
-  } catch {
-    return null;
-  }
-}
-
-function isStrongPassword(password) {
-  return (
-    password.length >= 8 &&
-    /[A-Z]/.test(password) &&
-    /[a-z]/.test(password) &&
-    /[0-9]/.test(password) &&
-    /[^A-Za-z0-9]/.test(password)
-  );
-}
+import { adminLoginApi, adminLogoutApi, getAdminMeApi } from "../services/adminAuthService.js";
 
 export function AdminAuthProvider({ children }) {
-  const [adminPassword, setAdminPassword] = useState(() => readAdminPassword());
-  const [passwordChanged, setPasswordChanged] = useState(() =>
-    readPasswordChanged()
-  );
-  const [session, setSession] = useState(() => readAdminSession());
+  const [adminUser, setAdminUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function verifySession() {
+      try {
+        const user = await getAdminMeApi();
+        setAdminUser(user);
+      } catch (error) {
+        // Expected when no cookie or cookie expired
+        setAdminUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    verifySession();
+  }, []);
 
   const value = useMemo(() => {
-    const isLoggedIn = session?.username === ADMIN_USERNAME;
-    const isDefaultPassword = !passwordChanged;
+    const isLoggedIn = !!adminUser;
 
-    function login(username, password) {
-      if (username.trim() !== ADMIN_USERNAME || password !== adminPassword) {
-        throw new Error("Invalid admin username or password.");
-      }
-
-      const nextSession = {
-        username: ADMIN_USERNAME,
-        loggedInAt: new Date().toISOString(),
-      };
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(nextSession));
-      setSession(nextSession);
-
-      return {
-        isDefaultPassword: !passwordChanged,
-      };
+    async function login(username, password) {
+      const data = await adminLoginApi(username, password);
+      setAdminUser(data.user);
+      return data;
     }
 
-    function changePassword(currentPassword, newPassword, confirmPassword) {
-      if (currentPassword !== adminPassword) {
-        throw new Error("Current password is incorrect.");
+    async function logout() {
+      try {
+        await adminLogoutApi();
+      } catch (e) {
+        console.error("Logout error", e);
+      } finally {
+        setAdminUser(null);
       }
-
-      if (!isStrongPassword(newPassword)) {
-        throw new Error(
-          "New password must be at least 8 characters and include uppercase, lowercase, number, and special character."
-        );
-      }
-
-      if (newPassword !== confirmPassword) {
-        throw new Error("Confirm password does not match.");
-      }
-
-      localStorage.setItem(ADMIN_PASSWORD_KEY, newPassword);
-      localStorage.setItem(ADMIN_PASSWORD_CHANGED_KEY, "true");
-      setAdminPassword(newPassword);
-      setPasswordChanged(true);
-
-      const nextSession = {
-        username: ADMIN_USERNAME,
-        loggedInAt: new Date().toISOString(),
-      };
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(nextSession));
-      setSession(nextSession);
-    }
-
-    function logout() {
-      localStorage.removeItem(ADMIN_SESSION_KEY);
-      setSession(null);
     }
 
     return {
-      adminUsername: ADMIN_USERNAME,
-      changePassword,
-      isDefaultPassword,
-      passwordChanged,
+      adminUser,
+      loading,
       isLoggedIn,
       login,
       logout,
-      session,
     };
-  }, [adminPassword, passwordChanged, session]);
+  }, [adminUser, loading]);
 
   return (
     <AdminAuthContext.Provider value={value}>
