@@ -61,7 +61,11 @@ export async function getJobs(req, res) {
 
 export async function createJob(req, res) {
   try {
-    const { title, company, description, skills, category, jobType } = req.body;
+    const { 
+      title, company, description, skills, category, jobType, 
+      contactEmail, companyLogo, experienceRequired, salaryRange, 
+      numberOfOpenings, applicationDeadline, source, status, location
+    } = req.body;
     
     if (!title || !company) {
       return res.status(400).json({ error: 'Title and company are required.' });
@@ -70,12 +74,19 @@ export async function createJob(req, res) {
     const newJob = new Job({
       title,
       company,
+      contactEmail,
+      companyLogo,
       description: description || '',
+      location: location || '',
       skills: Array.isArray(skills) ? skills : (typeof skills === 'string' ? skills.split(',').map(s=>s.trim()) : []),
       category: category || '',
       jobType: jobType || '',
-      source: 'SkillNova Admin',
-      status: 'active',
+      experienceRequired,
+      salaryRange,
+      numberOfOpenings,
+      applicationDeadline,
+      source: source || 'SkillNova Verified Vacancy',
+      status: status || 'Pending Approval',
       publishedAt: new Date()
     });
 
@@ -92,7 +103,11 @@ export async function updateJob(req, res) {
     const { id } = req.params;
     const updates = req.body;
     
-    const allowedUpdates = ['title', 'company', 'description', 'skills', 'category', 'jobType', 'status'];
+    const allowedUpdates = [
+      'title', 'company', 'description', 'skills', 'category', 'jobType', 'status',
+      'contactEmail', 'companyLogo', 'experienceRequired', 'salaryRange', 
+      'numberOfOpenings', 'applicationDeadline', 'source', 'location'
+    ];
     const filteredUpdates = Object.keys(updates)
       .filter(key => allowedUpdates.includes(key))
       .reduce((obj, key) => {

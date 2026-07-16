@@ -70,15 +70,15 @@ export async function importJobsFromWeWorkRemotely() {
         company,
         description,
         category,
-        source: 'We Work Remotely',
+        source: 'RSS Imported Job',
         sourceUrl: item.link,
         externalId,
         publishedAt: item.isoDate ? new Date(item.isoDate) : new Date(),
         importedAt: new Date(),
-        status: 'active',
+        status: 'Active',
       };
 
-      const filter = { source: 'We Work Remotely', externalId };
+      const filter = { source: 'RSS Imported Job', externalId };
 
       const updateOp = {
         $set: jobData,

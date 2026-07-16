@@ -4,20 +4,26 @@ const jobSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     company: { type: String, required: true },
+    contactEmail: { type: String },
+    companyLogo: { type: String },
     description: { type: String },
     location: { type: String },
-    category: { type: String },
-    jobType: { type: String },
+    category: { type: String }, // Used for Industry
+    jobType: { type: String }, // Used for Employment Type
+    experienceRequired: { type: String },
+    salaryRange: { type: String },
+    numberOfOpenings: { type: Number },
+    applicationDeadline: { type: Date },
     skills: { type: [String], default: [] },
-    source: { type: String, required: true, default: "SkillNova Admin" },
+    source: { type: String, required: true, default: "SkillNova Verified Vacancy" },
     sourceUrl: { type: String },
     externalId: { type: String },
     publishedAt: { type: Date },
     importedAt: { type: Date },
     status: { 
       type: String, 
-      enum: ["active", "inactive", "archived"], 
-      default: "active" 
+      enum: ["active", "inactive", "archived", "Pending Approval", "Active", "Closed", "Expired"], 
+      default: "Pending Approval" 
     },
   },
   { timestamps: true }
