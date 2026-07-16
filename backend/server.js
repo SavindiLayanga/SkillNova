@@ -40,6 +40,7 @@ function getDeduplicationKey(test) {
 import adminAuthRoutes from './routes/adminAuthRoutes.js';
 import adminUsersRoutes from './routes/adminUsersRoutes.js';
 import adminDashboardRoutes from './routes/adminDashboardRoutes.js';
+import adminJobsRoutes from './routes/adminJobsRoutes.js';
 
 import cookieParser from 'cookie-parser';
 
@@ -58,6 +59,7 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use('/api/admin', adminAuthRoutes);
 app.use('/api/admin/users', adminUsersRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/jobs', adminJobsRoutes);
 
 console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 
