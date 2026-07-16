@@ -13,13 +13,30 @@ import { adminActivity } from "../../data/adminDummyData.js";
 import { fetchDashboardStats } from "../../services/adminDashboardService.js";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const userEngagementData = [
+const userEngagementDataWeekly = [
+  { name: 'Mon', 'CV Uploads': 12, 'Progress Tracking': 5 },
+  { name: 'Tue', 'CV Uploads': 15, 'Progress Tracking': 8 },
+  { name: 'Wed', 'CV Uploads': 20, 'Progress Tracking': 12 },
+  { name: 'Thu', 'CV Uploads': 18, 'Progress Tracking': 10 },
+  { name: 'Fri', 'CV Uploads': 25, 'Progress Tracking': 15 },
+  { name: 'Sat', 'CV Uploads': 30, 'Progress Tracking': 22 },
+  { name: 'Sun', 'CV Uploads': 28, 'Progress Tracking': 20 },
+];
+
+const userEngagementDataMonthly = [
   { name: 'Jan', 'CV Uploads': 45, 'Progress Tracking': 20 },
   { name: 'Feb', 'CV Uploads': 55, 'Progress Tracking': 35 },
   { name: 'Mar', 'CV Uploads': 80, 'Progress Tracking': 50 },
   { name: 'Apr', 'CV Uploads': 110, 'Progress Tracking': 70 },
   { name: 'May', 'CV Uploads': 125, 'Progress Tracking': 84 },
   { name: 'Jun', 'CV Uploads': 140, 'Progress Tracking': 105 },
+];
+
+const userEngagementDataYearly = [
+  { name: '2021', 'CV Uploads': 200, 'Progress Tracking': 50 },
+  { name: '2022', 'CV Uploads': 350, 'Progress Tracking': 120 },
+  { name: '2023', 'CV Uploads': 500, 'Progress Tracking': 250 },
+  { name: '2024', 'CV Uploads': 800, 'Progress Tracking': 450 },
 ];
 
 const statIcons = [Users, FileText, ClipboardCheck, BriefcaseBusiness, BookOpen];
@@ -29,6 +46,13 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timeFilter, setTimeFilter] = useState("Monthly");
+
+  const getChartData = () => {
+    if (timeFilter === "Weekly") return userEngagementDataWeekly;
+    if (timeFilter === "Yearly") return userEngagementDataYearly;
+    return userEngagementDataMonthly;
+  };
 
   useEffect(() => {
     async function loadStats() {
@@ -141,12 +165,23 @@ export default function AdminDashboard() {
 
       <section className="mt-8">
         <AdminCard>
-          <h2 className="text-lg font-bold text-slate-950 mb-6">
-            User Engagement Overview
-          </h2>
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-950">
+              User Engagement Overview
+            </h2>
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={userEngagementData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <BarChart data={getChartData()} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
