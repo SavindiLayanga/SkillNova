@@ -23,7 +23,7 @@ const jobSchema = new mongoose.Schema(
     importedAt: { type: Date },
     status: { 
       type: String, 
-      enum: ["active", "inactive", "archived", "Pending Approval", "Active", "Closed", "Expired"], 
+      enum: ["active", "inactive", "archived", "deleted", "Pending Approval", "Active", "Closed", "Expired"], 
       default: "Pending Approval" 
     },
   },
