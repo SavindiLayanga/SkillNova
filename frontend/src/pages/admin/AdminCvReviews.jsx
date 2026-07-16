@@ -1,15 +1,29 @@
-import { useState } from "react";
-import { Eye } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Eye, PieChart as PieChartIcon, List } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import { adminCvReviews } from "../../data/adminDummyData.js";
 
 export default function AdminCvReviews() {
   const [filterStatus, setFilterStatus] = useState("All");
+  const [viewMode, setViewMode] = useState("list");
 
   const filteredReviews = filterStatus === "All"
     ? adminCvReviews
     : adminCvReviews.filter((review) => review.status === filterStatus);
+
+  const chartData = useMemo(() => {
+    const counts = { Pending: 0, Reviewed: 0 };
+    adminCvReviews.forEach(r => {
+      if (counts[r.status] !== undefined) counts[r.status]++;
+    });
+    return [
+      { name: 'Pending', value: counts.Pending, color: '#f59e0b' },
+      { name: 'Reviewed', value: counts.Reviewed, color: '#10b981' }
+    ];
+  }, []);
+
   return (
     <div>
       <AdminPageHeader
@@ -17,19 +31,39 @@ export default function AdminCvReviews() {
         title="CV Reviews"
       />
 
-      <div className="mb-6 flex justify-end">
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-        >
-          <option value="All">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Reviewed">Reviewed</option>
-        </select>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            <List className="h-4 w-4" />
+            List
+          </button>
+          <button
+            onClick={() => setViewMode('chart')}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'chart' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            <PieChartIcon className="h-4 w-4" />
+            Chart
+          </button>
+        </div>
+
+        {viewMode === 'list' && (
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+          >
+            <option value="All">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Reviewed">Reviewed</option>
+          </select>
+        )}
       </div>
 
-      <div className="grid gap-4">
+      {viewMode === 'list' ? (
+        <div className="grid gap-4">
         {filteredReviews.length === 0 ? (
           <div className="py-10 text-center text-slate-500">
             No CVs found for the selected status.
@@ -80,6 +114,31 @@ export default function AdminCvReviews() {
           </AdminCard>
         )))}
       </div>
+      ) : (
+        <div className="h-96 w-full rounded-lg border border-slate-100 bg-slate-50 p-6 flex flex-col items-center justify-center">
+          <h2 className="text-lg font-bold text-slate-900 mb-4">CV Status Distribution</h2>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={80}
+                outerRadius={120}
+                paddingAngle={5}
+                dataKey="value"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <RechartsTooltip cursor={{fill: '#f8fafc'}} />
+              <Legend verticalAlign="bottom" height={36} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
