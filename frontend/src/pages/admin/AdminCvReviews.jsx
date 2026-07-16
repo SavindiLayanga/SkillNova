@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye } from "lucide-react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import { adminCvReviews } from "../../data/adminDummyData.js";
@@ -57,13 +58,23 @@ export default function AdminCvReviews() {
                   {review.summary}
                 </p>
               </div>
-              <div className="rounded-lg bg-slate-50 p-4 text-center lg:w-32">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-                  Score
-                </p>
-                <p className="mt-2 text-3xl font-bold text-primary-600">
-                  {review.score}%
-                </p>
+              <div className="flex flex-col items-center gap-3 rounded-lg bg-slate-50 p-4 lg:w-32">
+                <div className="text-center">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                    Score
+                  </p>
+                  <p className="mt-1 text-3xl font-bold text-primary-600">
+                    {review.score}%
+                  </p>
+                </div>
+                <button
+                  onClick={() => alert(`Viewing document: ${review.fileName}`)}
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-white border border-slate-200 py-1.5 px-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary-600 transition-colors"
+                  title="View CV Document"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>View CV</span>
+                </button>
               </div>
             </div>
           </AdminCard>
