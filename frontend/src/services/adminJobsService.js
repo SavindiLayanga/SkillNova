@@ -31,5 +31,10 @@ export const adminJobsService = {
   importJobs: async () => {
     const response = await api.post('/import');
     return response.data;
+  },
+
+  importLinkedInJobs: async (keyword, location) => {
+    const response = await api.post('/import/linkedin', { keyword, location });
+    return response.data;
   }
 };

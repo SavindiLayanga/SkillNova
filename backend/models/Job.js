@@ -18,6 +18,7 @@ const jobSchema = new mongoose.Schema(
     source: { type: String, required: true, default: "SkillNova Verified Vacancy" },
     sourceUrl: { type: String },
     externalId: { type: String },
+    externalSource: { type: String },
     publishedAt: { type: Date },
     importedAt: { type: Date },
     status: { 

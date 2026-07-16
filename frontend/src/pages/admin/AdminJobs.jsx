@@ -1,6 +1,6 @@
 import { 
   Edit3, Plus, Trash2, DownloadCloud, ExternalLink, Search, Filter,
-  Briefcase, CheckCircle, Clock, X, MapPin, DollarSign, Calendar, Users
+  Briefcase, CheckCircle, Clock, X, MapPin, DollarSign, Calendar, Users, Linkedin
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import DOMPurify from 'dompurify';
@@ -45,6 +45,11 @@ export default function AdminJobs() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, closed: 0 });
+
+  const [showLinkedInModal, setShowLinkedInModal] = useState(false);
+  const [linkedInKeyword, setLinkedInKeyword] = useState("");
+  const [linkedInLocation, setLinkedInLocation] = useState("");
+  const [isImportingLinkedIn, setIsImportingLinkedIn] = useState(false);
 
   const fetchJobs = async () => {
     try {
@@ -155,6 +160,33 @@ export default function AdminJobs() {
     }
   }
 
+  async function handleImportLinkedIn(e) {
+    e.preventDefault();
+    if (!linkedInKeyword) {
+      alert("Please enter a job keyword.");
+      return;
+    }
+    try {
+      setIsImportingLinkedIn(true);
+      setImportResult(null);
+      const result = await adminJobsService.importLinkedInJobs(linkedInKeyword, linkedInLocation);
+      if (result.success) {
+        setImportResult(result);
+        setShowLinkedInModal(false);
+        setLinkedInKeyword("");
+        setLinkedInLocation("");
+        fetchJobs();
+      } else {
+        alert(result.error || "Failed to import jobs from LinkedIn.");
+      }
+    } catch (error) {
+      console.error("Failed to import LinkedIn jobs:", error);
+      alert(error.response?.data?.error || "Failed to import LinkedIn jobs. Check console for details.");
+    } finally {
+      setIsImportingLinkedIn(false);
+    }
+  }
+
   const handleAddSkill = (e) => {
     if (e.key === 'Enter' && skillInput.trim()) {
       e.preventDefault();
@@ -255,6 +287,7 @@ export default function AdminJobs() {
             <option value="all">All Sources</option>
             <option value="SkillNova Verified Vacancy">SkillNova Verified</option>
             <option value="RSS Imported Job">RSS Imported</option>
+            <option value="LinkedIn Imported Job">LinkedIn Imported</option>
             <option value="We Work Remotely">We Work Remotely</option>
           </select>
 
@@ -271,10 +304,57 @@ export default function AdminJobs() {
           </select>
         </div>
 
-        <Button icon={DownloadCloud} onClick={handleImport} disabled={isImporting} variant="secondary">
-          {isImporting ? "Importing..." : "Import RSS Jobs"}
-        </Button>
+        <div className="flex gap-2">
+          <Button icon={Linkedin} onClick={() => setShowLinkedInModal(true)} disabled={isImporting || isImportingLinkedIn} className="bg-[#0A66C2] hover:bg-[#084e96] text-white border-none">
+            {isImportingLinkedIn ? "Importing..." : "Import LinkedIn Jobs"}
+          </Button>
+          <Button icon={DownloadCloud} onClick={handleImport} disabled={isImporting || isImportingLinkedIn} variant="secondary">
+            {isImporting ? "Importing..." : "Import RSS Jobs"}
+          </Button>
+        </div>
       </div>
+
+      {showLinkedInModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <AdminCard className="w-full max-w-md shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                <Linkedin size={20} className="text-[#0A66C2]"/> Import from LinkedIn
+              </h3>
+              <button onClick={() => setShowLinkedInModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+            </div>
+            <form onSubmit={handleImportLinkedIn} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">Job Keyword *</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Software Engineer" 
+                  value={linkedInKeyword}
+                  onChange={e => setLinkedInKeyword(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#0A66C2]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">Location</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Sri Lanka" 
+                  value={linkedInLocation}
+                  onChange={e => setLinkedInLocation(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#0A66C2]"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={isImportingLinkedIn} className="flex-1 bg-[#0A66C2] hover:bg-[#084e96] border-none text-white">
+                  {isImportingLinkedIn ? "Importing..." : "Import Jobs"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setShowLinkedInModal(false)}>Cancel</Button>
+              </div>
+            </form>
+          </AdminCard>
+        </div>
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[1fr_2fr]">
         <AdminCard className="self-start">

@@ -4,7 +4,8 @@ import {
   getJobs, 
   createJob, 
   updateJob, 
-  deleteJob 
+  deleteJob,
+  importLinkedInJobs
 } from '../controllers/adminJobsController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 import rateLimit from 'express-rate-limit';
@@ -20,6 +21,7 @@ const importRateLimiter = rateLimit({
 router.use(authenticateAdmin);
 
 router.post('/import', importRateLimiter, importJobs);
+router.post('/import/linkedin', importRateLimiter, importLinkedInJobs);
 router.get('/', getJobs);
 router.post('/', createJob);
 router.patch('/:id', updateJob);

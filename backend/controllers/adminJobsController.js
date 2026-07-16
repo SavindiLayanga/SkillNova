@@ -1,5 +1,5 @@
 import Job from '../models/Job.js';
-import { importJobsFromWeWorkRemotely } from '../services/jobImportService.js';
+import { importJobsFromWeWorkRemotely, importJobsFromLinkedIn } from '../services/jobImportService.js';
 
 export async function importJobs(req, res) {
   try {
@@ -146,5 +146,23 @@ export async function deleteJob(req, res) {
   } catch (error) {
     console.error('Error deleting job:', error.message);
     res.status(500).json({ error: 'Failed to delete job' });
+  }
+}
+
+export async function importLinkedInJobs(req, res) {
+  try {
+    const { keyword, location } = req.body;
+    const result = await importJobsFromLinkedIn(keyword, location);
+    return res.status(200).json({
+      message: 'LinkedIn job import completed.',
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('LinkedIn Job import error:', error.message);
+    return res.status(500).json({ 
+      error: error.message || 'Failed to import LinkedIn jobs. Please try again later.',
+      success: false
+    });
   }
 }

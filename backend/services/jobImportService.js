@@ -105,3 +105,120 @@ export async function importJobsFromWeWorkRemotely() {
 
   return result;
 }
+
+export async function importJobsFromLinkedIn(keyword, location) {
+  const result = {
+    source: 'LinkedIn Imported Job',
+    found: 0,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    failed: 0,
+  };
+
+  const API_KEY = process.env.LINKEDIN_API_KEY;
+  const API_HOST = process.env.LINKEDIN_API_HOST || 'linkedin-jobs-search.p.rapidapi.com';
+  const API_URL = process.env.LINKEDIN_API_URL || 'https://linkedin-jobs-search.p.rapidapi.com/';
+
+  let jobs = [];
+
+  if (!API_KEY) {
+    console.log('No LINKEDIN_API_KEY provided. Returning mock data.');
+    // Mock response for development
+    jobs = [
+      {
+        id: `mock-ln-${Date.now()}-1`,
+        title: `${keyword || 'Software Engineer'} (Mock)`,
+        company: 'Tech Corp Mock',
+        location: location || 'Sri Lanka',
+        jobUrl: 'https://linkedin.com/jobs/view/mock1',
+        description: 'This is a mock job description for testing purposes.',
+        skills: ['React', 'Node.js']
+      },
+      {
+        id: `mock-ln-${Date.now()}-2`,
+        title: `Senior ${keyword || 'Developer'} (Mock)`,
+        company: 'Global Innovations Mock',
+        location: location || 'Sri Lanka',
+        jobUrl: 'https://linkedin.com/jobs/view/mock2',
+        description: 'Another mock job for testing duplicate handling.',
+        skills: ['MongoDB', 'Express']
+      }
+    ];
+  } else {
+    try {
+      const response = await axios.post(API_URL, {
+        search_terms: keyword || '',
+        location: location || '',
+        page: '1'
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RapidAPI-Key': API_KEY,
+          'X-RapidAPI-Host': API_HOST
+        },
+        timeout: 15000
+      });
+      
+      jobs = response.data || [];
+    } catch (error) {
+      console.error('LinkedIn API Error:', error.message);
+      throw new Error('Failed to fetch jobs from LinkedIn API.');
+    }
+  }
+
+  if (!Array.isArray(jobs) || jobs.length === 0) {
+    return result;
+  }
+
+  result.found = jobs.length;
+
+  for (const item of jobs) {
+    try {
+      if (!item.title || !item.company) {
+        result.skipped++;
+        continue;
+      }
+
+      const externalId = item.id || item.jobUrl || `ln-${Date.now()}-${Math.random()}`;
+
+      const jobData = {
+        title: item.title,
+        company: item.company,
+        location: item.location || '',
+        description: item.description || '',
+        skills: item.skills || [],
+        source: 'LinkedIn Imported Job',
+        sourceUrl: item.jobUrl || '',
+        externalId,
+        externalSource: 'LinkedIn',
+        publishedAt: new Date(),
+        importedAt: new Date(),
+        status: 'Active',
+      };
+
+      const filter = { externalId };
+
+      const updateOp = {
+        $set: jobData,
+        $setOnInsert: {
+          createdAt: new Date(),
+        },
+      };
+
+      const existing = await Job.findOne(filter);
+      await Job.updateOne(filter, updateOp, { upsert: true });
+
+      if (existing) {
+        result.updated++;
+      } else {
+        result.created++;
+      }
+    } catch (err) {
+      console.error('Error saving LinkedIn job:', err.message);
+      result.failed++;
+    }
+  }
+
+  return result;
+}
