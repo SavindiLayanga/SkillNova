@@ -69,6 +69,15 @@ export const adminCvReviews = [
     status: "Pending",
     summary: "Creative portfolio. Missing accessibility and testing evidence.",
   },
+  {
+    id: 104,
+    student: "Kavindu Silva",
+    fileName: "Kavindu_Backend_CV.pdf",
+    uploadedAt: "2026-05-21",
+    score: 60,
+    status: "In Learning Path",
+    summary: "Basic understanding of Node.js. Recommended to complete API design module.",
+  },
 ];
 
 export const adminJobs = [

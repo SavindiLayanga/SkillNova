@@ -14,13 +14,14 @@ export default function AdminCvReviews() {
     : adminCvReviews.filter((review) => review.status === filterStatus);
 
   const chartData = useMemo(() => {
-    const counts = { Pending: 0, Reviewed: 0 };
+    const counts = { Pending: 0, Reviewed: 0, "In Learning Path": 0 };
     adminCvReviews.forEach(r => {
       if (counts[r.status] !== undefined) counts[r.status]++;
     });
     return [
       { name: 'Pending', value: counts.Pending, color: '#f59e0b' },
-      { name: 'Reviewed', value: counts.Reviewed, color: '#10b981' }
+      { name: 'Reviewed', value: counts.Reviewed, color: '#10b981' },
+      { name: 'In Learning Path', value: counts["In Learning Path"], color: '#3b82f6' }
     ];
   }, []);
 
@@ -58,6 +59,7 @@ export default function AdminCvReviews() {
             <option value="All">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Reviewed">Reviewed</option>
+            <option value="In Learning Path">In Learning Path</option>
           </select>
         )}
       </div>
@@ -80,7 +82,9 @@ export default function AdminCvReviews() {
                   <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                     review.status === "Pending"
                       ? "bg-amber-50 text-amber-700"
-                      : "bg-emerald-50 text-emerald-700"
+                      : review.status === "Reviewed"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-blue-50 text-blue-700"
                   }`}>
                     {review.status}
                   </span>
