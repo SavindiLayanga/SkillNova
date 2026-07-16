@@ -1,8 +1,14 @@
+import { useState } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import { adminCvReviews } from "../../data/adminDummyData.js";
 
 export default function AdminCvReviews() {
+  const [filterStatus, setFilterStatus] = useState("All");
+
+  const filteredReviews = filterStatus === "All"
+    ? adminCvReviews
+    : adminCvReviews.filter((review) => review.status === filterStatus);
   return (
     <div>
       <AdminPageHeader
@@ -10,8 +16,25 @@ export default function AdminCvReviews() {
         title="CV Reviews"
       />
 
+      <div className="mb-6 flex justify-end">
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        >
+          <option value="All">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Reviewed">Reviewed</option>
+        </select>
+      </div>
+
       <div className="grid gap-4">
-        {adminCvReviews.map((review) => (
+        {filteredReviews.length === 0 ? (
+          <div className="py-10 text-center text-slate-500">
+            No CVs found for the selected status.
+          </div>
+        ) : (
+          filteredReviews.map((review) => (
           <AdminCard key={review.id}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -44,7 +67,7 @@ export default function AdminCvReviews() {
               </div>
             </div>
           </AdminCard>
-        ))}
+        )))}
       </div>
     </div>
   );
