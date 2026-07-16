@@ -11,6 +11,16 @@ import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import { adminActivity } from "../../data/adminDummyData.js";
 import { fetchDashboardStats } from "../../services/adminDashboardService.js";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+const userEngagementData = [
+  { name: 'Jan', 'CV Uploads': 45, 'Progress Tracking': 20 },
+  { name: 'Feb', 'CV Uploads': 55, 'Progress Tracking': 35 },
+  { name: 'Mar', 'CV Uploads': 80, 'Progress Tracking': 50 },
+  { name: 'Apr', 'CV Uploads': 110, 'Progress Tracking': 70 },
+  { name: 'May', 'CV Uploads': 125, 'Progress Tracking': 84 },
+  { name: 'Jun', 'CV Uploads': 140, 'Progress Tracking': 105 },
+];
 
 const statIcons = [Users, FileText, ClipboardCheck, BriefcaseBusiness, BookOpen];
 const statLinks = ["/admin/users", "/admin/cv-reviews", "/admin/jobs", "/admin/courses", "/admin/skills"];
@@ -125,6 +135,27 @@ export default function AdminDashboard() {
                 {activity}
               </div>
             ))}
+          </div>
+        </AdminCard>
+      </section>
+
+      <section className="mt-8">
+        <AdminCard>
+          <h2 className="text-lg font-bold text-slate-950 mb-6">
+            User Engagement Overview
+          </h2>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={userEngagementData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip cursor={{fill: '#f8fafc'}} />
+                <Legend />
+                <Bar dataKey="CV Uploads" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Progress Tracking" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </AdminCard>
       </section>
