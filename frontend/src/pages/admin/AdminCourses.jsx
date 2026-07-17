@@ -23,6 +23,21 @@ export default function AdminCourses() {
   const [courses, setCourses] = useState(adminCourses);
   const [form, setForm] = useState(emptyCourse);
   const [editingId, setEditingId] = useState(null);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
+
+  const totalCourses = courses.length;
+  const totalPages = Math.ceil(totalCourses / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalCourses);
+  const currentCourses = courses.slice(startIndex, endIndex);
+
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  }
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -315,7 +330,7 @@ export default function AdminCourses() {
         </AdminCard>
 
         <div className="space-y-4">
-          {courses.map((course) => (
+          {currentCourses.map((course) => (
             <AdminCard key={course.id}>
               <div className="flex flex-col gap-6">
                 <div className="flex items-start justify-between">
@@ -408,27 +423,44 @@ export default function AdminCourses() {
           ))}
 
           {/* Pagination */}
-          <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row">
-            <p className="text-sm text-slate-600">
-              Showing <span className="font-semibold text-slate-900">1-10</span> of <span className="font-semibold text-slate-900">286</span>
-            </p>
-            <div className="flex items-center gap-1">
-              <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-                &lt; Previous
-              </button>
+          {totalPages > 1 && (
+            <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row">
+              <p className="text-sm text-slate-600">
+                Showing <span className="font-semibold text-slate-900">{totalCourses === 0 ? 0 : startIndex + 1}-{endIndex}</span> of <span className="font-semibold text-slate-900">{totalCourses}</span>
+              </p>
               <div className="flex items-center gap-1">
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-medium text-white shadow-sm hover:bg-primary-700">1</button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">2</button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">3</button>
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">4</button>
-                <span className="px-1 text-slate-400">...</span>
-                <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">29</button>
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 disabled:hover:bg-transparent"
+                >
+                  &lt; Previous
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium shadow-sm transition-colors ${
+                        currentPage === page
+                          ? "bg-primary-600 text-white hover:bg-primary-700"
+                          : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50 disabled:hover:bg-transparent"
+                >
+                  Next &gt;
+                </button>
               </div>
-              <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-                Next &gt;
-              </button>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </div>
