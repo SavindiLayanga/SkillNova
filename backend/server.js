@@ -42,6 +42,7 @@ import adminUsersRoutes from './routes/adminUsersRoutes.js';
 import adminDashboardRoutes from './routes/adminDashboardRoutes.js';
 import adminJobsRoutes from './routes/adminJobsRoutes.js';
 import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
+import adminCoursesRoutes from './routes/adminCoursesRoutes.js';
 
 import cookieParser from 'cookie-parser';
 
@@ -62,6 +63,7 @@ app.use('/api/admin/users', adminUsersRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/jobs', adminJobsRoutes);
 app.use('/api/admin/notifications', adminNotificationRoutes);
+app.use('/api/admin/courses', adminCoursesRoutes);
 
 console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 
