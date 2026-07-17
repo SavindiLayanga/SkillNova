@@ -407,6 +407,29 @@ export default function AdminCourses() {
             </AdminCard>
           ))}
         </div>
+
+        {/* Pagination */}
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row">
+          <p className="text-sm text-slate-600">
+            Showing <span className="font-semibold text-slate-900">1-10</span> of <span className="font-semibold text-slate-900">286</span>
+          </p>
+          <div className="flex items-center gap-1">
+            <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+              &lt; Previous
+            </button>
+            <div className="flex items-center gap-1">
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-medium text-white shadow-sm hover:bg-primary-700">1</button>
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">2</button>
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">3</button>
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">4</button>
+              <span className="px-1 text-slate-400">...</span>
+              <button className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">29</button>
+            </div>
+            <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+              Next &gt;
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   );
