@@ -1,12 +1,12 @@
 import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter, Copy, Archive, Star, Clock, BarChart, Tag, Building, Eye } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
 import BulkActions from "../../components/admin/BulkActions.jsx";
 import CoursePreviewModal from "../../components/admin/CoursePreviewModal.jsx";
 import CourseAnalyticsModal from "../../components/admin/CourseAnalyticsModal.jsx";
-import { adminCourses } from "../../data/adminDummyData.js";
+import { adminCoursesService } from "../../services/adminCoursesService.js";
 
 const emptyCourse = {
   title: "",
@@ -23,7 +23,8 @@ const emptyCourse = {
 };
 
 export default function AdminCourses() {
-  const [courses, setCourses] = useState(adminCourses);
+  const [courses, setCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState(emptyCourse);
   const [editingId, setEditingId] = useState(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState(new Set());
@@ -45,18 +46,32 @@ export default function AdminCourses() {
     }
   }
 
-  function handleSubmit(event) {
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      setIsLoading(true);
+      const data = await adminCoursesService.getCourses();
+      setCourses(data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  async function handleSubmit(event) {
     event.preventDefault();
-    const nextCourse = {
-      id: editingId ?? Date.now(),
+    const courseData = {
       title: form.title.trim(),
       provider: form.provider.trim(),
       category: form.category,
       difficulty: form.difficulty,
       duration: form.duration.trim(),
       language: form.language.trim(),
-      certificate: form.certificate,
-      thumbnail: form.thumbnail,
+      certificate: form.certificate === "Yes",
       description: form.description.trim(),
       skills: form.skills
         .split(",")
@@ -65,15 +80,19 @@ export default function AdminCourses() {
       status: form.status,
     };
 
-    setCourses((currentCourses) =>
-      editingId
-        ? currentCourses.map((course) =>
-            course.id === editingId ? nextCourse : course
-          )
-        : [nextCourse, ...currentCourses]
-    );
-    setEditingId(null);
-    setForm(emptyCourse);
+    try {
+      if (editingId) {
+        await adminCoursesService.updateCourse(editingId, courseData);
+      } else {
+        await adminCoursesService.createCourse(courseData);
+      }
+      await fetchCourses();
+      setEditingId(null);
+      setForm(emptyCourse);
+    } catch (error) {
+      console.error("Error saving course:", error);
+      alert("Error saving course.");
+    }
   }
 
   function editCourse(course) {
@@ -85,7 +104,7 @@ export default function AdminCourses() {
       difficulty: course.difficulty || "Beginner",
       duration: course.duration || "",
       language: course.language || "English",
-      certificate: course.certificate || "Yes",
+      certificate: course.certificate ? "Yes" : "No",
       thumbnail: null, // Keep null for file input
       description: course.description || "",
       skills: course.skills ? course.skills.join(", ") : "",
@@ -93,15 +112,20 @@ export default function AdminCourses() {
     });
   }
 
-  function deleteCourse(id) {
-    setCourses((currentCourses) =>
-      currentCourses.filter((course) => course.id !== id)
-    );
-    setSelectedCourseIds((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
+  async function deleteCourse(id) {
+    if (!confirm("Are you sure you want to delete this course?")) return;
+    try {
+      await adminCoursesService.deleteCourse(id);
+      await fetchCourses();
+      setSelectedCourseIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      alert("Error deleting course.");
+    }
   }
 
   // Bulk Selection Functions
@@ -122,25 +146,25 @@ export default function AdminCourses() {
     }
   };
 
-  const handleBulkAction = (actionType) => {
+  const handleBulkAction = async (actionType) => {
     const count = selectedCourseIds.size;
     if (count === 0) return;
 
     if (actionType === 'delete') {
-      if (confirm(`Are you sure you want to delete ${count} courses?`)) {
-        setCourses(courses.filter(c => !selectedCourseIds.has(c.id)));
-        setSelectedCourseIds(new Set());
-      }
-    } else if (actionType === 'archive') {
-      setCourses(courses.map(c => selectedCourseIds.has(c.id) ? { ...c, status: 'Archived' } : c));
+      if (!confirm(`Are you sure you want to delete ${count} courses?`)) return;
+    }
+
+    try {
+      await adminCoursesService.bulkAction({
+        courseIds: Array.from(selectedCourseIds),
+        action: actionType
+      });
+      await fetchCourses();
       setSelectedCourseIds(new Set());
-      alert(`Archived ${count} courses.`);
-    } else if (actionType === 'publish') {
-      setCourses(courses.map(c => selectedCourseIds.has(c.id) ? { ...c, status: 'Published' } : c));
-      setSelectedCourseIds(new Set());
-      alert(`Published ${count} courses.`);
-    } else if (actionType === 'export') {
-      alert(`Exporting ${count} courses to CSV...`);
+      alert(`Action '${actionType}' completed for ${count} courses.`);
+    } catch (error) {
+      console.error("Error performing bulk action:", error);
+      alert("Error performing bulk action.");
     }
   };
 
