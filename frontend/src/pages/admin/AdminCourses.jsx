@@ -396,8 +396,18 @@ export default function AdminCourses() {
             </div>
           )}
 
-          {currentCourses.map((course) => (
-            <AdminCard key={course.id} className={`transition-colors border ${selectedCourseIds.has(course.id) ? 'border-purple-300 bg-purple-50/30' : 'border-transparent'}`}>
+          {currentCourses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 py-16 text-center">
+              <div className="text-5xl mb-4">📚</div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Courses Yet</h3>
+              <p className="text-sm text-slate-500 mb-6">Create your first course.</p>
+              <Button icon={Plus} onClick={() => document.querySelector('form input[placeholder="Course title"]')?.focus()}>
+                Add Course
+              </Button>
+            </div>
+          ) : (
+            currentCourses.map((course) => (
+              <AdminCard key={course.id} className={`transition-colors border ${selectedCourseIds.has(course.id) ? 'border-purple-300 bg-purple-50/30' : 'border-transparent'}`}>
               <div className="flex flex-col gap-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
@@ -503,7 +513,7 @@ export default function AdminCourses() {
                 </div>
               </div>
             </AdminCard>
-          ))}
+          )))}
 
           {/* Pagination */}
           {totalPages > 1 && (
