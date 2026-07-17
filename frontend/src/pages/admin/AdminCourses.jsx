@@ -1,9 +1,11 @@
-import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter, Copy, Archive, Star, Clock, BarChart, Tag, Building } from "lucide-react";
+import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter, Copy, Archive, Star, Clock, BarChart, Tag, Building, Eye } from "lucide-react";
 import { useState } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
 import BulkActions from "../../components/admin/BulkActions.jsx";
+import CoursePreviewModal from "../../components/admin/CoursePreviewModal.jsx";
+import CourseAnalyticsModal from "../../components/admin/CourseAnalyticsModal.jsx";
 import { adminCourses } from "../../data/adminDummyData.js";
 
 const emptyCourse = {
@@ -25,6 +27,8 @@ export default function AdminCourses() {
   const [form, setForm] = useState(emptyCourse);
   const [editingId, setEditingId] = useState(null);
   const [selectedCourseIds, setSelectedCourseIds] = useState(new Set());
+  const [previewCourse, setPreviewCourse] = useState(null);
+  const [analyticsCourse, setAnalyticsCourse] = useState(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
@@ -472,6 +476,12 @@ export default function AdminCourses() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <Button icon={BarChart} onClick={() => setAnalyticsCourse(course)} size="sm" variant="secondary" className="text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-200">
+                      Analytics
+                    </Button>
+                    <Button icon={Eye} onClick={() => setPreviewCourse(course)} size="sm" variant="secondary" className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 border-purple-200">
+                      Preview
+                    </Button>
                     <Button icon={Edit3} onClick={() => editCourse(course)} size="sm" variant="secondary">
                       Edit
                     </Button>
@@ -537,6 +547,18 @@ export default function AdminCourses() {
         selectedCount={selectedCourseIds.size}
         onClear={() => setSelectedCourseIds(new Set())}
         onAction={handleBulkAction}
+      />
+
+      {/* Course Preview Modal */}
+      <CoursePreviewModal 
+        course={previewCourse} 
+        onClose={() => setPreviewCourse(null)} 
+      />
+
+      {/* Course Analytics Modal */}
+      <CourseAnalyticsModal 
+        course={analyticsCourse} 
+        onClose={() => setAnalyticsCourse(null)} 
       />
     </div>
   );
