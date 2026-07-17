@@ -1,4 +1,5 @@
 import {
+  Bell,
   BookOpen,
   BriefcaseBusiness,
   ClipboardCheck,
@@ -118,13 +119,23 @@ export default function AdminLayout() {
                 SkillNova Management
               </p>
             </div>
-            <button
-              className="ml-auto rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              onClick={handleLogout}
-              type="button"
-            >
-              Logout
-            </button>
+            <div className="ml-auto flex items-center gap-3">
+              <button
+                aria-label="Notifications"
+                className="relative rounded-full p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                type="button"
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+              </button>
+              <button
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                onClick={handleLogout}
+                type="button"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1440px] px-4 py-7 pb-12 sm:px-6 lg:px-8">
