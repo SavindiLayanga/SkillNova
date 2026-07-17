@@ -1,4 +1,4 @@
-import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users } from "lucide-react";
+import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter } from "lucide-react";
 import { useState } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
@@ -98,6 +98,35 @@ export default function AdminCourses() {
         description="Manage course recommendations and the skills each course covers."
         title="Courses"
       />
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search courses..."
+            className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <select className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+              <option value="all">All Providers</option>
+              <option value="coursera">Coursera</option>
+              <option value="udemy">Udemy</option>
+              <option value="edx">edX</option>
+            </select>
+          </div>
+          <div className="relative">
+            <select className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="popular">Most Popular</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <AdminCard>
