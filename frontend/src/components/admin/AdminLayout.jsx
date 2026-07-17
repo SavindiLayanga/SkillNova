@@ -10,10 +10,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import useAdminAuth from "../../hooks/useAdminAuth.js";
 import clsx from "../../utils/clsx.js";
+import adminNotificationService from "../../services/adminNotificationService.js";
 
 const adminNavigation = [
   { label: "Dashboard", path: "/admin/dashboard", icon: Gauge },
@@ -26,8 +27,54 @@ const adminNavigation = [
 
 export default function AdminLayout() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const notificationRef = useRef(null);
   const { logout } = useAdminAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchNotifications();
+
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await adminNotificationService.getNotifications();
+      setNotifications(data);
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await adminNotificationService.markAsRead(id);
+      setNotifications(prev => 
+        prev.map(n => n._id === id ? { ...n, isRead: true } : n)
+      );
+    } catch (error) {
+      console.error("Failed to mark as read", error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await adminNotificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (error) {
+      console.error("Failed to mark all as read", error);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   function handleLogout() {
     logout();
@@ -120,14 +167,71 @@ export default function AdminLayout() {
               </p>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              <button
-                aria-label="Notifications"
-                className="relative rounded-full p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                type="button"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-              </button>
+              <div className="relative" ref={notificationRef}>
+                <button
+                  aria-label="Notifications"
+                  className="relative rounded-full p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  type="button"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                  )}
+                </button>
+                
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 origin-top-right rounded-xl bg-white py-2 shadow-xl ring-1 ring-black/5 focus:outline-none">
+                    <div className="flex items-center justify-between border-b border-slate-100 px-4 pb-2">
+                      <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={handleMarkAllAsRead}
+                          className="text-xs font-medium text-primary-600 hover:text-primary-700"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-[28rem] overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-6 text-center text-sm text-slate-500">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div 
+                            key={notification._id} 
+                            className={clsx(
+                              "px-4 py-3 transition hover:bg-slate-50 cursor-pointer",
+                              !notification.isRead && "bg-slate-50/50"
+                            )}
+                            onClick={() => {
+                              if (!notification.isRead) handleMarkAsRead(notification._id);
+                              if (notification.link) navigate(notification.link);
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={clsx("text-sm", !notification.isRead ? "font-semibold text-slate-900" : "text-slate-600")}>
+                                {notification.title}
+                              </p>
+                              {!notification.isRead && (
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500"></span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs text-slate-500 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="mt-1 text-[10px] font-medium text-slate-400">
+                              {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 onClick={handleLogout}
