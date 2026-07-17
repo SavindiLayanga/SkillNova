@@ -144,6 +144,11 @@ export default function AdminCourses() {
     }
   };
 
+  const totalCount = courses.length;
+  const publishedCount = courses.filter(c => c.status && c.status.toLowerCase() === "published").length;
+  const draftCount = courses.filter(c => !c.status || c.status.toLowerCase() === "draft").length;
+  const enrollmentsCount = courses.reduce((acc, c) => acc + parseInt((c.students || "0").toString().replace(/,/g, '') || 0), 0).toLocaleString();
+
   return (
     <div>
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -153,7 +158,7 @@ export default function AdminCourses() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Total Courses</p>
-            <p className="text-2xl font-bold text-slate-900">0</p>
+            <p className="text-2xl font-bold text-slate-900">{totalCount}</p>
           </div>
         </AdminCard>
         
@@ -163,7 +168,7 @@ export default function AdminCourses() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Published</p>
-            <p className="text-2xl font-bold text-slate-900">0</p>
+            <p className="text-2xl font-bold text-slate-900">{publishedCount}</p>
           </div>
         </AdminCard>
 
@@ -173,7 +178,7 @@ export default function AdminCourses() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Draft</p>
-            <p className="text-2xl font-bold text-slate-900">0</p>
+            <p className="text-2xl font-bold text-slate-900">{draftCount}</p>
           </div>
         </AdminCard>
 
@@ -183,7 +188,7 @@ export default function AdminCourses() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Enrollments</p>
-            <p className="text-2xl font-bold text-slate-900">0</p>
+            <p className="text-2xl font-bold text-slate-900">{enrollmentsCount}</p>
           </div>
         </AdminCard>
       </div>
