@@ -426,7 +426,7 @@ export default function AdminCourses() {
           )}
 
           {currentCourses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 py-16 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-purple-200 dark:border-purple-800/50 bg-purple-50/50 dark:bg-purple-900/10 py-16 text-center">
               <div className="text-5xl mb-4">📚</div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Courses Yet</h3>
               <p className="text-sm text-slate-500 mb-6">Create your first course.</p>
