@@ -3,6 +3,7 @@ import { useState } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
+import BulkActions from "../../components/admin/BulkActions.jsx";
 import { adminCourses } from "../../data/adminDummyData.js";
 
 const emptyCourse = {
@@ -23,6 +24,7 @@ export default function AdminCourses() {
   const [courses, setCourses] = useState(adminCourses);
   const [form, setForm] = useState(emptyCourse);
   const [editingId, setEditingId] = useState(null);
+  const [selectedCourseIds, setSelectedCourseIds] = useState(new Set());
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
@@ -91,7 +93,52 @@ export default function AdminCourses() {
     setCourses((currentCourses) =>
       currentCourses.filter((course) => course.id !== id)
     );
+    setSelectedCourseIds((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
   }
+
+  // Bulk Selection Functions
+  const toggleSelection = (id) => {
+    setSelectedCourseIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCourseIds.size === currentCourses.length && currentCourses.length > 0) {
+      setSelectedCourseIds(new Set());
+    } else {
+      setSelectedCourseIds(new Set(currentCourses.map(c => c.id)));
+    }
+  };
+
+  const handleBulkAction = (actionType) => {
+    const count = selectedCourseIds.size;
+    if (count === 0) return;
+
+    if (actionType === 'delete') {
+      if (confirm(`Are you sure you want to delete ${count} courses?`)) {
+        setCourses(courses.filter(c => !selectedCourseIds.has(c.id)));
+        setSelectedCourseIds(new Set());
+      }
+    } else if (actionType === 'archive') {
+      setCourses(courses.map(c => selectedCourseIds.has(c.id) ? { ...c, status: 'Archived' } : c));
+      setSelectedCourseIds(new Set());
+      alert(`Archived ${count} courses.`);
+    } else if (actionType === 'publish') {
+      setCourses(courses.map(c => selectedCourseIds.has(c.id) ? { ...c, status: 'Published' } : c));
+      setSelectedCourseIds(new Set());
+      alert(`Published ${count} courses.`);
+    } else if (actionType === 'export') {
+      alert(`Exporting ${count} courses to CSV...`);
+    }
+  };
 
   return (
     <div>
@@ -137,10 +184,12 @@ export default function AdminCourses() {
         </AdminCard>
       </div>
 
-      <AdminPageHeader
-        description="Manage course recommendations and the skills each course covers."
-        title="Courses"
-      />
+      <div className="flex items-center justify-between">
+        <AdminPageHeader
+          description="Manage course recommendations and the skills each course covers."
+          title="Courses"
+        />
+      </div>
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
@@ -330,11 +379,30 @@ export default function AdminCourses() {
         </AdminCard>
 
         <div className="space-y-4">
+          {/* Select All Row */}
+          {currentCourses.length > 0 && (
+            <div className="flex items-center gap-3 px-2 py-1 mb-2">
+              <input 
+                type="checkbox" 
+                className="w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                checked={selectedCourseIds.size === currentCourses.length && currentCourses.length > 0}
+                onChange={toggleSelectAll}
+              />
+              <span className="text-sm font-medium text-slate-600">Select All on this page</span>
+            </div>
+          )}
+
           {currentCourses.map((course) => (
-            <AdminCard key={course.id}>
+            <AdminCard key={course.id} className={`transition-colors border ${selectedCourseIds.has(course.id) ? 'border-purple-300 bg-purple-50/30' : 'border-transparent'}`}>
               <div className="flex flex-col gap-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                      checked={selectedCourseIds.has(course.id)}
+                      onChange={() => toggleSelection(course.id)}
+                    />
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
                       <BookOpen className="h-6 w-6" />
                     </div>
@@ -463,6 +531,13 @@ export default function AdminCourses() {
           )}
         </div>
       </section>
+
+      {/* Floating Bulk Actions Toolbar */}
+      <BulkActions 
+        selectedCount={selectedCourseIds.size}
+        onClear={() => setSelectedCourseIds(new Set())}
+        onAction={handleBulkAction}
+      />
     </div>
   );
 }
