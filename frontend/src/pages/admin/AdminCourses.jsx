@@ -1,4 +1,4 @@
-import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter } from "lucide-react";
+import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter, Copy, Archive, Star, Clock, BarChart, Tag, Building } from "lucide-react";
 import { useState } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
@@ -317,28 +317,91 @@ export default function AdminCourses() {
         <div className="space-y-4">
           {courses.map((course) => (
             <AdminCard key={course.id}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-950">{course.title}</h3>
-                  <p className="mt-1 text-sm text-slate-500">{course.provider}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {course.skills.map((skill) => (
-                      <span
-                        className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700"
-                        key={skill}
-                      >
-                        {skill}
+              <div className="flex flex-col gap-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                      <BookOpen className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">{course.title}</h3>
+                      <div className="mt-1 flex items-center gap-1 text-sm text-amber-500">
+                        <Star className="h-4 w-4 fill-amber-500" />
+                        <Star className="h-4 w-4 fill-amber-500" />
+                        <Star className="h-4 w-4 fill-amber-500" />
+                        <Star className="h-4 w-4 fill-amber-500" />
+                        <Star className="h-4 w-4 fill-amber-500" />
+                        <span className="ml-1 font-semibold text-slate-700">{course.rating || "4.8"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-sm font-medium shadow-sm">
+                    {course.status === "Published" ? (
+                      <span className="flex items-center gap-1.5 text-emerald-600">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        Published
                       </span>
-                    ))}
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-slate-600">
+                        <span className="h-2 w-2 rounded-full bg-slate-400"></span>
+                        {course.status || "Draft"}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button icon={Edit3} onClick={() => editCourse(course)} size="sm" variant="secondary">
-                    Edit
-                  </Button>
-                  <Button icon={Trash2} onClick={() => deleteCourse(course.id)} size="sm" variant="ghost">
-                    Delete
-                  </Button>
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-5 border-y border-slate-100 py-4">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Building className="h-3 w-3" /> Provider</p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{course.provider || "SkillNova Academy"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Tag className="h-3 w-3" /> Category</p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{course.category || "Frontend"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 flex items-center gap-1"><BarChart className="h-3 w-3" /> Difficulty</p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{course.difficulty || "Intermediate"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Clock className="h-3 w-3" /> Duration</p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{course.duration || "18 Hours"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Users className="h-3 w-3" /> Students</p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{course.students || "1,245"}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap gap-2">
+                    {course.skills && course.skills.length > 0 ? (
+                      course.skills.map((skill) => (
+                        <span
+                          className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700"
+                          key={skill}
+                        >
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">No skills listed</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button icon={Edit3} onClick={() => editCourse(course)} size="sm" variant="secondary">
+                      Edit
+                    </Button>
+                    <Button icon={Copy} onClick={() => {}} size="sm" variant="secondary">
+                      Duplicate
+                    </Button>
+                    <Button icon={Archive} onClick={() => {}} size="sm" variant="secondary">
+                      Archive
+                    </Button>
+                    <Button icon={Trash2} onClick={() => deleteCourse(course.id)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700">
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </div>
             </AdminCard>
