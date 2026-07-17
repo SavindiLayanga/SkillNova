@@ -5,7 +5,19 @@ import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
 import { adminCourses } from "../../data/adminDummyData.js";
 
-const emptyCourse = { provider: "", skills: "", title: "" };
+const emptyCourse = {
+  title: "",
+  provider: "",
+  category: "Programming",
+  difficulty: "Beginner",
+  duration: "",
+  language: "English",
+  certificate: "Yes",
+  thumbnail: null,
+  description: "",
+  skills: "",
+  status: "Draft",
+};
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState(adminCourses);
@@ -16,12 +28,20 @@ export default function AdminCourses() {
     event.preventDefault();
     const nextCourse = {
       id: editingId ?? Date.now(),
+      title: form.title.trim(),
       provider: form.provider.trim(),
+      category: form.category,
+      difficulty: form.difficulty,
+      duration: form.duration.trim(),
+      language: form.language.trim(),
+      certificate: form.certificate,
+      thumbnail: form.thumbnail,
+      description: form.description.trim(),
       skills: form.skills
         .split(",")
         .map((skill) => skill.trim())
         .filter(Boolean),
-      title: form.title.trim(),
+      status: form.status,
     };
 
     setCourses((currentCourses) =>
@@ -38,9 +58,17 @@ export default function AdminCourses() {
   function editCourse(course) {
     setEditingId(course.id);
     setForm({
-      provider: course.provider,
-      skills: course.skills.join(", "),
-      title: course.title,
+      title: course.title || "",
+      provider: course.provider || "",
+      category: course.category || "Programming",
+      difficulty: course.difficulty || "Beginner",
+      duration: course.duration || "",
+      language: course.language || "English",
+      certificate: course.certificate || "Yes",
+      thumbnail: null, // Keep null for file input
+      description: course.description || "",
+      skills: course.skills ? course.skills.join(", ") : "",
+      status: course.status || "Draft",
     });
   }
 
@@ -150,28 +178,137 @@ export default function AdminCourses() {
             {editingId ? "Edit course" : "Add course"}
           </h2>
           <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-            <input
-              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
-              onChange={(event) => setForm({ ...form, title: event.target.value })}
-              placeholder="Course title"
-              required
-              value={form.title}
-            />
-            <input
-              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
-              onChange={(event) => setForm({ ...form, provider: event.target.value })}
-              placeholder="Provider"
-              required
-              value={form.provider}
-            />
-            <textarea
-              className="min-h-28 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
-              onChange={(event) => setForm({ ...form, skills: event.target.value })}
-              placeholder="Skills covered, comma separated"
-              required
-              value={form.skills}
-            />
-            <Button icon={Plus} type="submit">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Course Title *</label>
+              <input
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                onChange={(event) => setForm({ ...form, title: event.target.value })}
+                placeholder="Course title"
+                required
+                value={form.title}
+              />
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Provider *</label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                  onChange={(event) => setForm({ ...form, provider: event.target.value })}
+                  placeholder="Provider"
+                  required
+                  value={form.provider}
+                />
+              </div>
+              
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Category *</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                  onChange={(event) => setForm({ ...form, category: event.target.value })}
+                  required
+                  value={form.category}
+                >
+                  <option value="Programming">Programming</option>
+                  <option value="Design">Design</option>
+                  <option value="Business">Business</option>
+                  <option value="Marketing">Marketing</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Difficulty</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                  onChange={(event) => setForm({ ...form, difficulty: event.target.value })}
+                  value={form.difficulty}
+                >
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Duration (e.g. 10 Hours)</label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                  onChange={(event) => setForm({ ...form, duration: event.target.value })}
+                  placeholder="e.g. 10 Hours"
+                  value={form.duration}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Language</label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                  onChange={(event) => setForm({ ...form, language: event.target.value })}
+                  placeholder="e.g. English"
+                  value={form.language}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Certificate</label>
+                <select
+                  className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                  onChange={(event) => setForm({ ...form, certificate: event.target.value })}
+                  value={form.certificate}
+                >
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Thumbnail Upload</label>
+              <input
+                type="file"
+                className="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-primary-400 bg-white"
+                onChange={(event) => setForm({ ...form, thumbnail: event.target.files[0] })}
+                accept="image/*"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Description</label>
+              <textarea
+                className="min-h-24 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                onChange={(event) => setForm({ ...form, description: event.target.value })}
+                placeholder="Course description..."
+                value={form.description}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Skills</label>
+              <textarea
+                className="min-h-16 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                onChange={(event) => setForm({ ...form, skills: event.target.value })}
+                placeholder="React, Node, MongoDB"
+                value={form.skills}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
+              <select
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary-400"
+                onChange={(event) => setForm({ ...form, status: event.target.value })}
+                value={form.status}
+              >
+                <option value="Published">Published</option>
+                <option value="Draft">Draft</option>
+              </select>
+            </div>
+
+            <Button icon={Plus} type="submit" className="w-full mt-2">
               {editingId ? "Update course" : "Add course"}
             </Button>
           </form>
