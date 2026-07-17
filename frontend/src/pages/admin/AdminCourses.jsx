@@ -108,7 +108,7 @@ export default function AdminCourses() {
             className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <select className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
@@ -117,6 +117,13 @@ export default function AdminCourses() {
               <option value="design">Design</option>
               <option value="business">Business</option>
               <option value="marketing">Marketing</option>
+            </select>
+          </div>
+          <div className="relative">
+            <select className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+              <option value="all_status">All Statuses</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
             </select>
           </div>
           <div className="relative">
