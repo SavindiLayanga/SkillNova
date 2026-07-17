@@ -112,7 +112,16 @@ export default function AdminCourses() {
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <select className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
-              <option value="all">All Providers</option>
+              <option value="all_categories">All Categories</option>
+              <option value="programming">Programming</option>
+              <option value="design">Design</option>
+              <option value="business">Business</option>
+              <option value="marketing">Marketing</option>
+            </select>
+          </div>
+          <div className="relative">
+            <select className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+              <option value="all_providers">All Providers</option>
               <option value="coursera">Coursera</option>
               <option value="udemy">Udemy</option>
               <option value="edx">edX</option>
