@@ -428,9 +428,14 @@ export default function AdminCourses() {
                         <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
                         Published
                       </span>
+                    ) : course.status === "Archived" ? (
+                      <span className="flex items-center gap-1.5 text-blue-600">
+                        <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                        Archived
+                      </span>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-slate-600">
-                        <span className="h-2 w-2 rounded-full bg-slate-400"></span>
+                      <span className="flex items-center gap-1.5 text-amber-600">
+                        <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                         {course.status || "Draft"}
                       </span>
                     )}
