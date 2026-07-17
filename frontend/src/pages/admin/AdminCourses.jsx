@@ -1,4 +1,4 @@
-import { Edit3, Plus, Trash2 } from "lucide-react";
+import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
@@ -52,6 +52,48 @@ export default function AdminCourses() {
 
   return (
     <div>
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AdminCard className="flex items-center gap-4 py-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+            <BookOpen className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Total Courses</p>
+            <p className="text-2xl font-bold text-slate-900">0</p>
+          </div>
+        </AdminCard>
+        
+        <AdminCard className="flex items-center gap-4 py-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+            <CheckCircle className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Published</p>
+            <p className="text-2xl font-bold text-slate-900">0</p>
+          </div>
+        </AdminCard>
+
+        <AdminCard className="flex items-center gap-4 py-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <FileText className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Draft</p>
+            <p className="text-2xl font-bold text-slate-900">0</p>
+          </div>
+        </AdminCard>
+
+        <AdminCard className="flex items-center gap-4 py-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600">
+            <Users className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Enrollments</p>
+            <p className="text-2xl font-bold text-slate-900">0</p>
+          </div>
+        </AdminCard>
+      </div>
+
       <AdminPageHeader
         description="Manage course recommendations and the skills each course covers."
         title="Courses"
