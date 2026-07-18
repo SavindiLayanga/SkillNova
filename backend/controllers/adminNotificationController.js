@@ -1,5 +1,18 @@
 import { AdminNotification } from "../models/AdminNotification.js";
+import { sendTestEmail } from "../services/emailService.js";
 
+// @desc    Send a test critical email alert
+// @route   POST /api/admin/notifications/test-email
+// @access  Private (Admin)
+export const testCriticalEmail = async (req, res) => {
+  try {
+    await sendTestEmail();
+    res.json({ message: "Test email sent successfully" });
+  } catch (error) {
+    console.error("Error sending test email:", error);
+    res.status(500).json({ message: "Failed to send test email" });
+  }
+};
 // @desc    Get all admin notifications
 // @route   GET /api/admin/notifications
 // @access  Private (Admin)

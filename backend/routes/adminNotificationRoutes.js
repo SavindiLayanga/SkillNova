@@ -4,13 +4,15 @@ import {
   getNotifications,
   markAsRead,
   markAllAsRead,
-  deleteNotification
+  deleteNotification,
+  testCriticalEmail
 } from '../controllers/adminNotificationController.js';
 
 const router = express.Router();
 
 router.use(authenticateAdmin);
 
+router.post('/test-email', testCriticalEmail);
 router.get('/', getNotifications);
 router.put('/read-all', markAllAsRead);
 router.put('/:id/read', markAsRead);
