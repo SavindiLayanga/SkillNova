@@ -1,20 +1,23 @@
 import { User } from '../models/User.js';
 import { CVAnalysis } from '../models/CVAnalysis.js';
+import Job from '../models/Job.js';
+import { Course } from '../models/Course.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const [totalUsers, totalCVUploads] = await Promise.all([
+    const [totalUsers, totalCVUploads, totalJobs, totalCourses] = await Promise.all([
       User.countDocuments({ role: 'user', isDeleted: false }),
-      CVAnalysis.countDocuments()
+      CVAnalysis.countDocuments(),
+      Job.countDocuments({ status: { $ne: 'deleted' } }),
+      Course.countDocuments()
     ]);
 
-    // For metrics that don't have dedicated collections yet, we mock them
-    // or calculate based on existing data if applicable.
+    // For metrics that don't have dedicated collections yet (e.g. Skills), we mock them.
     const stats = [
       { label: "Total Users", value: totalUsers, change: "+12% from last month" },
       { label: "Total CV Uploads", value: totalCVUploads, change: "+5% from last month" },
-      { label: "Total Jobs", value: 145, change: "+10% from last month" },
-      { label: "Total Courses", value: 34, change: "0% from last month" },
+      { label: "Total Jobs", value: totalJobs, change: "Live from DB" },
+      { label: "Total Courses", value: totalCourses, change: "Live from DB" },
       { label: "Total Skills", value: 56, change: "+2% from last month" }
     ];
 

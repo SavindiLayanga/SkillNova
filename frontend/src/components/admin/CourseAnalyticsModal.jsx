@@ -2,14 +2,14 @@ import React from 'react';
 import { X, Users, CheckCircle2, Star, Award, Clock, Eye, TrendingUp, Calendar } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const mockChartData = [
-  { name: 'Jan', views: 400, enrollments: 240 },
-  { name: 'Feb', views: 300, enrollments: 139 },
-  { name: 'Mar', views: 200, enrollments: 980 },
-  { name: 'Apr', views: 278, enrollments: 390 },
-  { name: 'May', views: 189, enrollments: 480 },
-  { name: 'Jun', views: 239, enrollments: 380 },
-  { name: 'Jul', views: 349, enrollments: 430 },
+const defaultChartData = [
+  { name: 'Jan', views: 0, enrollments: 0 },
+  { name: 'Feb', views: 0, enrollments: 0 },
+  { name: 'Mar', views: 0, enrollments: 0 },
+  { name: 'Apr', views: 0, enrollments: 0 },
+  { name: 'May', views: 0, enrollments: 0 },
+  { name: 'Jun', views: 0, enrollments: 0 },
+  { name: 'Jul', views: 0, enrollments: 0 },
 ];
 
 const MetricCard = ({ title, value, icon: Icon, trend, colorClass }) => (
@@ -68,37 +68,32 @@ const CourseAnalyticsModal = ({ course, onClose }) => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <MetricCard 
               title="Enrollments" 
-              value={course.students || "1,245"} 
+              value={course.students || 0} 
               icon={Users} 
-              trend={12} 
               colorClass="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" 
             />
             <MetricCard 
               title="Completion Rate" 
-              value="68%" 
+              value={`${course.completionRate || 0}%`} 
               icon={CheckCircle2} 
-              trend={4.2} 
               colorClass="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" 
             />
             <MetricCard 
               title="Rating" 
-              value={course.rating || "4.8"} 
+              value={course.rating || 0} 
               icon={Star} 
-              trend={0} 
               colorClass="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" 
             />
             <MetricCard 
               title="Certificates Issued" 
-              value="842" 
+              value={course.certificatesIssued || 0} 
               icon={Award} 
-              trend={8.5} 
               colorClass="bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400" 
             />
             <MetricCard 
               title="Total Views" 
-              value="15.4K" 
+              value={course.totalViews || 0} 
               icon={Eye} 
-              trend={24} 
               colorClass="bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400" 
             />
             <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center">
@@ -108,7 +103,9 @@ const CourseAnalyticsModal = ({ course, onClose }) => {
                 </div>
                 <h4 className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Last Updated</h4>
               </div>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">2 Days Ago</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">
+                {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : 'N/A'}
+              </p>
             </div>
           </div>
 
@@ -117,7 +114,7 @@ const CourseAnalyticsModal = ({ course, onClose }) => {
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Performance Overview</h3>
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={course.chartData?.length > 0 ? course.chartData : defaultChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>

@@ -464,7 +464,7 @@ export default function AdminCourses() {
                         <Star className="h-4 w-4 fill-amber-500" />
                         <Star className="h-4 w-4 fill-amber-500" />
                         <Star className="h-4 w-4 fill-amber-500" />
-                        <span className="ml-1 font-semibold text-slate-700">{course.rating || "4.8"}</span>
+                        <span className="ml-1 font-semibold text-slate-700">{course.rating || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -507,7 +507,7 @@ export default function AdminCourses() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Users className="h-3 w-3" /> Students</p>
-                    <p className="mt-1 text-sm font-medium text-slate-900">{course.students || "1,245"}</p>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{course.students || 0}</p>
                   </div>
                 </div>
 

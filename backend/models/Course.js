@@ -50,6 +50,26 @@ const courseSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  completionRate: {
+    type: Number,
+    default: 0,
+  },
+  certificatesIssued: {
+    type: Number,
+    default: 0,
+  },
+  totalViews: {
+    type: Number,
+    default: 0,
+  },
+  chartData: {
+    type: [{
+      name: String,
+      views: Number,
+      enrollments: Number
+    }],
+    default: [],
+  },
   thumbnail: {
     type: String,
     default: "",
