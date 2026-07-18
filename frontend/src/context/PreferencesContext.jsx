@@ -42,7 +42,8 @@ export function PreferencesProvider({ children }) {
           language: "en",
           dateFormat: "DD/MM/YYYY",
           timeFormat: "12h",
-          theme: "system"
+          theme: "system",
+          currency: "LKR"
         };
         setPreferences(defaultPrefs);
         localStorage.setItem("preferences", JSON.stringify(defaultPrefs));

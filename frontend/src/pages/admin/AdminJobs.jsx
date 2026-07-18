@@ -569,7 +569,7 @@ export default function AdminJobs() {
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
                       {job.location && <span className="flex items-center gap-1"><MapPin size={14}/> {job.location}</span>}
                       {job.jobType && <span className="flex items-center gap-1"><Briefcase size={14}/> {job.jobType}</span>}
-                      {job.salaryRange && <span className="flex items-center gap-1"><DollarSign size={14}/> {job.salaryRange}</span>}
+                      {job.salaryRange && <span className="flex items-center gap-1"><DollarSign size={14}/> {job.salaryRange} {preferences?.currency === 'LKR' ? 'LKR' : 'USD'}</span>}
                       {job.experienceRequired && <span className="flex items-center gap-1"><Clock size={14}/> {job.experienceRequired}</span>}
                       {job.applicationDeadline && <span className="flex items-center gap-1"><Calendar size={14}/> {formatDate(job.applicationDeadline, preferences)}</span>}
                     </div>

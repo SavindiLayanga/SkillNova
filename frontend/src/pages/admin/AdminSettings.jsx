@@ -19,6 +19,7 @@ export default function AdminSettings() {
     timezone: "",
     dateFormat: "DD/MM/YYYY",
     timeFormat: "12h",
+    currency: "LKR",
   });
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function AdminSettings() {
         timezone: preferences.timezone || "",
         dateFormat: preferences.dateFormat || "DD/MM/YYYY",
         timeFormat: preferences.timeFormat || "12h",
+        currency: preferences.currency || "LKR",
       });
     }
   }, [preferences]);
@@ -190,6 +192,18 @@ export default function AdminSettings() {
                   >
                     <option value="12h">12-hour (05:30 PM)</option>
                     <option value="24h">24-hour (17:30)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
+                  <select 
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    value={prefs.currency}
+                    onChange={(e) => handlePreferenceChange("currency", e.target.value)}
+                  >
+                    <option value="LKR">LKR (Sri Lankan Rupee)</option>
+                    <option value="USD">USD (US Dollar)</option>
                   </select>
                 </div>
 

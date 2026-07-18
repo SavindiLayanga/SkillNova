@@ -11,7 +11,8 @@ const UserSettingsSchema = new mongoose.Schema({
     timezone: { type: String, default: "" },
     dateFormat: { type: String, default: "DD/MM/YYYY" },
     timeFormat: { type: String, default: "12h" },
-    theme: { type: String, default: "system" }
+    theme: { type: String, default: "system" },
+    currency: { type: String, default: "LKR" }
   },
   emailCourseRecommendations: { type: Boolean, default: true },
   showRemoteJobsFirst: { type: Boolean, default: true },
