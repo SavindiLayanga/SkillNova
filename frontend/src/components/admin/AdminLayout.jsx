@@ -20,7 +20,8 @@ import { useTranslation } from "react-i18next";
 import useAdminAuth from "../../hooks/useAdminAuth.js";
 import clsx from "../../utils/clsx.js";
 import adminNotificationService from "../../services/adminNotificationService.js";
-
+import { usePreferences } from "../../context/PreferencesContext.jsx";
+import { formatRelativeTime, formatDateTime } from "../../utils/dateUtils.js";
 const adminNavigation = [
   { label: "Dashboard", path: "/admin/dashboard", icon: Gauge },
   { label: "Users", path: "/admin/users", icon: Users },
@@ -38,6 +39,7 @@ export default function AdminLayout() {
   const { logout } = useAdminAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { preferences } = usePreferences();
 
   useEffect(() => {
     fetchNotifications();
@@ -254,8 +256,8 @@ export default function AdminLayout() {
                                 <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
                                   {notification.message}
                                 </p>
-                                <p className="mt-1.5 text-[10px] font-semibold text-slate-400">
-                                  {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                <p className="mt-1.5 text-[10px] font-semibold text-slate-400" title={formatDateTime(notification.createdAt, preferences)}>
+                                  {formatRelativeTime(notification.createdAt)}
                                 </p>
                               </div>
                             </div>

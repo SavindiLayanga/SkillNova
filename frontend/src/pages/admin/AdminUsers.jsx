@@ -6,6 +6,8 @@ import AdminCard from "../../components/admin/AdminCard.jsx";
 import Button from "../../components/ui/Button.jsx";
 import { fetchAllUsers, updateUserStatus, deleteUser, updateUser } from "../../services/adminUsersService.js";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { usePreferences } from "../../context/PreferencesContext.jsx";
+import { formatDate } from "../../utils/dateUtils.js";
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -20,6 +22,7 @@ function useDebounce(value, delay) {
 export default function AdminUsers() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { preferences } = usePreferences();
   
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -222,7 +225,7 @@ export default function AdminUsers() {
                       <td className="px-4 py-4 capitalize">{user.role}</td>
                       <td className="px-4 py-4">{user.careerGoal || "-"}</td>
                       <td className="px-4 py-4">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {formatDate(user.createdAt, preferences)}
                       </td>
                       <td className="px-4 py-4">
                         <span

@@ -1,6 +1,8 @@
 import React from 'react';
 import { X, Users, CheckCircle2, Star, Award, Clock, Eye, TrendingUp, Calendar } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { usePreferences } from '../../context/PreferencesContext.jsx';
+import { formatDate } from '../../utils/dateUtils.js';
 
 const defaultChartData = [
   { name: 'Jan', views: 0, enrollments: 0 },
@@ -31,6 +33,7 @@ const MetricCard = ({ title, value, icon: Icon, trend, colorClass }) => (
 );
 
 const CourseAnalyticsModal = ({ course, onClose }) => {
+  const { preferences } = usePreferences();
   if (!course) return null;
 
   return (
@@ -104,7 +107,7 @@ const CourseAnalyticsModal = ({ course, onClose }) => {
                 <h4 className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Last Updated</h4>
               </div>
               <p className="text-lg font-bold text-slate-900 dark:text-white">
-                {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : 'N/A'}
+                {course.updatedAt ? formatDate(course.updatedAt, preferences) : 'N/A'}
               </p>
             </div>
           </div>

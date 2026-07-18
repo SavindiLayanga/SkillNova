@@ -8,6 +8,8 @@ import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
 import { adminJobsService } from "../../services/adminJobsService.js";
+import { usePreferences } from "../../context/PreferencesContext.jsx";
+import { formatDate } from "../../utils/dateUtils.js";
 
 const emptyJob = { 
   title: "", 
@@ -28,6 +30,7 @@ const emptyJob = {
 };
 
 export default function AdminJobs() {
+  const { preferences } = usePreferences();
   const [jobs, setJobs] = useState([]);
   const [form, setForm] = useState(emptyJob);
   const [skillInput, setSkillInput] = useState("");
@@ -568,7 +571,7 @@ export default function AdminJobs() {
                       {job.jobType && <span className="flex items-center gap-1"><Briefcase size={14}/> {job.jobType}</span>}
                       {job.salaryRange && <span className="flex items-center gap-1"><DollarSign size={14}/> {job.salaryRange}</span>}
                       {job.experienceRequired && <span className="flex items-center gap-1"><Clock size={14}/> {job.experienceRequired}</span>}
-                      {job.applicationDeadline && <span className="flex items-center gap-1"><Calendar size={14}/> {new Date(job.applicationDeadline).toLocaleDateString()}</span>}
+                      {job.applicationDeadline && <span className="flex items-center gap-1"><Calendar size={14}/> {formatDate(job.applicationDeadline, preferences)}</span>}
                     </div>
 
                     {job.description && (

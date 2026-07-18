@@ -6,19 +6,42 @@ import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
 import useAdminAuth from "../../hooks/useAdminAuth.js";
+import { formatDate } from "../../utils/dateUtils.js";
+
+import { usePreferences } from "../../context/PreferencesContext.jsx";
 
 export default function AdminSettings() {
   const { logout, adminUser } = useAdminAuth();
   const { t, i18n } = useTranslation();
-  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || "en");
+  const { preferences, updatePreferences } = usePreferences();
+  const [prefs, setPrefs] = useState({
+    language: "en",
+    timezone: "",
+    dateFormat: "DD/MM/YYYY",
+    timeFormat: "12h",
+  });
 
   useEffect(() => {
-    setSelectedLanguage(i18n.language || "en");
-  }, [i18n.language]);
+    if (preferences) {
+      setPrefs({
+        language: preferences.language || "en",
+        timezone: preferences.timezone || "",
+        dateFormat: preferences.dateFormat || "DD/MM/YYYY",
+        timeFormat: preferences.timeFormat || "12h",
+      });
+    }
+  }, [preferences]);
 
-  const handleSaveLanguage = () => {
-    i18n.changeLanguage(selectedLanguage);
-    localStorage.setItem("i18nextLng", selectedLanguage);
+  const handlePreferenceChange = (key, value) => {
+    setPrefs(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSavePreferences = () => {
+    if (prefs.language !== i18n.language) {
+      i18n.changeLanguage(prefs.language);
+      localStorage.setItem("i18nextLng", prefs.language);
+    }
+    updatePreferences(prefs);
   };
   const navigate = useNavigate();
 
@@ -69,7 +92,7 @@ export default function AdminSettings() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4 text-slate-400" />
-                    {t("settings.profile.lastLogin")}: {new Date().toLocaleDateString()}
+                    {t("settings.profile.lastLogin")}: {formatDate(new Date(), preferences)}
                   </div>
                 </div>
               </div>
@@ -108,26 +131,73 @@ export default function AdminSettings() {
               <Globe className="h-5 w-5" />
             </div>
             <div className="w-full">
-              <h2 className="text-lg font-bold text-slate-950">{t("settings.language.title")}</h2>
+              <h2 className="text-lg font-bold text-slate-950">User Preferences</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500 mb-4">
-                {t("settings.language.desc")}
+                Manage your system-wide preferences including language, timezone, and date formats.
               </p>
               
-              <div className="flex items-center gap-3 max-w-sm">
-                <select 
-                  className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                >
-                  <option value="en">English</option>
-                  <option value="si-LK">සිංහල</option>
-                  <option value="es">Español</option>
-                  <option value="hi">हिन्दी</option>
-                  <option value="zh-CN">中文 (简体)</option>
-                </select>
-                <Button onClick={handleSaveLanguage} icon={Save}>
-                  {t("settings.language.saveBtn")}
-                </Button>
+              <div className="grid gap-4 sm:grid-cols-2 max-w-2xl">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                  <select 
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    value={prefs.language}
+                    onChange={(e) => handlePreferenceChange("language", e.target.value)}
+                  >
+                    <option value="en">English</option>
+                    <option value="si-LK">සිංහල</option>
+                    <option value="es">Español</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="zh-CN">中文 (简体)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Timezone</label>
+                  <select 
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    value={prefs.timezone}
+                    onChange={(e) => handlePreferenceChange("timezone", e.target.value)}
+                  >
+                    <option value="">Browser Default</option>
+                    <option value="Asia/Colombo">🇱🇰 Sri Lanka (Asia/Colombo) UTC+05:30</option>
+                    <option value="Europe/London">🇬🇧 United Kingdom (Europe/London) UTC+00:00</option>
+                    <option value="America/New_York">🇺🇸 United States (America/New_York) UTC-05:00</option>
+                    <option value="Asia/Dubai">🇦🇪 UAE (Asia/Dubai) UTC+04:00</option>
+                    <option value="Australia/Sydney">🇦🇺 Australia (Australia/Sydney) UTC+10:00</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Date Format</label>
+                  <select 
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    value={prefs.dateFormat}
+                    onChange={(e) => handlePreferenceChange("dateFormat", e.target.value)}
+                  >
+                    <option value="DD/MM/YYYY">DD/MM/YYYY (18/07/2026)</option>
+                    <option value="MM/DD/YYYY">MM/DD/YYYY (07/18/2026)</option>
+                    <option value="YYYY-MM-DD">YYYY-MM-DD (2026-07-18)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Time Format</label>
+                  <select 
+                    className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    value={prefs.timeFormat}
+                    onChange={(e) => handlePreferenceChange("timeFormat", e.target.value)}
+                  >
+                    <option value="12h">12-hour (05:30 PM)</option>
+                    <option value="24h">24-hour (17:30)</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Button onClick={handleSavePreferences} icon={Save} className="mt-2">
+                    Save Preferences
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

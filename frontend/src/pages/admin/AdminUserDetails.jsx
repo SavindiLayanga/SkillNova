@@ -4,9 +4,12 @@ import { ArrowLeft, User, FileText, Target, Briefcase, BookOpen, Activity } from
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import { fetchUserDetails } from "../../services/adminUsersService.js";
+import { usePreferences } from "../../context/PreferencesContext.jsx";
+import { formatDate } from "../../utils/dateUtils.js";
 
 export default function AdminUserDetails() {
   const { id } = useParams();
+  const { preferences } = usePreferences();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,7 +81,7 @@ export default function AdminUserDetails() {
             </div>
             <div>
               <p className="text-slate-500">Joined Date</p>
-              <p className="font-medium text-slate-900">{new Date(user.createdAt).toLocaleDateString()}</p>
+              <p className="font-medium text-slate-900">{formatDate(user.createdAt, preferences)}</p>
             </div>
           </div>
         </AdminCard>
@@ -196,7 +199,7 @@ export default function AdminUserDetails() {
                             {test.score}%
                           </span>
                         </td>
-                        <td className="px-4 py-3">{new Date(test.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3">{formatDate(test.createdAt, preferences)}</td>
                       </tr>
                     ))}
                   </tbody>

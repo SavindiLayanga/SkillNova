@@ -1,7 +1,10 @@
 import { X, CheckCircle2, Target, Briefcase, Award, GraduationCap, Sparkles } from "lucide-react";
 import Button from "./Button.jsx";
+import { usePreferences } from "../../context/PreferencesContext.jsx";
+import { formatDateTime } from "../../utils/dateUtils.js";
 
 export default function CVAnalysisViewModal({ analysis, onClose }) {
+  const { preferences } = usePreferences();
   if (!analysis) return null;
 
   const renderList = (items, fallback = "None") => {
@@ -71,7 +74,7 @@ export default function CVAnalysisViewModal({ analysis, onClose }) {
               )}
             </div>
             <p className="text-sm text-ink-500 mt-2">
-              {new Date(analysis.createdAt || Date.now()).toLocaleString()}
+              {formatDateTime(analysis.createdAt || Date.now(), preferences)}
             </p>
           </div>
           <button 

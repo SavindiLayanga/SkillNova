@@ -6,6 +6,13 @@ const UserSettingsSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  preferences: {
+    language: { type: String, default: "en" },
+    timezone: { type: String, default: "" },
+    dateFormat: { type: String, default: "DD/MM/YYYY" },
+    timeFormat: { type: String, default: "12h" },
+    theme: { type: String, default: "system" }
+  },
   emailCourseRecommendations: { type: Boolean, default: true },
   showRemoteJobsFirst: { type: Boolean, default: true },
   useCVDataForMatchScoring: { type: Boolean, default: true },
