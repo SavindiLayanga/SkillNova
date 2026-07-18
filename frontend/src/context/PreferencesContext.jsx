@@ -42,7 +42,7 @@ export function PreferencesProvider({ children }) {
           language: "en",
           dateFormat: "DD/MM/YYYY",
           timeFormat: "12h",
-          theme: "system",
+          theme: "light",
           currency: "LKR"
         };
         setPreferences(defaultPrefs);
