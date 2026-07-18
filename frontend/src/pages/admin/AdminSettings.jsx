@@ -1,4 +1,4 @@
-import { LogOut, ShieldAlert, Edit3, User, Mail, Phone, Shield, Clock, Camera } from "lucide-react";
+import { LogOut, ShieldAlert, Edit3, User, Mail, Phone, Shield, Clock, Camera, Globe } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
@@ -86,6 +86,55 @@ export default function AdminSettings() {
               <Button as={Link} className="mt-5" to="/admin/change-password">
                 Change Password
               </Button>
+            </div>
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
+              <Globe className="h-5 w-5" />
+            </div>
+            <div className="w-full">
+              <h2 className="text-lg font-bold text-slate-950">Platform Language</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500 mb-4">
+                Select your preferred language for the admin dashboard interface.
+              </p>
+              
+              <div className="max-w-xs">
+                <select 
+                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
+                  defaultValue="en"
+                >
+                  <option value="en">English</option>
+                  <option value="si">Sinhala (සිංහල)</option>
+                  <option value="zh">Mandarin Chinese (中文)</option>
+                  <option value="hi">Hindi (हिन्दी)</option>
+                  <option value="es">Spanish (Español)</option>
+                  <option value="fr">French (Français)</option>
+                  <option value="ar">Arabic (العربية)</option>
+                  <option value="bn">Bengali (বাংলা)</option>
+                  <option value="ru">Russian (Русский)</option>
+                  <option value="pt">Portuguese (Português)</option>
+                  <option value="ur">Urdu (اردو)</option>
+                  <option value="id">Indonesian (Bahasa Indonesia)</option>
+                  <option value="de">German (Deutsch)</option>
+                  <option value="ja">Japanese (日本語)</option>
+                  <option value="mr">Marathi (मराठी)</option>
+                  <option value="te">Telugu (తెలుగు)</option>
+                  <option value="tr">Turkish (Türkçe)</option>
+                  <option value="ta">Tamil (தமிழ்)</option>
+                  <option value="vi">Vietnamese (Tiếng Việt)</option>
+                  <option value="tl">Tagalog (Filipino)</option>
+                  <option value="ko">Korean (한국어)</option>
+                  <option value="fa">Persian (فارسی)</option>
+                  <option value="sw">Swahili (Kiswahili)</option>
+                  <option value="it">Italian (Italiano)</option>
+                  <option value="jv">Javanese (Basa Jawa)</option>
+                  <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+                  <option value="gu">Gujarati (ગુજરાતી)</option>
+                </select>
+              </div>
             </div>
           </div>
         </AdminCard>
