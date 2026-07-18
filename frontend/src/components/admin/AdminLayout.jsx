@@ -9,6 +9,10 @@ import {
   Settings,
   Users,
   X,
+  Info,
+  CheckCircle,
+  AlertTriangle,
+  AlertCircle
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -199,34 +203,59 @@ export default function AdminLayout() {
                           No notifications yet
                         </div>
                       ) : (
-                        notifications.map((notification) => (
-                          <div 
-                            key={notification._id} 
-                            className={clsx(
-                              "px-4 py-3 transition hover:bg-slate-50 cursor-pointer",
-                              !notification.isRead && "bg-slate-50/50"
-                            )}
-                            onClick={() => {
-                              if (!notification.isRead) handleMarkAsRead(notification._id);
-                              if (notification.link) navigate(notification.link);
-                            }}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className={clsx("text-sm", !notification.isRead ? "font-semibold text-slate-900" : "text-slate-600")}>
-                                {notification.title}
-                              </p>
-                              {!notification.isRead && (
-                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500"></span>
+                        notifications.map((notification) => {
+                          let Icon = Info;
+                          let iconColor = "text-blue-500";
+                          let bgColor = "bg-blue-50";
+
+                          if (notification.type === "success") {
+                            Icon = CheckCircle;
+                            iconColor = "text-emerald-500";
+                            bgColor = "bg-emerald-50";
+                          } else if (notification.type === "warning") {
+                            Icon = AlertTriangle;
+                            iconColor = "text-amber-500";
+                            bgColor = "bg-amber-50";
+                          } else if (notification.type === "error") {
+                            Icon = AlertCircle;
+                            iconColor = "text-red-500";
+                            bgColor = "bg-red-50";
+                          }
+
+                          return (
+                            <div 
+                              key={notification._id} 
+                              className={clsx(
+                                "flex gap-3 px-4 py-3 transition hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0",
+                                !notification.isRead && "bg-slate-50/50"
                               )}
+                              onClick={() => {
+                                if (!notification.isRead) handleMarkAsRead(notification._id);
+                                if (notification.link) navigate(notification.link);
+                              }}
+                            >
+                              <div className={clsx("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", bgColor)}>
+                                <Icon className={clsx("h-4 w-4", iconColor)} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className={clsx("text-sm truncate", !notification.isRead ? "font-semibold text-slate-900" : "font-medium text-slate-700")}>
+                                    {notification.title}
+                                  </p>
+                                  {!notification.isRead && (
+                                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary-500"></span>
+                                  )}
+                                </div>
+                                <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                                  {notification.message}
+                                </p>
+                                <p className="mt-1.5 text-[10px] font-semibold text-slate-400">
+                                  {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                              </div>
                             </div>
-                            <p className="mt-1 text-xs text-slate-500 line-clamp-2">
-                              {notification.message}
-                            </p>
-                            <p className="mt-1 text-[10px] font-medium text-slate-400">
-                              {new Date(notification.createdAt).toLocaleDateString()} {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </p>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
