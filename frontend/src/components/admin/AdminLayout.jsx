@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import useAdminAuth from "../../hooks/useAdminAuth.js";
 import clsx from "../../utils/clsx.js";
 import adminNotificationService from "../../services/adminNotificationService.js";
@@ -36,6 +37,7 @@ export default function AdminLayout() {
   const notificationRef = useRef(null);
   const { logout } = useAdminAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchNotifications();
@@ -121,24 +123,27 @@ export default function AdminLayout() {
         </div>
 
         <nav className="mt-8 space-y-1">
-          {adminNavigation.map(({ icon: Icon, label, path }) => (
-            <NavLink
-              className={({ isActive }) =>
-                clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition",
-                  isActive
-                    ? "bg-primary-500 text-white"
-                    : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                )
-              }
-              key={path}
-              onClick={() => setIsOpen(false)}
-              to={path}
-            >
-              <Icon className="h-5 w-5" />
-              {label}
-            </NavLink>
-          ))}
+          {adminNavigation.map(({ icon: Icon, label, path }) => {
+            const key = path.split("/").pop().replace("-", "");
+            return (
+              <NavLink
+                className={({ isActive }) =>
+                  clsx(
+                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition",
+                    isActive
+                      ? "bg-primary-500 text-white"
+                      : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                  )
+                }
+                key={path}
+                onClick={() => setIsOpen(false)}
+                to={path}
+              >
+                <Icon className="h-5 w-5" />
+                {t(`sidebar.${key}`, label)}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <button
@@ -147,7 +152,7 @@ export default function AdminLayout() {
           type="button"
         >
           <LogOut className="h-5 w-5" />
-          Logout
+          {t("settings.session.logout", "Logout")}
         </button>
       </aside>
 

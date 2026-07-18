@@ -1,0 +1,38 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "courses": "Courses",
+    "jobs": "Jobs",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "systemInfo": "System Info",
+    "aiInsights": "AI Insights",
+    "cvreviews": "CV Reviews"
+  },
+  "settings": {
+    "title": "Admin Settings",
+    "description": "Manage admin security preferences and session access.",
+    "profile": {
+      "title": "Admin Profile",
+      "noEmail": "No email provided",
+      "lastLogin": "Last Login",
+      "editBtn": "Edit Profile"
+    },
+    "security": {
+      "title": "Security notice",
+      "desc": "Admin access is separate from student accounts. Use a strong password and sign out when you finish platform management tasks.",
+      "changePassword": "Change Password"
+    },
+    "language": {
+      "title": "Platform Language",
+      "desc": "Select your preferred language for the admin dashboard interface.",
+      "saveBtn": "Save Settings"
+    },
+    "session": {
+      "title": "Session",
+      "desc": "End the current admin session and return to the separate admin login page.",
+      "logout": "Logout"
+    }
+  }
+}

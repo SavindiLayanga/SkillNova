@@ -1,0 +1,38 @@
+{
+  "sidebar": {
+    "dashboard": "仪表板",
+    "users": "用户",
+    "courses": "课程",
+    "jobs": "工作",
+    "settings": "设置",
+    "notifications": "通知",
+    "systemInfo": "系统信息",
+    "aiInsights": "AI洞察",
+    "cvreviews": "简历审查"
+  },
+  "settings": {
+    "title": "管理员设置",
+    "description": "管理管理员安全首选项和会话访问。",
+    "profile": {
+      "title": "管理员简介",
+      "noEmail": "未提供电子邮件",
+      "lastLogin": "上次登录",
+      "editBtn": "编辑简介"
+    },
+    "security": {
+      "title": "安全通知",
+      "desc": "管理员访问权限与学生帐户是分开的。请使用强密码。",
+      "changePassword": "更改密码"
+    },
+    "language": {
+      "title": "平台语言",
+      "desc": "选择管理员仪表板界面的首选语言。",
+      "saveBtn": "保存设置"
+    },
+    "session": {
+      "title": "会话",
+      "desc": "结束当前管理员会话并返回登录页面。",
+      "logout": "登出"
+    }
+  }
+}

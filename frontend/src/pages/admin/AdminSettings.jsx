@@ -1,5 +1,7 @@
-import { LogOut, ShieldAlert, Edit3, User, Mail, Phone, Shield, Clock, Camera, Globe } from "lucide-react";
+import { LogOut, ShieldAlert, Edit3, User, Mail, Phone, Shield, Clock, Camera, Globe, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import Button from "../../components/ui/Button.jsx";
@@ -7,6 +9,17 @@ import useAdminAuth from "../../hooks/useAdminAuth.js";
 
 export default function AdminSettings() {
   const { logout, adminUser } = useAdminAuth();
+  const { t, i18n } = useTranslation();
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || "en");
+
+  useEffect(() => {
+    setSelectedLanguage(i18n.language || "en");
+  }, [i18n.language]);
+
+  const handleSaveLanguage = () => {
+    i18n.changeLanguage(selectedLanguage);
+    localStorage.setItem("i18nextLng", selectedLanguage);
+  };
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -17,8 +30,8 @@ export default function AdminSettings() {
   return (
     <div>
       <AdminPageHeader
-        description="Manage admin security preferences and session access."
-        title="Admin Settings"
+        description={t("settings.description")}
+        title={t("settings.title")}
       />
 
       {/* Admin Profile Section */}
@@ -44,7 +57,7 @@ export default function AdminSettings() {
                 <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
                   <div className="flex items-center gap-1.5">
                     <Mail className="h-4 w-4 text-slate-400" />
-                    {adminUser?.email || "No email provided"}
+                    {adminUser?.email || t("settings.profile.noEmail")}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Phone className="h-4 w-4 text-slate-400" />
@@ -56,14 +69,14 @@ export default function AdminSettings() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4 text-slate-400" />
-                    Last Login: {new Date().toLocaleDateString()}
+                    {t("settings.profile.lastLogin")}: {new Date().toLocaleDateString()}
                   </div>
                 </div>
               </div>
             </div>
 
             <Button icon={Edit3} variant="outline" className="shrink-0">
-              Edit Profile
+              {t("settings.profile.editBtn")}
             </Button>
           </div>
         </AdminCard>
@@ -77,14 +90,13 @@ export default function AdminSettings() {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-950">
-                Security notice
+                {t("settings.security.title")}
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Admin access is separate from student accounts. Use a strong
-                password and sign out when you finish platform management tasks.
+                {t("settings.security.desc")}
               </p>
               <Button as={Link} className="mt-5" to="/admin/change-password">
-                Change Password
+                {t("settings.security.changePassword")}
               </Button>
             </div>
           </div>
@@ -96,54 +108,35 @@ export default function AdminSettings() {
               <Globe className="h-5 w-5" />
             </div>
             <div className="w-full">
-              <h2 className="text-lg font-bold text-slate-950">Platform Language</h2>
+              <h2 className="text-lg font-bold text-slate-950">{t("settings.language.title")}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500 mb-4">
-                Select your preferred language for the admin dashboard interface.
+                {t("settings.language.desc")}
               </p>
               
-              <div className="max-w-xs">
+              <div className="flex items-center gap-3 max-w-sm">
                 <select 
-                  className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
-                  defaultValue="en"
+                  className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors"
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
                 >
                   <option value="en">English</option>
-                  <option value="si">Sinhala (සිංහල)</option>
-                  <option value="zh">Mandarin Chinese (中文)</option>
-                  <option value="hi">Hindi (हिन्दी)</option>
-                  <option value="es">Spanish (Español)</option>
-                  <option value="fr">French (Français)</option>
-                  <option value="ar">Arabic (العربية)</option>
-                  <option value="bn">Bengali (বাংলা)</option>
-                  <option value="ru">Russian (Русский)</option>
-                  <option value="pt">Portuguese (Português)</option>
-                  <option value="ur">Urdu (اردو)</option>
-                  <option value="id">Indonesian (Bahasa Indonesia)</option>
-                  <option value="de">German (Deutsch)</option>
-                  <option value="ja">Japanese (日本語)</option>
-                  <option value="mr">Marathi (मराठी)</option>
-                  <option value="te">Telugu (తెలుగు)</option>
-                  <option value="tr">Turkish (Türkçe)</option>
-                  <option value="ta">Tamil (தமிழ்)</option>
-                  <option value="vi">Vietnamese (Tiếng Việt)</option>
-                  <option value="tl">Tagalog (Filipino)</option>
-                  <option value="ko">Korean (한국어)</option>
-                  <option value="fa">Persian (فارسی)</option>
-                  <option value="sw">Swahili (Kiswahili)</option>
-                  <option value="it">Italian (Italiano)</option>
-                  <option value="jv">Javanese (Basa Jawa)</option>
-                  <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
-                  <option value="gu">Gujarati (ગુજરાતી)</option>
+                  <option value="si-LK">සිංහල</option>
+                  <option value="es">Español</option>
+                  <option value="hi">हिन्दी</option>
+                  <option value="zh-CN">中文 (简体)</option>
                 </select>
+                <Button onClick={handleSaveLanguage} icon={Save}>
+                  {t("settings.language.saveBtn")}
+                </Button>
               </div>
             </div>
           </div>
         </AdminCard>
 
         <AdminCard>
-          <h2 className="text-lg font-bold text-slate-950">Session</h2>
+          <h2 className="text-lg font-bold text-slate-950">{t("settings.session.title")}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            End the current admin session and return to the separate admin login
-            page.
+            {t("settings.session.desc")}
           </p>
           <Button
             className="mt-5"
@@ -151,7 +144,7 @@ export default function AdminSettings() {
             onClick={handleLogout}
             variant="secondary"
           >
-            Logout
+            {t("settings.session.logout")}
           </Button>
         </AdminCard>
       </section>

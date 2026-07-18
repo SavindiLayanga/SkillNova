@@ -1,0 +1,38 @@
+{
+  "sidebar": {
+    "dashboard": "Tablero",
+    "users": "Usuarios",
+    "courses": "Cursos",
+    "jobs": "Trabajos",
+    "settings": "Configuraciones",
+    "notifications": "Notificaciones",
+    "systemInfo": "Info del Sistema",
+    "aiInsights": "Insights de IA",
+    "cvreviews": "Revisiones de CV"
+  },
+  "settings": {
+    "title": "Configuraciones de Administrador",
+    "description": "Administre las preferencias de seguridad y el acceso a la sesión.",
+    "profile": {
+      "title": "Perfil del Administrador",
+      "noEmail": "No se proporcionó correo",
+      "lastLogin": "Último acceso",
+      "editBtn": "Editar Perfil"
+    },
+    "security": {
+      "title": "Aviso de seguridad",
+      "desc": "El acceso de administrador está separado de las cuentas de estudiantes. Use una contraseña segura.",
+      "changePassword": "Cambiar Contraseña"
+    },
+    "language": {
+      "title": "Idioma de la Plataforma",
+      "desc": "Seleccione su idioma preferido para la interfaz del administrador.",
+      "saveBtn": "Guardar Configuraciones"
+    },
+    "session": {
+      "title": "Sesión",
+      "desc": "Finalice la sesión actual y regrese a la página de inicio de sesión.",
+      "logout": "Cerrar Sesión"
+    }
+  }
+}

@@ -6,6 +6,7 @@ import { AdminAuthProvider } from "./context/AdminAuthContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CVAnalysisProvider } from "./context/CVAnalysisContext.jsx";
 import { PracticeProvider } from "./context/PracticeContext.jsx";
+import "./i18n.js";
 import "./styles/index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
