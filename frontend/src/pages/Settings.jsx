@@ -274,22 +274,42 @@ export default function Settings() {
           </Card>
 
           <Card>
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary-50 p-2 text-primary-600">
-                  <Lock className="h-5 w-5" />
+            <div className="space-y-6">
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-primary-50 p-2 text-primary-600">
+                    <Lock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-ink-900">
+                      Account security
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-500">
+                      Manage your password, two-factor authentication, and other security preferences.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink-900">
-                    Account security
-                  </h2>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-500">
-                    Student authentication is stored locally for this prototype.
-                    Backend authentication can replace this flow later.
-                  </p>
-                </div>
+                <Button variant="secondary">Review security</Button>
               </div>
-              <Button variant="secondary">Review security</Button>
+
+              <div className="border-t border-ink-100 pt-6">
+                <label className="flex cursor-pointer gap-4 rounded-lg border border-ink-100 bg-white p-4 transition-colors hover:border-ink-200">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-ink-900">Two-factor authentication (2FA)</h3>
+                    <p className="mt-2 text-sm leading-6 text-ink-500">
+                      Add an extra layer of security to your account by requiring more than just a password to sign in.
+                    </p>
+                  </div>
+                  <div className="pt-1">
+                    <input
+                      className="h-5 w-5 cursor-pointer rounded border-ink-200 text-primary-500 focus:ring-primary-400"
+                      checked={settings?.twoFactorAuth ?? false}
+                      onChange={() => handleToggle("twoFactorAuth", settings?.twoFactorAuth)}
+                      type="checkbox"
+                    />
+                  </div>
+                </label>
+              </div>
             </div>
           </Card>
 
