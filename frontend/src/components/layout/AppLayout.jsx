@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar.jsx";
@@ -19,7 +18,7 @@ export default function AppLayout() {
           setIsChatOpen(true);
         }}
       />
-      <div className="min-w-0 lg:pl-72">
+      <div className="min-w-0 lg:pl-[110px]">
         <Navbar 
           onMenuClick={() => setIsSidebarOpen(true)} 
           onChatClick={() => setIsChatOpen(true)} 
