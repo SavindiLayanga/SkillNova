@@ -11,9 +11,13 @@ import { formatDate } from "../../utils/dateUtils.js";
 import { usePreferences } from "../../context/PreferencesContext.jsx";
 
 export default function AdminSettings() {
-  const { logout, adminUser } = useAdminAuth();
+  const { logout, adminUser, updateProfile } = useAdminAuth();
   const { t, i18n } = useTranslation();
   const { preferences, updatePreferences } = usePreferences();
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({ name: "", phone: "" });
+  const [isSaving, setIsSaving] = useState(false);
   const [prefs, setPrefs] = useState({
     language: "en",
     timezone: "",
@@ -51,6 +55,27 @@ export default function AdminSettings() {
     logout();
     navigate("/admin/login", { replace: true });
   }
+
+  const openEditModal = () => {
+    setEditFormData({
+      name: adminUser?.name || adminUser?.username || "",
+      phone: adminUser?.phone || ""
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await updateProfile(editFormData);
+      setIsEditModalOpen(false);
+    } catch (error) {
+      alert(error.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div>
@@ -100,7 +125,7 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            <Button icon={Edit3} variant="outline" className="shrink-0">
+            <Button icon={Edit3} variant="outline" className="shrink-0" onClick={openEditModal}>
               {t("settings.profile.editBtn")}
             </Button>
           </div>
@@ -232,6 +257,43 @@ export default function AdminSettings() {
           </Button>
         </AdminCard>
       </section>
+      {/* Edit Profile Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <AdminCard className="w-full max-w-md">
+            <h2 className="mb-4 text-xl font-bold text-slate-900">Edit Profile</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Name</span>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  required
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Phone</span>
+                <input
+                  type="text"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                />
+              </label>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </AdminCard>
+        </div>
+      )}
     </div>
   );
 }

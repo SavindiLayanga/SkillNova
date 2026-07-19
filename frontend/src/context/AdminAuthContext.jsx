@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminAuthContext } from "./adminAuthContextValue.js";
-import { adminLoginApi, adminLogoutApi, getAdminMeApi } from "../services/adminAuthService.js";
+import { adminLoginApi, adminLogoutApi, getAdminMeApi, updateAdminProfileApi } from "../services/adminAuthService.js";
 
 export function AdminAuthProvider({ children }) {
   const [adminUser, setAdminUser] = useState(null);
@@ -41,12 +41,19 @@ export function AdminAuthProvider({ children }) {
       }
     }
 
+    async function updateProfile(data) {
+      const response = await updateAdminProfileApi(data);
+      setAdminUser(response.user);
+      return response;
+    }
+
     return {
       adminUser,
       loading,
       isLoggedIn,
       login,
       logout,
+      updateProfile,
     };
   }, [adminUser, loading]);
 

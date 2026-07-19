@@ -87,3 +87,30 @@ export const getAdminMe = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const updateAdminProfile = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+    const { name, phone, email } = req.body;
+
+    const admin = await User.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    if (name !== undefined) admin.name = name;
+    if (phone !== undefined) admin.phone = phone;
+    // Don't allow changing email if it's tied to firebase or requires verification, but since it's just profile updates, we'll allow name and phone for now.
+
+    await admin.save();
+
+    const adminObj = admin.toObject();
+    delete adminObj.password;
+    delete adminObj.__v;
+
+    res.json({ message: 'Profile updated successfully', user: adminObj });
+  } catch (error) {
+    console.error('Admin profile update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
