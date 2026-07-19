@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  phone: { type: String, default: '' },
   role: { type: String, enum: ['user', 'super_admin'], default: 'user' },
   
   // Admin specific fields
