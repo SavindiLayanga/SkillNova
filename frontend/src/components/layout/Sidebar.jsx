@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-[110px] flex-col border-r-0 bg-primary-600 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r-0 bg-primary-600 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -63,15 +63,15 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-2 flex-1 space-y-1.5 overflow-y-auto px-0 custom-scrollbar-sidebar">
+        <nav className="mt-2 flex-1 space-y-1.5 overflow-y-auto px-0 custom-scrollbar-sidebar relative">
           {navigation.map(({ icon: Icon, label, path }) => (
             <NavLink
               className={({ isActive }) =>
                 clsx(
-                  "group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto",
+                  "group relative flex flex-col gap-1.5 py-3 transition-all duration-300",
                   isActive
-                    ? "bg-white text-primary-600 rounded-[24px] shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-[125px] -ml-3 z-10"
-                    : "text-primary-100 hover:text-white hover:bg-white/10 rounded-[20px] w-[86px]"
+                    ? "items-start pl-6 mx-auto bg-white text-primary-600 rounded-[28px] shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-[116px] z-10"
+                    : "items-center justify-center text-primary-100 hover:text-white hover:bg-white/10 rounded-[24px] w-[120px] mx-auto"
                 )
               }
               key={path}
@@ -91,7 +91,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
                        strokeWidth={isActive ? 2.2 : 1.8}
                      />
                   </div>
-                  <span className="text-[11px] font-semibold text-center leading-tight px-1">
+                  <span className={clsx("text-[12px] font-semibold leading-tight px-1", isActive ? "text-left" : "text-center")}>
                     {label}
                   </span>
                 </>
@@ -101,7 +101,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
 
           {/* Logout */}
           <button
-            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[86px] text-primary-100 hover:text-white hover:bg-white/10 rounded-[20px] mt-2"
+            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-primary-100 hover:text-white hover:bg-white/10 rounded-[24px] mt-2"
             onClick={handleLogout}
             type="button"
           >
@@ -111,12 +111,12 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
                  strokeWidth={1.8}
                />
             </div>
-            <span className="text-[11px] font-semibold text-center leading-tight px-1">Logout</span>
+            <span className="text-[12px] font-semibold text-center leading-tight px-1">Logout</span>
           </button>
         </nav>
 
         {/* Chatbot trigger */}
-        <div className="mt-4 px-3">
+        <div className="mt-4 px-4">
           <button
             className="w-full h-16 rounded-[24px] bg-primary-700/50 shadow-inner border border-primary-500/30 backdrop-blur-sm flex flex-col items-center justify-center gap-1 hover:bg-primary-500 transition-colors active:scale-95 group"
             onClick={onChatClick}

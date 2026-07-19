@@ -100,7 +100,7 @@ export default function AdminLayout() {
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-[110px] flex-col border-r-0 bg-slate-950 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r-0 bg-slate-950 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -127,10 +127,10 @@ export default function AdminLayout() {
               <NavLink
                 className={({ isActive }) =>
                   clsx(
-                    "group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto",
+                    "group relative flex flex-col gap-1.5 py-3 transition-all duration-300 mx-auto",
                     isActive
-                      ? "bg-white text-slate-900 rounded-[24px] shadow-[0_10px_25px_rgba(0,0,0,0.2)] w-[125px] -ml-3 z-10"
-                      : "text-slate-400 hover:text-white hover:bg-white/5 rounded-[20px] w-[86px]"
+                      ? "items-start pl-6 mx-auto bg-white text-slate-900 rounded-[28px] shadow-[0_10px_25px_rgba(0,0,0,0.2)] w-[116px] z-10"
+                      : "items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-[24px] w-[120px]"
                   )
                 }
                 key={path}
@@ -150,7 +150,7 @@ export default function AdminLayout() {
                          strokeWidth={isActive ? 2.2 : 1.8}
                        />
                     </div>
-                    <span className="text-[11px] font-semibold text-center leading-tight px-1">
+                    <span className={clsx("text-[11px] font-semibold leading-tight px-1", isActive ? "text-left" : "text-center")}>
                       {t(`sidebar.${key}`, label)}
                     </span>
                   </>
@@ -161,7 +161,7 @@ export default function AdminLayout() {
           
           {/* Logout */}
           <button
-            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[86px] text-slate-400 hover:text-white hover:bg-white/5 rounded-[20px] mt-2"
+            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-slate-400 hover:text-white hover:bg-white/5 rounded-[24px] mt-2"
             onClick={handleLogout}
             type="button"
           >
@@ -187,7 +187,7 @@ export default function AdminLayout() {
         `}} />
       </aside>
 
-      <div className="min-w-0 lg:pl-[110px]">
+      <div className="min-w-0 lg:pl-[150px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4">
             <button
