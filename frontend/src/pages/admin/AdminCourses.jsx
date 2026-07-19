@@ -332,7 +332,7 @@ export default function AdminCourses() {
             disabled={!(searchQuery || categoryFilter !== "all_categories" || statusFilter !== "all_status" || providerFilter !== "all_providers" || sortFilter !== "newest")}
             className={`flex items-center gap-1 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
               (searchQuery || categoryFilter !== "all_categories" || statusFilter !== "all_status" || providerFilter !== "all_providers" || sortFilter !== "newest")
-                ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+                ? "text-red-500 hover:bg-red-50 hover:text-red-700 cursor-pointer"
                 : "text-slate-300 cursor-not-allowed"
             }`}
           >
