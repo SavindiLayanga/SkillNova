@@ -1,4 +1,4 @@
-import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter, Copy, Archive, Star, Clock, BarChart, Tag, Building, Eye } from "lucide-react";
+import { BookOpen, CheckCircle, Edit3, FileText, Plus, Trash2, Users, Search, Filter, Copy, Archive, Star, Clock, BarChart, Tag, Building, Eye, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
@@ -321,6 +321,24 @@ export default function AdminCourses() {
               <option value="popular">Most Popular</option>
             </select>
           </div>
+          <button
+            onClick={() => {
+              setSearchQuery("");
+              setCategoryFilter("all_categories");
+              setStatusFilter("all_status");
+              setProviderFilter("all_providers");
+              setSortFilter("newest");
+            }}
+            disabled={!(searchQuery || categoryFilter !== "all_categories" || statusFilter !== "all_status" || providerFilter !== "all_providers" || sortFilter !== "newest")}
+            className={`flex items-center gap-1 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              (searchQuery || categoryFilter !== "all_categories" || statusFilter !== "all_status" || providerFilter !== "all_providers" || sortFilter !== "newest")
+                ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+                : "text-slate-300 cursor-not-allowed"
+            }`}
+          >
+            <X className="h-4 w-4" />
+            Clear
+          </button>
         </div>
       </div>
 
