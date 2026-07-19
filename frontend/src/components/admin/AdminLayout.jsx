@@ -93,30 +93,25 @@ export default function AdminLayout() {
     <div className="admin-premium-wallpaper min-h-screen bg-slate-100 text-slate-900">
       <div
         className={clsx(
-          "fixed inset-0 z-40 bg-slate-950/40 transition lg:hidden",
+          "fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm transition-opacity lg:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => setIsOpen(false)}
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-950 px-4 py-5 text-white transition-transform lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-[110px] flex-col border-r-0 bg-slate-950 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-500 text-xl font-black">
-              S
-            </div>
-            <div>
-              <p className="text-lg font-bold">SkillNova Admin</p>
-              <p className="text-xs text-slate-400">Operations console</p>
-            </div>
+        {/* Logo */}
+        <div className="flex flex-col items-center justify-center mb-6 relative">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-primary-500 text-white shadow-md">
+            <span className="text-2xl font-black">S</span>
           </div>
           <button
             aria-label="Close admin menu"
-            className="rounded-lg p-2 text-slate-300 lg:hidden"
+            className="absolute -right-3 top-0 rounded-lg p-1 text-slate-400 hover:text-white lg:hidden"
             onClick={() => setIsOpen(false)}
             type="button"
           >
@@ -124,41 +119,75 @@ export default function AdminLayout() {
           </button>
         </div>
 
-        <nav className="mt-8 space-y-1">
+        {/* Navigation */}
+        <nav className="mt-2 flex-1 space-y-1.5 overflow-y-auto px-0 custom-scrollbar-sidebar">
           {adminNavigation.map(({ icon: Icon, label, path }) => {
             const key = path.split("/").pop().replace("-", "");
             return (
               <NavLink
                 className={({ isActive }) =>
                   clsx(
-                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition",
+                    "group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto",
                     isActive
-                      ? "bg-primary-500 text-white"
-                      : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                      ? "bg-white text-slate-900 rounded-[24px] shadow-[0_10px_25px_rgba(0,0,0,0.2)] w-[125px] -ml-3 z-10"
+                      : "text-slate-400 hover:text-white hover:bg-white/5 rounded-[20px] w-[86px]"
                   )
                 }
                 key={path}
                 onClick={() => setIsOpen(false)}
                 to={path}
               >
-                <Icon className="h-5 w-5" />
-                {t(`sidebar.${key}`, label)}
+                {({ isActive }) => (
+                  <>
+                    <div className={clsx("flex items-center justify-center h-10 w-10 rounded-full transition-colors", isActive ? "bg-slate-100" : "")}>
+                       <Icon
+                         className={clsx(
+                           "h-[24px] w-[24px] shrink-0",
+                           isActive
+                             ? "text-slate-900"
+                             : "text-slate-400 group-hover:text-white"
+                         )}
+                         strokeWidth={isActive ? 2.2 : 1.8}
+                       />
+                    </div>
+                    <span className="text-[11px] font-semibold text-center leading-tight px-1">
+                      {t(`sidebar.${key}`, label)}
+                    </span>
+                  </>
+                )}
               </NavLink>
             );
           })}
+          
+          {/* Logout */}
+          <button
+            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[86px] text-slate-400 hover:text-white hover:bg-white/5 rounded-[20px] mt-2"
+            onClick={handleLogout}
+            type="button"
+          >
+            <div className="flex items-center justify-center h-10 w-10 rounded-full">
+               <LogOut
+                 className="h-[24px] w-[24px] shrink-0 text-slate-400 group-hover:text-white"
+                 strokeWidth={1.8}
+               />
+            </div>
+            <span className="text-[11px] font-semibold text-center leading-tight px-1">{t("settings.session.logout", "Logout")}</span>
+          </button>
         </nav>
-
-        <button
-          className="mt-auto flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-900 hover:text-white"
-          onClick={handleLogout}
-          type="button"
-        >
-          <LogOut className="h-5 w-5" />
-          {t("settings.session.logout", "Logout")}
-        </button>
+        
+        <style dangerouslySetInnerHTML={{__html: `
+          .custom-scrollbar-sidebar::-webkit-scrollbar {
+            width: 0px;
+            display: none;
+          }
+          .custom-scrollbar-sidebar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}} />
       </aside>
 
-      <div className="min-w-0 lg:pl-72">
+      <div className="min-w-0 lg:pl-[110px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4">
             <button
