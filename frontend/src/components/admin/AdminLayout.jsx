@@ -40,6 +40,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { preferences } = usePreferences();
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
   useEffect(() => {
     fetchNotifications();
@@ -50,7 +51,15 @@ export default function AdminLayout() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      clearInterval(timer);
+    };
   }, []);
 
   const fetchNotifications = async () => {
@@ -304,6 +313,14 @@ export default function AdminLayout() {
               >
                 Logout
               </button>
+              <div className="hidden sm:flex flex-col items-end border-l border-slate-200 pl-3">
+                <span className="text-xs font-semibold text-slate-800">
+                  {currentDateTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <span className="text-[11px] font-medium text-slate-500">
+                  {currentDateTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
             </div>
           </div>
         </header>
