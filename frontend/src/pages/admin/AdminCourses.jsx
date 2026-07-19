@@ -34,11 +34,48 @@ export default function AdminCourses() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
 
-  const totalCourses = courses.length;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all_categories");
+  const [statusFilter, setStatusFilter] = useState("all_status");
+  const [providerFilter, setProviderFilter] = useState("all_providers");
+  const [sortFilter, setSortFilter] = useState("newest");
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, statusFilter, providerFilter, sortFilter]);
+
+  const filteredCourses = courses.filter((course) => {
+    if (searchQuery && !course.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (categoryFilter !== "all_categories" && course.category?.toLowerCase() !== categoryFilter) return false;
+    if (statusFilter !== "all_status") {
+      const cStatus = course.status?.toLowerCase() || "draft";
+      if (cStatus !== statusFilter) return false;
+    }
+    if (providerFilter !== "all_providers") {
+      const cProvider = course.provider?.toLowerCase() || "skillnova academy";
+      if (!cProvider.includes(providerFilter)) return false;
+    }
+    return true;
+  });
+
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
+    if (sortFilter === "newest") {
+      return (b.id || 0) - (a.id || 0);
+    } else if (sortFilter === "oldest") {
+      return (a.id || 0) - (b.id || 0);
+    } else if (sortFilter === "popular") {
+      const studentsA = parseInt((a.students || "0").toString().replace(/,/g, '')) || 0;
+      const studentsB = parseInt((b.students || "0").toString().replace(/,/g, '')) || 0;
+      return studentsB - studentsA;
+    }
+    return 0;
+  });
+
+  const totalCourses = sortedCourses.length;
   const totalPages = Math.ceil(totalCourses / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalCourses);
-  const currentCourses = courses.slice(startIndex, endIndex);
+  const currentCourses = sortedCourses.slice(startIndex, endIndex);
 
   function goToPage(page) {
     if (page >= 1 && page <= totalPages) {
@@ -231,12 +268,18 @@ export default function AdminCourses() {
             type="text"
             placeholder="Search courses..."
             className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+            <select 
+              className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
               <option value="all_categories">All Categories</option>
               <option value="programming">Programming</option>
               <option value="design">Design</option>
@@ -245,14 +288,22 @@ export default function AdminCourses() {
             </select>
           </div>
           <div className="relative">
-            <select className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+            <select 
+              className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
               <option value="all_status">All Statuses</option>
               <option value="published">Published</option>
               <option value="draft">Draft</option>
             </select>
           </div>
           <div className="relative">
-            <select className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+            <select 
+              className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              value={providerFilter}
+              onChange={(e) => setProviderFilter(e.target.value)}
+            >
               <option value="all_providers">All Providers</option>
               <option value="coursera">Coursera</option>
               <option value="udemy">Udemy</option>
@@ -260,7 +311,11 @@ export default function AdminCourses() {
             </select>
           </div>
           <div className="relative">
-            <select className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400">
+            <select 
+              className="appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+              value={sortFilter}
+              onChange={(e) => setSortFilter(e.target.value)}
+            >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="popular">Most Popular</option>
