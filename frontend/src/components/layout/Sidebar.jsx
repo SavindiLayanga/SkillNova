@@ -58,24 +58,24 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
         )}
       >
         {/* Profile Card */}
-        <div className="bg-white rounded-[28px] p-4 flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
-          <div className="h-12 w-12 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-lg shrink-0">
+        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-[28px] p-4 flex items-center gap-3 shadow-[0_8px_30px_rgb(214,85,85,0.2)] border border-primary-400/20">
+          <div className="h-12 w-12 rounded-full bg-white text-primary-600 flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">{user?.name || "User"}</p>
-            <p className="text-xs text-slate-500 truncate">{user?.email || ""}</p>
+            <p className="text-sm font-bold text-white truncate">{user?.name || "User"}</p>
+            <p className="text-xs text-primary-100 truncate">{user?.email || ""}</p>
           </div>
         </div>
 
         {/* Navigation Card */}
-        <div className="bg-white rounded-[32px] pl-4 py-4 pr-0 flex-1 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-visible">
+        <div className="bg-gradient-to-b from-primary-500 to-primary-600 rounded-[32px] pl-4 py-4 pr-0 flex-1 flex flex-col shadow-[0_10px_40px_rgba(214,85,85,0.2)] overflow-visible">
           
           <div className="flex items-center gap-2 px-2 mb-6 mt-2 pr-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[12px] bg-primary-600 text-white shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[12px] bg-white text-primary-600 shadow-md">
               <Sparkles className="h-4 w-4" strokeWidth={2} />
             </div>
-            <span className="font-black text-lg text-slate-800 tracking-tight">SkillNova</span>
+            <span className="font-black text-lg text-white tracking-tight">SkillNova</span>
           </div>
 
           <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar-sidebar pl-2 pt-2 pb-4 w-[calc(100%+24px)]">
@@ -89,7 +89,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
                     "flex items-center gap-3 px-4 py-3 transition-all duration-300",
                     isActive
                       ? "nav-item-active-user font-bold w-[calc(100%-24px)]"
-                      : "text-slate-500 hover:bg-primary-50 hover:text-primary-600 font-medium rounded-full w-[calc(100%-40px)] mr-10"
+                      : "text-primary-50 hover:bg-white/20 hover:text-white font-medium rounded-full w-[calc(100%-40px)] mr-10"
                   )
                 }
               >
@@ -104,17 +104,17 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
           </nav>
 
           {/* Bottom Actions */}
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1 relative z-0 mx-2 pr-4">
+          <div className="mt-4 pt-4 border-t border-white/20 flex flex-col gap-1 relative z-0 mx-2 pr-4">
             <button
               onClick={onChatClick}
-              className="flex items-center gap-3 px-4 py-3 rounded-full text-slate-500 hover:bg-primary-50 hover:text-primary-600 transition-colors font-medium w-full"
+              className="flex items-center gap-3 px-4 py-3 rounded-full text-primary-50 hover:bg-white/20 hover:text-white transition-colors font-medium w-full"
             >
               <Bot className="h-5 w-5" />
               <span className="text-sm">AI Assistant</span>
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors font-medium w-full"
+              className="flex items-center gap-3 px-4 py-3 rounded-full text-primary-50 hover:bg-white/20 hover:text-white transition-colors font-medium w-full"
             >
               <LogOut className="h-5 w-5" />
               <span className="text-sm">Logout</span>

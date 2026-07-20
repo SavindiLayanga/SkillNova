@@ -9,7 +9,7 @@ export default function AppLayout() {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
-    <div className="premium-wallpaper min-h-screen bg-ink-50">
+    <div className="admin-premium-wallpaper min-h-screen bg-slate-100 text-slate-900">
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
