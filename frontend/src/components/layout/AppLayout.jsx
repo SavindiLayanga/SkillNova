@@ -9,7 +9,7 @@ export default function AppLayout() {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
-    <div className="admin-premium-wallpaper min-h-screen bg-slate-100 text-slate-900">
+    <div className="premium-wallpaper min-h-screen bg-ink-50">
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -18,7 +18,7 @@ export default function AppLayout() {
           setIsChatOpen(true);
         }}
       />
-      <div className="min-w-0 lg:pl-[290px]">
+      <div className="min-w-0 lg:pl-[150px]">
         <Navbar 
           onMenuClick={() => setIsSidebarOpen(true)} 
           onChatClick={() => setIsChatOpen(true)} 

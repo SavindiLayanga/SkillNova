@@ -31,7 +31,7 @@ const navigation = [
 ];
 
 export default function Sidebar({ isOpen, onClose, onChatClick }) {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -39,8 +39,6 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
     onClose();
     navigate("/login", { replace: true });
   }
-
-  const initials = user?.name ? user.name.substring(0, 2).toUpperCase() : "U";
 
   return (
     <>
@@ -51,77 +49,84 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
         )}
         onClick={onClose}
       />
-      <div
+      <aside
         className={clsx(
-          "fixed top-4 bottom-4 left-4 z-50 flex w-[260px] flex-col gap-4 transition-transform duration-300 ease-out lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-[calc(100%+1rem)]"
+          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r-0 bg-primary-600 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
+          isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Profile Card */}
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-[28px] p-4 flex items-center gap-3 shadow-[0_8px_30px_rgb(214,85,85,0.2)] border border-primary-400/20">
-          <div className="h-12 w-12 rounded-full bg-white text-primary-600 flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate">{user?.name || "User"}</p>
-            <p className="text-xs text-primary-100 truncate">{user?.email || ""}</p>
+        {/* Logo */}
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-white text-primary-500 shadow-md">
+            <Sparkles className="h-8 w-8" strokeWidth={2} />
           </div>
         </div>
 
-        {/* Navigation Card */}
-        <div className="bg-gradient-to-b from-primary-500 to-primary-600 rounded-[32px] pl-4 py-4 pr-0 flex-1 flex flex-col shadow-[0_10px_40px_rgba(214,85,85,0.2)] overflow-visible">
-          
-          <div className="flex items-center gap-2 px-2 mb-6 mt-2 pr-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[12px] bg-white text-primary-600 shadow-md">
-              <Sparkles className="h-4 w-4" strokeWidth={2} />
+        {/* Navigation */}
+        <nav className="mt-2 flex-1 space-y-1.5 overflow-y-auto px-0 custom-scrollbar-sidebar relative">
+          {navigation.map(({ icon: Icon, label, path }) => (
+            <NavLink
+              className={({ isActive }) =>
+                clsx(
+                  "group relative flex flex-col gap-1.5 py-3 transition-all duration-300",
+                  isActive
+                    ? "items-start pl-6 mx-auto bg-white text-primary-600 rounded-[28px] shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-[116px] z-10"
+                    : "items-center justify-center text-primary-100 hover:text-white hover:bg-white/10 rounded-[24px] w-[120px] mx-auto"
+                )
+              }
+              key={path}
+              onClick={onClose}
+              to={path}
+            >
+              {({ isActive }) => (
+                <>
+                  <div className={clsx("flex items-center justify-center h-10 w-10 rounded-full transition-colors", isActive ? "bg-primary-50" : "")}>
+                     <Icon
+                       className={clsx(
+                         "h-[24px] w-[24px] shrink-0",
+                         isActive
+                           ? "text-primary-600"
+                           : "text-primary-200 group-hover:text-white"
+                       )}
+                       strokeWidth={isActive ? 2.2 : 1.8}
+                     />
+                  </div>
+                  <span className={clsx("text-[12px] font-semibold leading-tight px-1", isActive ? "text-left" : "text-center")}>
+                    {label}
+                  </span>
+                </>
+              )}
+            </NavLink>
+          ))}
+
+          {/* Logout */}
+          <button
+            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-primary-100 hover:text-white hover:bg-white/10 rounded-[24px] mt-2"
+            onClick={handleLogout}
+            type="button"
+          >
+            <div className="flex items-center justify-center h-10 w-10 rounded-full">
+               <LogOut
+                 className="h-[24px] w-[24px] shrink-0 text-primary-200 group-hover:text-white"
+                 strokeWidth={1.8}
+               />
             </div>
-            <span className="font-black text-lg text-white tracking-tight">SkillNova</span>
-          </div>
+            <span className="text-[12px] font-semibold text-center leading-tight px-1">Logout</span>
+          </button>
+        </nav>
 
-          <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar-sidebar pl-2 pt-2 pb-4 w-[calc(100%+24px)]">
-            {navigation.map(({ icon: Icon, label, path }) => (
-              <NavLink
-                key={path}
-                to={path}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  clsx(
-                    "flex items-center gap-3 px-4 py-3 transition-all duration-300",
-                    isActive
-                      ? "nav-item-active-user font-bold w-[calc(100%-24px)]"
-                      : "text-primary-50 hover:bg-white/20 hover:text-white font-medium rounded-full w-[calc(100%-40px)] mr-10"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-sm">{label}</span>
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Bottom Actions */}
-          <div className="mt-4 pt-4 border-t border-white/20 flex flex-col gap-1 relative z-0 mx-2 pr-4">
-            <button
-              onClick={onChatClick}
-              className="flex items-center gap-3 px-4 py-3 rounded-full text-primary-50 hover:bg-white/20 hover:text-white transition-colors font-medium w-full"
-            >
-              <Bot className="h-5 w-5" />
-              <span className="text-sm">AI Assistant</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 rounded-full text-primary-50 hover:bg-white/20 hover:text-white transition-colors font-medium w-full"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="text-sm">Logout</span>
-            </button>
-          </div>
+        {/* Chatbot trigger */}
+        <div className="mt-4 px-4">
+          <button
+            className="w-full h-16 rounded-[24px] bg-primary-700/50 shadow-inner border border-primary-500/30 backdrop-blur-sm flex flex-col items-center justify-center gap-1 hover:bg-primary-500 transition-colors active:scale-95 group"
+            onClick={onChatClick}
+            type="button"
+          >
+             <Bot className="h-6 w-6 text-white group-hover:text-primary-100" strokeWidth={1.8} />
+             <span className="text-[10px] font-bold text-white uppercase tracking-wider">Help</span>
+          </button>
         </div>
-
+        
         <style dangerouslySetInnerHTML={{__html: `
           .custom-scrollbar-sidebar::-webkit-scrollbar {
             width: 0px;
@@ -131,43 +136,8 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
             -ms-overflow-style: none;
             scrollbar-width: none;
           }
-          
-          .nav-item-active-user {
-            position: relative;
-            background: #f1f5f9;
-            color: #d65555;
-            border-radius: 24px 0 0 24px;
-            margin-left: 12px;
-            z-index: 10;
-          }
-
-          .nav-item-active-user::before {
-            content: "";
-            position: absolute;
-            top: -48px;
-            right: 0;
-            width: 48px;
-            height: 48px;
-            background: transparent;
-            border-radius: 50%;
-            box-shadow: 24px 24px 0 0 #f1f5f9;
-            pointer-events: none;
-          }
-
-          .nav-item-active-user::after {
-            content: "";
-            position: absolute;
-            bottom: -48px;
-            right: 0;
-            width: 48px;
-            height: 48px;
-            background: transparent;
-            border-radius: 50%;
-            box-shadow: 24px -24px 0 0 #f1f5f9;
-            pointer-events: none;
-          }
         `}} />
-      </div>
+      </aside>
     </>
   );
 }
