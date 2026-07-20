@@ -134,7 +134,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
           
           .nav-item-active-user {
             position: relative;
-            background: #F8FAFC;
+            background: #f1f5f9;
             color: #d65555;
             border-radius: 24px 0 0 24px;
             margin-left: 12px;
@@ -150,7 +150,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
             height: 48px;
             background: transparent;
             border-radius: 50%;
-            box-shadow: 24px 24px 0 0 #F8FAFC;
+            box-shadow: 24px 24px 0 0 #f1f5f9;
             pointer-events: none;
           }
 
@@ -163,7 +163,7 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
             height: 48px;
             background: transparent;
             border-radius: 50%;
-            box-shadow: 24px -24px 0 0 #F8FAFC;
+            box-shadow: 24px -24px 0 0 #f1f5f9;
             pointer-events: none;
           }
         `}} />
