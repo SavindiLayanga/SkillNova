@@ -18,7 +18,7 @@ export default function AppLayout() {
           setIsChatOpen(true);
         }}
       />
-      <div className="min-w-0 lg:pl-[150px]">
+      <div className="min-w-0 lg:pl-[290px]">
         <Navbar 
           onMenuClick={() => setIsSidebarOpen(true)} 
           onChatClick={() => setIsChatOpen(true)} 

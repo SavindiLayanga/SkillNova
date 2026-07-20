@@ -107,83 +107,66 @@ export default function AdminLayout() {
         )}
         onClick={() => setIsOpen(false)}
       />
-      <aside
+      <div
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r-0 bg-slate-950 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed top-4 bottom-4 left-4 z-50 flex w-[260px] flex-col gap-4 transition-transform duration-300 ease-out lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-[calc(100%+1rem)]"
         )}
       >
-        {/* Logo */}
-        <div className="flex flex-col items-center justify-center mb-6 relative">
-          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-primary-500 text-white shadow-md">
-            <span className="text-2xl font-black">S</span>
+        {/* Admin Profile Card */}
+        <div className="bg-white rounded-[28px] p-4 flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100">
+          <div className="h-12 w-12 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">
+            A
           </div>
-          <button
-            aria-label="Close admin menu"
-            className="absolute -right-3 top-0 rounded-lg p-1 text-slate-400 hover:text-white lg:hidden"
-            onClick={() => setIsOpen(false)}
-            type="button"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-800 truncate">Admin</p>
+            <p className="text-xs text-slate-500 truncate">Control Panel</p>
+          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="mt-2 flex-1 space-y-1.5 overflow-y-auto px-0 custom-scrollbar-sidebar">
-          {adminNavigation.map(({ icon: Icon, label, path }) => {
-            const key = path.split("/").pop().replace("-", "");
-            return (
-              <NavLink
-                className={({ isActive }) =>
-                  clsx(
-                    "group relative flex flex-col gap-1.5 py-3 transition-all duration-300 mx-auto",
-                    isActive
-                      ? "items-start pl-6 mx-auto bg-white text-slate-900 rounded-[28px] shadow-[0_10px_25px_rgba(0,0,0,0.2)] w-[116px] z-10"
-                      : "items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-[24px] w-[120px]"
-                  )
-                }
-                key={path}
-                onClick={() => setIsOpen(false)}
-                to={path}
-              >
-                {({ isActive }) => (
-                  <>
-                    <div className={clsx("flex items-center justify-center h-10 w-10 rounded-full transition-colors", isActive ? "bg-slate-100" : "")}>
-                       <Icon
-                         className={clsx(
-                           "h-[24px] w-[24px] shrink-0",
-                           isActive
-                             ? "text-slate-900"
-                             : "text-slate-400 group-hover:text-white"
-                         )}
-                         strokeWidth={isActive ? 2.2 : 1.8}
-                       />
-                    </div>
-                    <span className={clsx("text-[11px] font-semibold leading-tight px-1", isActive ? "text-left" : "text-center")}>
-                      {t(`sidebar.${key}`, label)}
-                    </span>
-                  </>
-                )}
-              </NavLink>
-            );
-          })}
+        {/* Navigation Card */}
+        <div className="bg-white rounded-[32px] pl-4 py-4 pr-0 flex-1 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 overflow-visible">
           
-          {/* Logout */}
-          <button
-            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-slate-400 hover:text-white hover:bg-white/5 rounded-[24px] mt-2"
-            onClick={handleLogout}
-            type="button"
-          >
-            <div className="flex items-center justify-center h-10 w-10 rounded-full">
-               <LogOut
-                 className="h-[24px] w-[24px] shrink-0 text-slate-400 group-hover:text-white"
-                 strokeWidth={1.8}
-               />
-            </div>
-            <span className="text-[11px] font-semibold text-center leading-tight px-1">{t("settings.session.logout", "Logout")}</span>
-          </button>
-        </nav>
-        
+          <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar-sidebar pl-2 pt-2 pb-4 w-[calc(100%+24px)]">
+            {adminNavigation.map(({ icon: Icon, label, path }) => {
+              const key = path.split("/").pop().replace("-", "");
+              return (
+                <NavLink
+                  key={path}
+                  to={path}
+                  onClick={() => setIsOpen(false)}
+                  className={({ isActive }) =>
+                    clsx(
+                      "flex items-center gap-3 px-4 py-3 transition-all duration-300",
+                      isActive
+                        ? "nav-item-active-admin font-bold w-[calc(100%-24px)]"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium rounded-full w-[calc(100%-40px)] mr-10"
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-sm">{t(`sidebar.${key}`, label)}</span>
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          {/* Bottom Actions */}
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1 relative z-0 mx-2 pr-4">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3 rounded-full text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors font-medium w-full"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="text-sm">{t("settings.session.logout", "Logout")}</span>
+            </button>
+          </div>
+        </div>
+
         <style dangerouslySetInnerHTML={{__html: `
           .custom-scrollbar-sidebar::-webkit-scrollbar {
             width: 0px;
@@ -193,10 +176,45 @@ export default function AdminLayout() {
             -ms-overflow-style: none;
             scrollbar-width: none;
           }
-        `}} />
-      </aside>
+          
+          .nav-item-active-admin {
+            position: relative;
+            background: #f1f5f9;
+            color: #0f172a;
+            border-radius: 24px 0 0 24px;
+            margin-left: 12px;
+            z-index: 10;
+          }
 
-      <div className="min-w-0 lg:pl-[150px]">
+          .nav-item-active-admin::before {
+            content: "";
+            position: absolute;
+            top: -48px;
+            right: 0;
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border-radius: 50%;
+            box-shadow: 24px 24px 0 0 #f1f5f9;
+            pointer-events: none;
+          }
+
+          .nav-item-active-admin::after {
+            content: "";
+            position: absolute;
+            bottom: -48px;
+            right: 0;
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border-radius: 50%;
+            box-shadow: 24px -24px 0 0 #f1f5f9;
+            pointer-events: none;
+          }
+        `}} />
+      </div>
+
+      <div className="min-w-0 lg:pl-[290px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4">
             <button
