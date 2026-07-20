@@ -75,7 +75,7 @@ export default function Profile() {
         <PageHeader
           description="Review your student profile information used by SkillNova recommendations."
           eyebrow="Profile"
-          title="Career profile"
+          title="User profile"
         />
         <AnalysisEmptyState />
       </div>
@@ -88,7 +88,7 @@ export default function Profile() {
         <PageHeader
           description="Review your student profile information used by SkillNova recommendations."
           eyebrow="Profile"
-          title="Career profile"
+          title="User profile"
         />
         <AnalysisProcessingState status={status} />
       </div>
@@ -125,7 +125,7 @@ export default function Profile() {
       <PageHeader
         description="Review your profile information extracted from your CV."
         eyebrow="Profile"
-        title="Career profile"
+        title="User profile"
       />
 
       <Card>
