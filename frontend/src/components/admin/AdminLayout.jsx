@@ -167,22 +167,24 @@ export default function AdminLayout() {
               </NavLink>
             );
           })}
-          
-          {/* Logout */}
+        </nav>
+        
+        {/* Logout */}
+        <div className="mt-auto px-0 pb-6 pt-2">
           <button
-            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-slate-400 hover:text-white hover:bg-white/5 rounded-[24px] mt-2"
+            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-slate-400 hover:text-white hover:bg-red-500/10 hover:text-red-400 rounded-[24px]"
             onClick={handleLogout}
             type="button"
           >
             <div className="flex items-center justify-center h-10 w-10 rounded-full">
                <LogOut
-                 className="h-[24px] w-[24px] shrink-0 text-slate-400 group-hover:text-white"
+                 className="h-[24px] w-[24px] shrink-0 text-slate-400 group-hover:text-red-400"
                  strokeWidth={1.8}
                />
             </div>
             <span className="text-[11px] font-semibold text-center leading-tight px-1">{t("settings.session.logout", "Logout")}</span>
           </button>
-        </nav>
+        </div>
         
         <style dangerouslySetInnerHTML={{__html: `
           .custom-scrollbar-sidebar::-webkit-scrollbar {

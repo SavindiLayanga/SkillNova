@@ -776,7 +776,7 @@ ${text}
     }
 
     return res.status(500).json({
-      error: "Failed to analyze CV. Please try again.",
+      error: `Failed to analyze CV. Please try again. Details: ${errorMessage}`,
     });
   }
 });
