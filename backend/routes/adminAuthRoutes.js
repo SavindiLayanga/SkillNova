@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { adminLogin, adminLogout, getAdminMe, updateAdminProfile } from '../controllers/adminAuthController.js';
+import { adminLogin, adminLogout, getAdminMe, updateAdminProfile, updateAdminCredentials } from '../controllers/adminAuthController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -18,5 +18,6 @@ router.post('/login', loginLimiter, adminLogin);
 router.post('/logout', adminLogout);
 router.get('/me', authenticateAdmin, getAdminMe);
 router.patch('/profile', authenticateAdmin, updateAdminProfile);
+router.patch('/credentials', authenticateAdmin, updateAdminCredentials);
 
 export default router;

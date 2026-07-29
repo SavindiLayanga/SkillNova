@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import bcrypt from 'bcrypt';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { User } from './models/User.js';
@@ -14,9 +15,12 @@ const seedAdminData = async () => {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/skillNova');
     console.log('MongoDB connected for Admin Data Seeding...');
 
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash('admin123', saltRounds);
+
     // Users
     const dummyUsers = [
-      { uid: 'admin_1', name: 'Super Admin', email: 'admin@skillnova.com', role: 'super_admin', username: 'admin', isActive: true },
+      { uid: 'admin_1', name: 'Super Admin', email: 'admin@skillnova.com', role: 'super_admin', username: 'admin', password: hashedPassword, isActive: true },
       { uid: 'user_1', name: 'John Doe', email: 'john@example.com', role: 'user', isActive: true, careerGoal: 'Frontend Developer', targetRole: 'React Developer' },
       { uid: 'user_2', name: 'Jane Smith', email: 'jane@example.com', role: 'user', isActive: true, careerGoal: 'Data Scientist', targetRole: 'Data Analyst' },
       { uid: 'user_3', name: 'Alice Johnson', email: 'alice@example.com', role: 'user', isActive: true, careerGoal: 'Backend Developer', targetRole: 'Node.js Developer' },

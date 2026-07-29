@@ -114,3 +114,48 @@ export const updateAdminProfile = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const updateAdminCredentials = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+    const { currentPassword, newUsername, newPassword } = req.body;
+
+    if (!currentPassword) {
+      return res.status(400).json({ error: 'Current password is required to make security changes' });
+    }
+
+    const admin = await User.findById(adminId).select('+password');
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, admin.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Incorrect current password' });
+    }
+
+    if (newUsername && newUsername.trim() !== '') {
+      // Check if username already exists for another user
+      const existingUser = await User.findOne({ username: newUsername, _id: { $ne: adminId } });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username is already taken' });
+      }
+      admin.username = newUsername;
+    }
+
+    if (newPassword && newPassword.trim() !== '') {
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+      }
+      const saltRounds = 10;
+      admin.password = await bcrypt.hash(newPassword, saltRounds);
+    }
+
+    await admin.save();
+
+    res.json({ message: 'Credentials updated successfully' });
+  } catch (error) {
+    console.error('Admin credentials update error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

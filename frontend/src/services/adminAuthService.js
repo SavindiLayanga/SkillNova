@@ -69,3 +69,21 @@ export async function updateAdminProfileApi(profileData) {
 
   return data;
 }
+
+export async function updateAdminCredentialsApi(credentialsData) {
+  const response = await fetch(`${API_URL}/admin/credentials`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify(credentialsData),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to update credentials");
+  }
+
+  return data;
+}
