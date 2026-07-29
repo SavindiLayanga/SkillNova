@@ -99,28 +99,28 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="admin-premium-wallpaper min-h-screen bg-slate-100 text-slate-900">
+    <div className="premium-wallpaper min-h-screen bg-ink-50 text-ink-900">
       <div
         className={clsx(
-          "fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm transition-opacity lg:hidden",
+          "fixed inset-0 z-40 bg-ink-950/40 backdrop-blur-sm transition-opacity lg:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => setIsOpen(false)}
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r-0 bg-slate-950 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r border-ink-100 bg-white py-8 shadow-sm transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
         <div className="flex flex-col items-center justify-center mb-6 relative">
-          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-primary-500 text-white shadow-md">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-primary-600 text-white shadow-md">
             <span className="text-2xl font-black">S</span>
           </div>
           <button
             aria-label="Close admin menu"
-            className="absolute -right-3 top-0 rounded-lg p-1 text-slate-400 hover:text-white lg:hidden"
+            className="absolute -right-3 top-0 rounded-lg p-1 text-ink-400 hover:text-ink-900 lg:hidden"
             onClick={() => setIsOpen(false)}
             type="button"
           >
@@ -138,8 +138,8 @@ export default function AdminLayout() {
                   clsx(
                     "group relative flex flex-col gap-1.5 py-3 transition-all duration-300 mx-auto",
                     isActive
-                      ? "items-start pl-6 mx-auto bg-white text-slate-900 rounded-[28px] shadow-[0_10px_25px_rgba(0,0,0,0.2)] w-[116px] z-10"
-                      : "items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-[24px] w-[120px]"
+                      ? "items-start pl-6 mx-auto bg-black text-white rounded-[28px] shadow-md w-[116px] z-10"
+                      : "items-center justify-center text-ink-500 hover:text-ink-900 hover:bg-ink-50 rounded-[24px] w-[120px]"
                   )
                 }
                 key={path}
@@ -148,13 +148,13 @@ export default function AdminLayout() {
               >
                 {({ isActive }) => (
                   <>
-                    <div className={clsx("flex items-center justify-center h-10 w-10 rounded-full transition-colors", isActive ? "bg-slate-100" : "")}>
+                    <div className={clsx("flex items-center justify-center h-10 w-10 rounded-full transition-colors", isActive ? "bg-white/10" : "")}>
                        <Icon
                          className={clsx(
                            "h-[24px] w-[24px] shrink-0",
                            isActive
-                             ? "text-slate-900"
-                             : "text-slate-400 group-hover:text-white"
+                             ? "text-white"
+                             : "text-ink-400 group-hover:text-ink-900"
                          )}
                          strokeWidth={isActive ? 2.2 : 1.8}
                        />
@@ -172,13 +172,13 @@ export default function AdminLayout() {
         {/* Logout */}
         <div className="mt-auto px-0 pb-6 pt-2">
           <button
-            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-slate-400 hover:text-white hover:bg-red-500/10 hover:text-red-400 rounded-[24px]"
+            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-error hover:text-error hover:bg-error/10 rounded-[24px]"
             onClick={handleLogout}
             type="button"
           >
             <div className="flex items-center justify-center h-10 w-10 rounded-full">
                <LogOut
-                 className="h-[24px] w-[24px] shrink-0 text-slate-400 group-hover:text-red-400"
+                 className="h-[24px] w-[24px] shrink-0 text-error/80 group-hover:text-error"
                  strokeWidth={1.8}
                />
             </div>
@@ -199,11 +199,11 @@ export default function AdminLayout() {
       </aside>
 
       <div className="min-w-0 lg:pl-[150px]">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
           <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4">
             <button
               aria-label="Open admin menu"
-              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+              className="rounded-lg p-2 text-ink-600 hover:bg-ink-100 lg:hidden"
               onClick={() => setIsOpen(true)}
               type="button"
             >
@@ -213,7 +213,7 @@ export default function AdminLayout() {
               <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary-600">
                 Admin Panel
               </p>
-              <p className="text-lg font-bold text-slate-950">
+              <p className="text-lg font-bold text-ink-950">
                 SkillNova Management
               </p>
             </div>
@@ -221,7 +221,7 @@ export default function AdminLayout() {
               <div className="relative" ref={notificationRef}>
                 <button
                   aria-label="Notifications"
-                  className="relative rounded-full p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                  className="relative rounded-full p-2 text-ink-600 transition hover:bg-ink-100 hover:text-ink-900"
                   onClick={() => setShowNotifications(!showNotifications)}
                   type="button"
                 >
@@ -233,8 +233,8 @@ export default function AdminLayout() {
                 
                 {showNotifications && (
                   <div className="absolute right-0 mt-2 w-80 origin-top-right rounded-xl bg-white py-2 shadow-xl ring-1 ring-black/5 focus:outline-none">
-                    <div className="flex items-center justify-between border-b border-slate-100 px-4 pb-2">
-                      <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
+                    <div className="flex items-center justify-between border-b border-ink-100 px-4 pb-2">
+                      <h3 className="text-sm font-semibold text-ink-900">Notifications</h3>
                       {unreadCount > 0 && (
                         <button 
                           onClick={handleMarkAllAsRead}
@@ -246,7 +246,7 @@ export default function AdminLayout() {
                     </div>
                     <div className="max-h-[28rem] overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-sm text-slate-500">
+                        <div className="px-4 py-6 text-center text-sm text-ink-500">
                           No notifications yet
                         </div>
                       ) : (
@@ -273,8 +273,8 @@ export default function AdminLayout() {
                             <div 
                               key={notification._id} 
                               className={clsx(
-                                "flex gap-3 px-4 py-3 transition hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0",
-                                !notification.isRead && "bg-slate-50/50"
+                                "flex gap-3 px-4 py-3 transition hover:bg-ink-50 cursor-pointer border-b border-ink-50 last:border-0",
+                                !notification.isRead && "bg-ink-50/50"
                               )}
                               onClick={() => {
                                 if (!notification.isRead) handleMarkAsRead(notification._id);
@@ -286,17 +286,17 @@ export default function AdminLayout() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className={clsx("text-sm truncate", !notification.isRead ? "font-semibold text-slate-900" : "font-medium text-slate-700")}>
+                                  <p className={clsx("text-sm truncate", !notification.isRead ? "font-semibold text-ink-900" : "font-medium text-ink-700")}>
                                     {notification.title}
                                   </p>
                                   {!notification.isRead && (
                                     <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary-500"></span>
                                   )}
                                 </div>
-                                <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                                <p className="mt-0.5 text-xs text-ink-500 line-clamp-2">
                                   {notification.message}
                                 </p>
-                                <p className="mt-1.5 text-[10px] font-semibold text-slate-400" title={formatDateTime(notification.createdAt, preferences)}>
+                                <p className="mt-1.5 text-[10px] font-semibold text-ink-400" title={formatDateTime(notification.createdAt, preferences)}>
                                   {formatRelativeTime(notification.createdAt)}
                                 </p>
                               </div>
@@ -309,17 +309,17 @@ export default function AdminLayout() {
                 )}
               </div>
               <button
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="rounded-lg border border-ink-200 px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
                 onClick={handleLogout}
                 type="button"
               >
                 Logout
               </button>
-              <div className="hidden sm:flex flex-col items-end border-l border-slate-200 pl-3">
-                <span className="text-xs font-semibold text-slate-800">
+              <div className="hidden sm:flex flex-col items-end border-l border-ink-200 pl-3">
+                <span className="text-xs font-semibold text-ink-800">
                   {currentDateTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
-                <span className="text-[11px] font-medium text-slate-500">
+                <span className="text-[11px] font-medium text-ink-500">
                   {currentDateTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
               </div>
