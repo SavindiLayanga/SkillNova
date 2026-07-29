@@ -9,67 +9,33 @@ import {
 } from "lucide-react";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
-import { adminActivity } from "../../data/adminDummyData.js";
 import { fetchDashboardStats } from "../../services/adminDashboardService.js";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-const userEngagementDataWeekly = [
-  { name: 'Mon', 'CV Uploads': 12, 'Progress Tracking': 5 },
-  { name: 'Tue', 'CV Uploads': 15, 'Progress Tracking': 8 },
-  { name: 'Wed', 'CV Uploads': 20, 'Progress Tracking': 12 },
-  { name: 'Thu', 'CV Uploads': 18, 'Progress Tracking': 10 },
-  { name: 'Fri', 'CV Uploads': 25, 'Progress Tracking': 15 },
-  { name: 'Sat', 'CV Uploads': 30, 'Progress Tracking': 22 },
-  { name: 'Sun', 'CV Uploads': 28, 'Progress Tracking': 20 },
-];
-
-const userEngagementDataMonthly = [
-  { name: 'Jan', 'CV Uploads': 45, 'Progress Tracking': 20 },
-  { name: 'Feb', 'CV Uploads': 55, 'Progress Tracking': 35 },
-  { name: 'Mar', 'CV Uploads': 80, 'Progress Tracking': 50 },
-  { name: 'Apr', 'CV Uploads': 110, 'Progress Tracking': 70 },
-  { name: 'May', 'CV Uploads': 125, 'Progress Tracking': 84 },
-  { name: 'Jun', 'CV Uploads': 140, 'Progress Tracking': 105 },
-];
-
-const userEngagementDataYearly = [
-  { name: '2021', 'CV Uploads': 200, 'Progress Tracking': 50 },
-  { name: '2022', 'CV Uploads': 350, 'Progress Tracking': 120 },
-  { name: '2023', 'CV Uploads': 500, 'Progress Tracking': 250 },
-  { name: '2024', 'CV Uploads': 800, 'Progress Tracking': 450 },
-];
 
 const statIcons = [Users, FileText, ClipboardCheck, BriefcaseBusiness, BookOpen];
 const statLinks = ["/admin/users", "/admin/cv-reviews", "/admin/jobs", "/admin/courses", "/admin/skills"];
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeFilter, setTimeFilter] = useState("Monthly");
 
   const getChartData = () => {
-    if (timeFilter === "Weekly") return userEngagementDataWeekly;
-    if (timeFilter === "Yearly") return userEngagementDataYearly;
-    return userEngagementDataMonthly;
+    if (!dashboardData?.chartData) return [];
+    if (timeFilter === "Weekly") return dashboardData.chartData.weekly;
+    if (timeFilter === "Yearly") return dashboardData.chartData.yearly;
+    return dashboardData.chartData.monthly;
   };
 
   useEffect(() => {
     async function loadStats() {
       try {
         const data = await fetchDashboardStats();
-        setStats(data);
+        setDashboardData(data);
       } catch (err) {
         console.error("Failed to fetch stats", err);
-        setError("Failed to load live statistics. Displaying fallback data.");
-        // Fallback data so the cards are always visible
-        setStats([
-          { label: "Total Users", value: 0, change: "Data unavailable" },
-          { label: "Total CV Uploads", value: 0, change: "Data unavailable" },
-          { label: "Total Jobs", value: 0, change: "Data unavailable" },
-          { label: "Total Courses", value: 0, change: "Data unavailable" },
-          { label: "Total Skills", value: 0, change: "Data unavailable" }
-        ]);
+        setError("Failed to load live statistics. Data unavailable.");
       } finally {
         setLoading(false);
       }
@@ -90,11 +56,11 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {loading ? (
+      {loading || !dashboardData ? (
         <div className="py-10 text-center text-slate-500">Loading statistics...</div>
       ) : (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {stats.map((stat, index) => {
+          {dashboardData.stats.map((stat, index) => {
             const Icon = statIcons[index % statIcons.length];
             const linkTarget = statLinks[index % statLinks.length];
 
@@ -129,19 +95,19 @@ export default function AdminDashboard() {
           </h2>
           <div className="mt-6 space-y-4">
             {[
-              ["Pending CV reviews", 68, "bg-amber-400"],
-              ["Reviewed CVs", 82, "bg-emerald-400"],
-              ["Open job roles", 56, "bg-blue-400"],
+              ["Pending CV reviews", dashboardData?.reviewWorkload?.pending || 0, "bg-amber-400"],
+              ["Reviewed CVs", dashboardData?.reviewWorkload?.reviewed || 0, "bg-emerald-400"],
+              ["Open job roles", dashboardData?.reviewWorkload?.openJobs || 0, "bg-blue-400"],
             ].map(([label, value, color]) => (
               <div key={label}>
                 <div className="mb-2 flex justify-between text-sm">
                   <span className="font-semibold text-slate-700">{label}</span>
-                  <span className="text-slate-500">{value}%</span>
+                  <span className="text-slate-500">{value} total</span>
                 </div>
                 <div className="h-2 rounded-full bg-slate-100">
                   <div
                     className={`h-full rounded-full ${color}`}
-                    style={{ width: `${value}%` }}
+                    style={{ width: `${Math.min(value > 0 ? (value / 100) * 100 : 0, 100)}%` }} // basic visualization
                   />
                 </div>
               </div>
@@ -154,11 +120,15 @@ export default function AdminDashboard() {
             Recent user activity
           </h2>
           <div className="mt-5 space-y-3">
-            {adminActivity.map((activity) => (
-              <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600" key={activity}>
-                {activity}
-              </div>
-            ))}
+            {dashboardData?.recentActivity?.length > 0 ? (
+              dashboardData.recentActivity.map((activity, idx) => (
+                <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600" key={idx}>
+                  {activity}
+                </div>
+              ))
+            ) : (
+              <div className="py-4 text-sm text-slate-500 text-center">No recent activity</div>
+            )}
           </div>
         </AdminCard>
       </section>

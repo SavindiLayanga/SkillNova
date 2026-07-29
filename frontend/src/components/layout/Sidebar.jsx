@@ -44,21 +44,21 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
     <>
       <div
         className={clsx(
-          "fixed inset-0 z-40 bg-ink-900/40 backdrop-blur-sm transition-opacity lg:hidden",
+          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity lg:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={onClose}
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r-0 bg-primary-600 py-8 shadow-[20px_0_50px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[200px] flex-col bg-white py-8 shadow-sm transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[32px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
         <div className="flex flex-col items-center justify-center mb-6">
-          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-white text-primary-500 shadow-md">
-            <Sparkles className="h-8 w-8" strokeWidth={2} />
+          <div className="flex items-center justify-center gap-2 px-6 w-full">
+            <span className="text-xl font-bold text-black tracking-tight flex-1">SkillNova</span>
           </div>
         </div>
 
@@ -68,10 +68,10 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
             <NavLink
               className={({ isActive }) =>
                 clsx(
-                  "group relative flex flex-col gap-1.5 py-3 transition-all duration-300",
+                  "group relative flex items-center gap-3 py-3 px-4 transition-all duration-300 mx-4 rounded-xl font-medium",
                   isActive
-                    ? "items-start pl-6 mx-auto bg-white text-primary-600 rounded-[28px] shadow-[0_10px_25px_rgba(0,0,0,0.15)] w-[116px] z-10"
-                    : "items-center justify-center text-primary-100 hover:text-white hover:bg-white/10 rounded-[24px] w-[120px] mx-auto"
+                    ? "bg-black text-white shadow-md shadow-black/10"
+                    : "text-primary-600 hover:text-black hover:bg-primary-50"
                 )
               }
               key={path}
@@ -80,20 +80,14 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
             >
               {({ isActive }) => (
                 <>
-                  <div className={clsx("flex items-center justify-center h-10 w-10 rounded-full transition-colors", isActive ? "bg-primary-50" : "")}>
-                     <Icon
-                       className={clsx(
-                         "h-[24px] w-[24px] shrink-0",
-                         isActive
-                           ? "text-primary-600"
-                           : "text-primary-200 group-hover:text-white"
-                       )}
-                       strokeWidth={isActive ? 2.2 : 1.8}
-                     />
-                  </div>
-                  <span className={clsx("text-[12px] font-semibold leading-tight px-1", isActive ? "text-left" : "text-center")}>
-                    {label}
-                  </span>
+                   <Icon
+                     className={clsx(
+                       "h-5 w-5 shrink-0 transition-colors",
+                       isActive ? "text-white" : "text-primary-400 group-hover:text-black"
+                     )}
+                     strokeWidth={isActive ? 2 : 1.8}
+                   />
+                  <span className="text-[13px]">{label}</span>
                 </>
               )}
             </NavLink>
@@ -101,29 +95,27 @@ export default function Sidebar({ isOpen, onClose, onChatClick }) {
 
           {/* Logout */}
           <button
-            className="group relative flex flex-col items-center justify-center gap-1.5 py-3 transition-all duration-300 mx-auto w-[120px] text-primary-100 hover:text-white hover:bg-white/10 rounded-[24px] mt-2"
+            className="group relative flex items-center gap-3 py-3 px-4 transition-all duration-300 mx-4 rounded-xl font-medium text-primary-600 hover:text-error hover:bg-error/10 mt-2"
             onClick={handleLogout}
             type="button"
           >
-            <div className="flex items-center justify-center h-10 w-10 rounded-full">
-               <LogOut
-                 className="h-[24px] w-[24px] shrink-0 text-primary-200 group-hover:text-white"
-                 strokeWidth={1.8}
-               />
-            </div>
-            <span className="text-[12px] font-semibold text-center leading-tight px-1">Logout</span>
+             <LogOut
+               className="h-5 w-5 shrink-0 text-primary-400 group-hover:text-error transition-colors"
+               strokeWidth={1.8}
+             />
+            <span className="text-[13px]">Logout</span>
           </button>
         </nav>
 
         {/* Chatbot trigger */}
-        <div className="mt-4 px-4">
+        <div className="mt-4 px-4 pb-4">
           <button
-            className="w-full h-16 rounded-[24px] bg-primary-700/50 shadow-inner border border-primary-500/30 backdrop-blur-sm flex flex-col items-center justify-center gap-1 hover:bg-primary-500 transition-colors active:scale-95 group"
+            className="w-full h-12 rounded-xl bg-black text-white flex items-center justify-center gap-2 hover:bg-[#222] transition-colors active:scale-95 group shadow-md shadow-black/10"
             onClick={onChatClick}
             type="button"
           >
-             <Bot className="h-6 w-6 text-white group-hover:text-primary-100" strokeWidth={1.8} />
-             <span className="text-[10px] font-bold text-white uppercase tracking-wider">Help</span>
+             <Bot className="h-5 w-5" strokeWidth={1.8} />
+             <span className="text-[13px] font-medium">AI Help</span>
           </button>
         </div>
         

@@ -9,4 +9,4 @@ const practiceSessionSchema = new mongoose.Schema({
   isFinished: { type: Boolean, default: false }
 }, { timestamps: true });
 
-export const PracticeSession = mongoose.model('PracticeSession', practiceSessionSchema);
+export const PracticeSession = mongoose.model('PracticeSession', practiceSessionSchema, 'user_practicesessions');

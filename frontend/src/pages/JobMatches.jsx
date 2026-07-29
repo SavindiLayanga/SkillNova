@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { MapPin, SlidersHorizontal } from "lucide-react";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
@@ -6,11 +7,39 @@ import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
+import { userMatchesService } from "../services/userMatchesService.js";
+import useAuth from "../hooks/useAuth.js";
 
 export default function JobMatches() {
-  const { analysis, hasAnalysis, status } = useCVAnalysis();
+  const { hasAnalysis, status } = useCVAnalysis();
+  const { getToken } = useAuth();
+
   
-  let jobMatches = analysis?.jobMatches || [];
+  const [realJobs, setRealJobs] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  useEffect(() => {
+    let isMounted = true;
+    if (hasAnalysis && status === "analyzed") {
+      setIsLoading(true);
+      getToken().then(token => {
+        if (!token) return;
+        return userMatchesService.getJobMatches(token);
+      })
+      .then(jobs => {
+        if (isMounted && jobs) setRealJobs(jobs);
+      })
+      .catch(err => {
+        if (isMounted) console.error("Failed to load jobs", err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    }
+    return () => { isMounted = false; };
+  }, [hasAnalysis, status, getToken]);
+
+  let jobMatches = realJobs;
   
   // Filter out completely empty objects that might have been returned by AI's default structure
   jobMatches = jobMatches.filter(job => {
@@ -53,14 +82,14 @@ export default function JobMatches() {
           }
 
           return (
-          <Card key={`${job.company}-${job.role}-${idx}`}>
+          <Card key={job._id || `${job.company}-${job.title}-${idx}`}>
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-xl font-bold text-ink-900">{job.role}</h2>
-                  {job.type && (
+                  <h2 className="text-xl font-bold text-ink-900">{job.title || job.role}</h2>
+                  {job.jobType && (
                     <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700">
-                      {job.type}
+                      {job.jobType}
                     </span>
                   )}
                   {job.source && (
@@ -73,10 +102,10 @@ export default function JobMatches() {
                   )}
                 </div>
                 {job.company && <p className="mt-2 font-semibold text-ink-700">{job.company}</p>}
-                {(job.location || job.salary) && (
+                {(job.location || job.salaryRange) && (
                   <p className="mt-2 flex items-center gap-2 text-sm text-ink-500">
                     <MapPin className="h-4 w-4" />
-                    {[job.location, job.salary].filter(Boolean).join(" - ")}
+                    {[job.location, job.salaryRange].filter(Boolean).join(" - ")}
                   </p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">

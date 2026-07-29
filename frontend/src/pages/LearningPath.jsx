@@ -1,5 +1,5 @@
-import { BookOpen, CheckCircle2, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, CheckCircle2, Sparkles, AlertCircle, ArrowRight, Star } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -8,12 +8,34 @@ import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import { generateCustomLearningPath } from "../services/aiService.js";
+import { userMatchesService } from "../services/userMatchesService.js";
+import useAuth from "../hooks/useAuth.js";
 
 export default function LearningPath() {
-  const { analysis, hasAnalysis } = useCVAnalysis();
+  const { analysis, hasAnalysis, status } = useCVAnalysis();
+  const { getToken } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [customPath, setCustomPath] = useState(null);
   const [error, setError] = useState(null);
+  
+  const [realCourses, setRealCourses] = useState([]);
+  
+  useEffect(() => {
+    let isMounted = true;
+    if (hasAnalysis && status === "analyzed") {
+      getToken().then(token => {
+        if (!token) return;
+        return userMatchesService.getCourseMatches(token);
+      })
+      .then(courses => {
+        if (isMounted && courses) setRealCourses(courses);
+      })
+      .catch(err => {
+        if (isMounted) console.error("Failed to load course matches", err);
+      });
+    }
+    return () => { isMounted = false; };
+  }, [hasAnalysis, status, getToken]);
 
   const missingSkills = hasAnalysis ? (analysis.missingSkills || []) : [];
   const targetRole = hasAnalysis ? (analysis.targetRole || "your target role") : "";
@@ -71,6 +93,43 @@ export default function LearningPath() {
         eyebrow="Learning Path"
         title="Your personalized roadmap"
       />
+
+      {/* Recommended Real Courses */}
+      {realCourses.length > 0 && (
+        <div className="mb-8 border-b border-ink-100 pb-8">
+          <h2 className="text-xl font-bold text-ink-900 mb-6">Recommended Courses</h2>
+          <div className="grid gap-5 lg:grid-cols-2">
+            {realCourses.map((course, idx) => (
+              <Card key={course.id || idx} className="flex gap-4">
+                <div className="w-24 h-24 bg-ink-100 rounded-lg shrink-0 overflow-hidden">
+                  {course.thumbnail ? (
+                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-ink-300">
+                      <BookOpen className="w-8 h-8" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-ink-900 text-base">{course.title}</h3>
+                  <p className="text-sm text-ink-500 mt-1">{course.provider} • {course.difficulty}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span className="text-xs font-bold text-ink-700">{course.rating?.toFixed(1) || "New"}</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {course.skills?.slice(0,3).map(skill => (
+                      <span key={skill} className="px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 text-[10px] font-bold">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* AI Career Roadmap */}
       <div className="mb-8">

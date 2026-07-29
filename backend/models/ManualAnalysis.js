@@ -39,4 +39,4 @@ const manualAnalysisSchema = new mongoose.Schema({
   aiInsights: { type: String, default: '' }
 }, { timestamps: true });
 
-export const ManualAnalysis = mongoose.model('ManualAnalysis', manualAnalysisSchema);
+export const ManualAnalysis = mongoose.model('ManualAnalysis', manualAnalysisSchema, 'user_manualanalyses');

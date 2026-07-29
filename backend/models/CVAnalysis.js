@@ -73,4 +73,4 @@ const cvAnalysisSchema = new mongoose.Schema({
   aiInsights: { type: String, default: '' }
 }, { timestamps: true });
 
-export const CVAnalysis = mongoose.model('CVAnalysis', cvAnalysisSchema);
+export const CVAnalysis = mongoose.model('CVAnalysis', cvAnalysisSchema, 'user_cvanalyses');

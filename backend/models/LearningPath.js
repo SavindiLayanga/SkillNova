@@ -16,4 +16,4 @@ const learningPathSchema = new mongoose.Schema({
   progress: { type: Number, default: 0 }
 }, { timestamps: true });
 
-export const LearningPath = mongoose.model('LearningPath', learningPathSchema);
+export const LearningPath = mongoose.model('LearningPath', learningPathSchema, 'user_learningpaths');

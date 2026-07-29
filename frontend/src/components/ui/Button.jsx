@@ -1,10 +1,11 @@
 import clsx from "../../utils/clsx.js";
 
 const variants = {
-  primary: "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/30 hover:shadow-lg hover:shadow-primary-500/40 hover:-translate-y-0.5",
-  secondary: "bg-white/80 backdrop-blur-sm text-ink-700 ring-1 ring-ink-200/50 hover:bg-white hover:shadow-sm hover:-translate-y-0.5",
-  ghost: "text-ink-600 hover:bg-primary-50/50 hover:text-primary-700",
-  dark: "bg-ink-900 text-white shadow-md hover:bg-ink-800 hover:-translate-y-0.5",
+  primary: "bg-[#252525] text-white shadow-md shadow-black/10 hover:bg-black hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5",
+  secondary: "bg-white text-primary-900 border border-primary-200 hover:bg-primary-50 hover:border-primary-300 hover:-translate-y-0.5 shadow-sm",
+  ghost: "text-primary-500 hover:bg-primary-50 hover:text-primary-900",
+  danger: "bg-error text-white shadow-md shadow-error/20 hover:bg-error/90 hover:-translate-y-0.5",
+  success: "bg-success text-white shadow-md shadow-success/20 hover:bg-success/90 hover:-translate-y-0.5",
 };
 
 const sizes = {
@@ -28,7 +29,7 @@ export default function Button({
   return (
     <Component
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-200/50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none",
         variants[variant],
         sizes[size],
         className

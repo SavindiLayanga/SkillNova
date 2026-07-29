@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 :root {
-  color: #172033;
-  background: #f7f8fb;
+  color: #111827; /* gray-900 */
+  background: #f3f4f6; /* gray-100 */
+  font-family: 'Inter', system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,6 +16,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #e5e5e5; /* The image has a slightly darker gray background than white */
+  color: #111827;
 }
 
 * {

@@ -21,4 +21,4 @@ const skillTestSchema = new mongoose.Schema({
   completedAt: { type: Date }
 }, { timestamps: true });
 
-export const SkillTest = mongoose.model('SkillTest', skillTestSchema);
+export const SkillTest = mongoose.model('SkillTest', skillTestSchema, 'user_skilltests');

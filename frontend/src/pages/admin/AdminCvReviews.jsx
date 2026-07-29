@@ -1,13 +1,32 @@
-import { useState, useMemo } from "react";
-import { Eye, PieChart as PieChartIcon, List } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Eye, PieChart as PieChartIcon, List, AlertCircle } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
-import { adminCvReviews } from "../../data/adminDummyData.js";
+import { fetchAdminCvReviews } from "../../services/adminCvReviewsService.js";
+import Loader from "../../components/ui/Loader.jsx";
 
 export default function AdminCvReviews() {
   const [filterStatus, setFilterStatus] = useState("All");
   const [viewMode, setViewMode] = useState("list");
+  const [adminCvReviews, setAdminCvReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function loadReviews() {
+      try {
+        const data = await fetchAdminCvReviews();
+        setAdminCvReviews(data);
+      } catch (err) {
+        console.error("Failed to load CV reviews:", err);
+        setError("Failed to load CV reviews.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadReviews();
+  }, []);
 
   const filteredReviews = filterStatus === "All"
     ? adminCvReviews
@@ -23,7 +42,22 @@ export default function AdminCvReviews() {
       { name: 'Reviewed', value: counts.Reviewed, color: '#10b981' },
       { name: 'In Learning Path', value: counts["In Learning Path"], color: '#3b82f6' }
     ];
-  }, []);
+  }, [adminCvReviews]);
+
+  if (loading) {
+    return <Loader text="Loading CV reviews..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center space-y-4 text-center">
+        <AlertCircle className="h-10 w-10 text-rose-500" />
+        <h2 className="text-lg font-bold text-slate-900">Oops!</h2>
+        <p className="text-sm text-slate-600">{error}</p>
+        <button onClick={() => window.location.reload()} className="mt-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white">Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div>
