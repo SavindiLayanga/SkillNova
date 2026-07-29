@@ -12,7 +12,9 @@ import {
   Info,
   CheckCircle,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  Search,
+  MessageSquare
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -40,6 +42,16 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { preferences } = usePreferences();
+  const { adminUser } = useAdminAuth();
+  
+  const displayName = adminUser?.name || adminUser?.username || "Admin User";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "AD";
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
   useEffect(() => {
@@ -109,14 +121,14 @@ export default function AdminLayout() {
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex w-[150px] flex-col border-r border-ink-100 bg-white py-8 shadow-sm transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[35px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[200px] flex-col bg-white py-8 shadow-sm transition-transform duration-300 ease-out lg:translate-x-0 rounded-r-[32px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
         <div className="flex flex-col items-center justify-center mb-6 relative">
-          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-primary-600 text-white shadow-md">
-            <span className="text-2xl font-black">S</span>
+          <div className="flex items-center justify-center gap-2 px-6 w-full">
+            <span className="text-xl font-bold text-black tracking-tight flex-1">SkillNova</span>
           </div>
           <button
             aria-label="Close admin menu"
@@ -198,30 +210,42 @@ export default function AdminLayout() {
         `}} />
       </aside>
 
-      <div className="min-w-0 lg:pl-[150px]">
-        <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/90 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-          <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4">
+      <div className="min-w-0 lg:pl-[200px]">
+        <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/90 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+          <div className="mx-auto flex w-full max-w-[1440px] items-center gap-4">
             <button
               aria-label="Open admin menu"
-              className="rounded-lg p-2 text-ink-600 hover:bg-ink-100 lg:hidden"
+              className="rounded-lg p-2 text-ink-500 hover:bg-ink-50 lg:hidden"
               onClick={() => setIsOpen(true)}
               type="button"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary-600">
-                Admin Panel
-              </p>
-              <p className="text-lg font-bold text-ink-950">
-                SkillNova Management
-              </p>
+            
+            {/* Global Search */}
+            <div className="hidden min-w-0 flex-1 md:block relative">
+              <div className="flex items-center gap-3 rounded-lg border border-ink-100 bg-ink-50/90 px-4 py-2.5 focus-within:border-primary-400 focus-within:bg-white focus-within:ring-1 focus-within:ring-primary-400 transition-all">
+                <Search className="h-4 w-4 text-ink-500" />
+                <input
+                  className="w-full bg-transparent text-sm text-ink-700 outline-none placeholder:text-ink-500"
+                  placeholder="Search users, jobs, courses..."
+                  type="search"
+                />
+              </div>
             </div>
             <div className="ml-auto flex items-center gap-3">
+              <button
+                aria-label="Chat"
+                className="rounded-lg border border-ink-100 bg-white/90 p-2.5 text-ink-500 transition hover:bg-ink-50 hidden sm:block"
+                type="button"
+              >
+                <MessageSquare className="h-5 w-5" />
+              </button>
+              
               <div className="relative" ref={notificationRef}>
                 <button
                   aria-label="Notifications"
-                  className="relative rounded-full p-2 text-ink-600 transition hover:bg-ink-100 hover:text-ink-900"
+                  className="relative rounded-lg border border-ink-100 bg-white/90 p-2.5 text-ink-500 transition hover:bg-ink-50"
                   onClick={() => setShowNotifications(!showNotifications)}
                   type="button"
                 >
@@ -308,20 +332,17 @@ export default function AdminLayout() {
                   </div>
                 )}
               </div>
-              <button
-                className="rounded-lg border border-ink-200 px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-                onClick={handleLogout}
-                type="button"
-              >
-                Logout
-              </button>
-              <div className="hidden sm:flex flex-col items-end border-l border-ink-200 pl-3">
-                <span className="text-xs font-semibold text-ink-800">
-                  {currentDateTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                </span>
-                <span className="text-[11px] font-medium text-ink-500">
-                  {currentDateTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
+              
+              <div className="flex items-center gap-3 pl-2 border-l border-ink-100 ml-1">
+                <div className="hidden text-right sm:block">
+                  <p className="text-sm font-semibold text-ink-900">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-ink-500 capitalize">{adminUser?.role?.replace('_', ' ') || "Administrator"}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-700 shadow-sm border border-primary-200">
+                  {initials}
+                </div>
               </div>
             </div>
           </div>
