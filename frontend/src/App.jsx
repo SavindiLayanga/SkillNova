@@ -16,6 +16,7 @@ import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 import AdminUserDetails from "./pages/admin/AdminUserDetails.jsx";
+import AdminChangePassword from "./pages/admin/AdminChangePassword.jsx";
 import CVUpload from "./pages/CVUpload.jsx";
 import CVAnalysisHistory from "./pages/CVAnalysisHistory.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/admin/jobs" element={<AdminJobs />} />
           <Route path="/admin/courses" element={<AdminCourses />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/change-password" element={<AdminChangePassword />} />
         </Route>
       </Route>
 
