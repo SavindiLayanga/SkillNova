@@ -695,67 +695,27 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
       };
       console.log("Mock payload created.");
     } else {
-      console.log("Entering real Gemini AI mode...");
-      const ai = getAI();
-
-      const prompt = `
-Analyze the uploaded CV using intelligent NLP techniques rather than simple keyword matching.
-
-Requirements:
-1. Read the entire CV including: Resume headline, Professional summary, Career objective, Work experience, Projects, Technical skills, Education, Certifications
-2. Determine whether the CV belongs to the Information Technology / Software Engineering domain.
-3. If the CV is NOT related to IT:
-   * Return: "isITRelated": false, a confidence score, and a short explanation in the summary. Do NOT continue with skill gap analysis.
-4. If the CV IS related to IT: Set "isITRelated": true.
-5. Automatically identify the candidate's primary job role from the CV (Infer using job titles, professional summary, experience, projects, technologies). Do NOT rely only on exact job titles.
-6. Return the Top 3 most likely job roles. Each role must include "role", "confidence" (0-100), and "reason".
-7. Extract ALL technical skills (programming languages, frameworks, databases, cloud, DevOps, OS, testing).
-8. Extract soft skills. Include all skills in the combined 'skills' array as well.
-9. Compare the extracted skills against the expected skills of the detected PRIMARY role.
-10. Calculate matchPercentage, careerReadinessScore, missingSkills, strongSkills, weakSkills. Calculate percentage accurately based on actual extracted vs expected.
-11. Generate a personalized learningRoadmap.
-12. Recommend suitable jobRecommendations.
-13. Explain WHY every recommendation was made in summary.
-14. Keep extracting the candidate's basic info: name, email, phone, education, experience, projects, certifications.
-
-Return ONLY valid JSON. The JSON should contain:
-{
-  "isITRelated": true,
-  "name": "",
-  "email": "",
-  "phone": "",
-  "primaryRole": { "role": "", "confidence": 0, "reason": "" },
-  "topRoles": [
-    { "role": "", "confidence": 0, "reason": "" }
-  ],
-  "technicalSkills": [],
-  "softSkills": [],
-  "skills": [],
-  "strongSkills": [],
-  "weakSkills": [],
-  "missingSkills": [],
-  "education": [],
-  "experience": [],
-  "projects": [],
-  "certifications": [],
-  "matchPercentage": 0,
-  "careerReadinessScore": 0,
-  "learningRoadmap": [],
-  "jobRecommendations": [],
-  "summary": ""
-}
-
-CV Text:
-${text}
-`;
-
-      const response = await ai.models.generateContent({
-        model: AI_MODEL,
-        contents: prompt,
-        config: { responseMimeType: "application/json" },
-      });
-
-      data = JSON.parse(response.text);
+      console.log("Entering custom Python NLP mode...");
+      
+      const userProfile = await User.findOne({ uid: req.user.uid });
+      const targetRole = userProfile?.targetRole || "Software Developer";
+      
+      try {
+        const nlpResponse = await fetch("http://127.0.0.1:5001/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, targetRole })
+        });
+        
+        if (!nlpResponse.ok) {
+           throw new Error("Python NLP service failed: " + nlpResponse.statusText);
+        }
+        
+        data = await nlpResponse.json();
+      } catch (err) {
+        console.error("Error communicating with Python NLP service:", err);
+        throw new Error("Could not reach the NLP processing service. Ensure the Python server is running on port 5001.");
+      }
       
       if (data.isITRelated === false) {
         return res.status(400).json({ error: "This CV does not appear to be related to the IT field. Please upload an IT-related CV." });
@@ -768,7 +728,7 @@ ${text}
       data.skillMatchScore = data.matchPercentage || data.skillMatchScore || 0;
       data.cvScore = data.careerReadinessScore || data.cvScore || 0;
 
-      console.log("Gemini payload created.");
+      console.log("Python NLP payload created.");
     }
 
     try {
