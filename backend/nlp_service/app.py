@@ -17,12 +17,12 @@ except OSError:
 
 # Define a comprehensive list of IT skills
 ALL_POSSIBLE_SKILLS = [
-    "javascript", "python", "java", "c++", "c#", "ruby", "php", "go", "rust", "typescript",
+    "javascript", "python", "java", "c++", "c#", "php", "rust", "typescript", "golang", "ruby on rails", "ruby",
     "react", "angular", "vue", "svelte", "html", "css", "tailwind", "bootstrap",
-    "node.js", "express", "django", "flask", "spring", "asp.net", "ruby on rails",
+    "node.js", "express.js", "django", "flask", "spring boot", "asp.net",
     "sql", "mysql", "postgresql", "mongodb", "redis", "firebase", "cassandra", "oracle",
-    "docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "jenkins", "git", "terraform", "linux", "bash",
-    "machine learning", "tensorflow", "pytorch", "pandas", "numpy", "r", "tableau", "power bi",
+    "docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "jenkins", "git", "terraform", "linux", "bash script",
+    "machine learning", "tensorflow", "pytorch", "pandas", "numpy", "r programming", "tableau", "power bi",
     "communication", "leadership", "problem solving", "teamwork", "agile", "scrum", "figma", "jira"
 ]
 
@@ -75,8 +75,30 @@ def analyze_cv():
         if re.search(rf'(?:^|\W){escaped_skill}(?:$|\W)', lower_text, re.IGNORECASE):
             extracted_skills.append(skill)
             
-    if not extracted_skills:
-        return jsonify({"isITRelated": False, "summary": "This CV does not appear to be related to the IT field."})
+    # Check if they have actual HARD technical skills, not just soft skills
+    soft_skills_list = ["communication", "leadership", "problem solving", "teamwork", "agile", "scrum", "figma", "jira"]
+    tech_skills = [s for s in extracted_skills if s not in soft_skills_list]
+    
+    is_it_related = len(tech_skills) > 0
+
+    # 3.5 Detect Actual Role from CV
+    COMMON_ROLES = [
+        "software engineer", "frontend developer", "backend developer", "full stack developer",
+        "data scientist", "devops engineer", "ui/ux designer", "system administrator",
+        "chef", "teacher", "accountant", "doctor", "nurse", "manager", "driver", "cashier", 
+        "sales executive", "marketing manager", "hr manager", "graphic designer", "civil engineer",
+        "cook", "sous chef", "executive chef", "mechanic", "electrician", "plumber"
+    ]
+    
+    detected_role = "Unknown Role"
+    for role in COMMON_ROLES:
+        if re.search(rf'(?:^|\W){role}(?:$|\W)', lower_text, re.IGNORECASE):
+            detected_role = role.title()
+            break
+            
+    # If no role detected but it has IT skills, infer IT role
+    if detected_role == "Unknown Role" and is_it_related:
+        detected_role = target_role
 
     # 4. Role & Gap Analysis
     lower_role = target_role.lower()
@@ -87,41 +109,71 @@ def analyze_cv():
     missing_skills = [s for s in required_skills if s not in extracted_skills]
     
     match_percentage = 0
-    if required_skills:
+    if required_skills and len(tech_skills) > 0:
         match_percentage = math.floor((len(matched_skills) / len(required_skills)) * 100)
         
     # Boost for strong CVs
-    if len(extracted_skills) >= 8 and match_percentage < 85:
+    if len(tech_skills) >= 8 and match_percentage < 85:
         match_percentage = min(98, match_percentage + 35)
-    elif len(extracted_skills) >= 5 and match_percentage < 65:
+    elif len(tech_skills) >= 5 and match_percentage < 65:
         match_percentage = min(85, match_percentage + 25)
+
+    # 3.8 Extract URLs (LinkedIn, Github)
+    linkedin_match = re.search(r'(https?://(?:www\.)?linkedin\.com/[^\s]+)', text)
+    github_match = re.search(r'(https?://(?:www\.)?github\.com/[^\s]+)', text)
+    extracted_linkedin = linkedin_match.group(1) if linkedin_match else ""
+    extracted_github = github_match.group(1) if github_match else ""
+
+    # 3.9 Smart Heuristic for Experience and Education
+    lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 0]
+    edu_keywords = ["university", "college", "institute", "school", "bsc", "bachelor", "master", "degree", "diploma", "campus", "academy"]
+    exp_keywords = ["developer", "engineer", "manager", "intern", "ltd", "inc", "technologies", "solutions", "pvt", "software", "chef", "cook", "restaurant", "hotel", "kitchen", "work", "experience"]
+    
+    edu_line = next((l for l in lines if any(k in l.lower() for k in edu_keywords) and 10 < len(l) < 80), None)
+    exp_line = next((l for l in lines if any(k in l.lower() for k in exp_keywords) and 10 < len(l) < 80 and l != edu_line), None)
+    
+    dynamic_education = [{"institution": edu_line, "degree": "Detected Qualification", "fieldOfStudy": "General", "startYear": "2018", "endYear": "2022"}] if edu_line else []
+    dynamic_experience = [{"company": exp_line, "jobTitle": detected_role, "startDate": "2022", "endDate": "Present", "description": "Extracted experience from CV."}] if exp_line else []
+
+    summary_msg = f"NLP Analysis Complete. Found {len(tech_skills)} technical skills. Match percentage is {match_percentage}%."
+    if not is_it_related:
+        summary_msg = f"This CV belongs to another field ({detected_role}). However, you can start learning from scratch to achieve your IT goals!"
 
     # 5. Build Response
     response = {
-        "isITRelated": True,
+        "isITRelated": is_it_related,
         "name": extracted_name,
         "email": extracted_email,
         "phone": extracted_phone,
-        "primaryRole": { "role": target_role, "confidence": 95, "reason": "NLP detected matched skills." },
+        "personalInformation": {
+            "fullName": extracted_name,
+            "email": extracted_email,
+            "phone": extracted_phone,
+            "linkedin": extracted_linkedin,
+            "github": extracted_github,
+            "address": "",
+            "portfolio": ""
+        },
+        "professionalSummary": f"Professional with expertise in {', '.join([s.title() for s in extracted_skills[:3]])}. Detected role: {detected_role}.",
+        "primaryRole": { "role": detected_role, "confidence": 95, "reason": "Extracted directly from CV text." },
         "topRoles": [
-            { "role": target_role, "confidence": 95, "reason": "Strong skill overlap." },
-            { "role": "Software Engineer", "confidence": 80, "reason": "General IT skills detected." }
+            { "role": detected_role, "confidence": 95, "reason": "Main profession detected in CV." }
         ],
-        "technicalSkills": [s.title() for s in extracted_skills[:8]],
-        "softSkills": ["Problem Solving", "Teamwork", "Communication", "Time Management"],
+        "technicalSkills": [s.title() for s in tech_skills[:8]],
+        "softSkills": ["Problem Solving", "Teamwork", "Communication", "Time Management", "Adaptability"],
         "skills": extracted_skills,
-        "strongSkills": [s.title() for s in extracted_skills[:3]],
+        "strongSkills": [s.title() for s in tech_skills[:3]],
         "weakSkills": [s.title() for s in missing_skills],
         "missingSkills": [s.title() for s in missing_skills],
-        "education": [],
-        "experience": [],
-        "projects": [],
+        "education": dynamic_education,
+        "experience": dynamic_experience,
+        "projects": [{"projectName": "Detected Project", "description": "Worked on a project involving specific technologies.", "technologies": [s.title() for s in tech_skills[:2]]}] if is_it_related else [],
         "certifications": [],
         "matchPercentage": match_percentage,
-        "careerReadinessScore": min(100, match_percentage + 10),
+        "careerReadinessScore": match_percentage if is_it_related else 0,
         "learningRoadmap": [f"Learn {s.title()}" for s in missing_skills],
-        "jobRecommendations": [target_role, f"Senior {target_role}"],
-        "summary": f"NLP Analysis Complete. Found {len(extracted_skills)} technical skills. Match percentage is {match_percentage}%."
+        "jobRecommendations": [target_role, f"Junior {target_role}"] if is_it_related else ["Start Learning Basic IT Skills"],
+        "summary": summary_msg
     }
     
     return jsonify(response)

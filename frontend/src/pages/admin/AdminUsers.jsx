@@ -49,6 +49,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: "", careerGoal: "", targetRole: "" });
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -120,6 +121,8 @@ export default function AdminUsers() {
     try {
       await updateUser(selectedUser._id, editFormData);
       setIsEditModalOpen(false);
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
       loadUsers();
     } catch (error) {
       alert(error.message);
@@ -377,6 +380,16 @@ export default function AdminUsers() {
               </div>
             </form>
           </AdminCard>
+        </div>
+      )}
+
+      {/* Success Message Toast */}
+      {showSuccessToast && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
+          <div className="bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all">
+            <CheckCircle2 className="h-6 w-6" />
+            <span className="text-lg font-medium">Changes Saved Successfully!</span>
+          </div>
         </div>
       )}
     </div>

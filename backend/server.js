@@ -552,184 +552,41 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
 
     let data;
 
-    // USE_MOCK_AI enabled because API quota exceeded
-    if (process.env.NODE_ENV !== "production" && process.env.USE_MOCK_AI === "true") {
-      console.log("Entering mock AI mode (Quota Exceeded Fallback)...");
-
-      const userProfile = await User.findOne({ uid: req.user.uid });
-      const targetRole = userProfile?.targetRole || "Software Developer";
-
-      const roleSkillsMap = {
-        "frontend": ["javascript", "react", "html", "css", "vue", "angular", "tailwind", "typescript", "figma"],
-        "backend": ["node.js", "python", "java", "mongodb", "sql", "postgres", "docker", "redis", "express", "go", "c#"],
-        "full stack": ["javascript", "react", "node.js", "mongodb", "express", "git", "html", "css", "docker", "typescript", "postgres"],
-        "data": ["python", "r", "sql", "machine learning", "pandas", "numpy", "tensorflow", "tableau", "power bi"],
-        "devops": ["docker", "kubernetes", "aws", "linux", "ci/cd", "jenkins", "terraform", "bash", "python"],
-        "default": ["javascript", "python", "java", "sql", "git", "communication", "problem solving", "agile", "react", "node.js"]
-      };
-
-      const lowerRole = targetRole.toLowerCase();
-      const matchedKey = Object.keys(roleSkillsMap).find(k => lowerRole.includes(k));
-      const requiredSkills = matchedKey ? roleSkillsMap[matchedKey] : roleSkillsMap["default"];
-
-      const lowerText = text.toLowerCase();
+    console.log("Entering custom Python NLP mode...");
       
-      const allPossibleSkills = [
-        "javascript", "python", "java", "c++", "c#", "ruby", "php", "go", "rust", "typescript",
-        "react", "angular", "vue", "svelte", "html", "css", "tailwind", "bootstrap",
-        "node.js", "express", "django", "flask", "spring", "asp.net",
-        "sql", "mysql", "postgresql", "mongodb", "redis", "firebase",
-        "docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "jenkins", "git", "terraform", "linux", "bash",
-        "machine learning", "tensorflow", "pytorch", "pandas", "numpy", "r", "tableau", "power bi",
-        "communication", "leadership", "problem solving", "teamwork", "agile", "scrum", "figma"
-      ];
-      
-      const extractedSkills = allPossibleSkills.filter(skill => {
-        try {
-          // Escape special regex characters
-          const escapedSkill = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(`(?:^|\\W)${escapedSkill}(?:$|\\W)`, 'i');
-          return regex.test(lowerText);
-        } catch (err) {
-          console.error("Regex error for skill:", skill, err);
-          return false;
-        }
+    const userProfile = await User.findOne({ uid: req.user.uid });
+    const targetRole = userProfile?.targetRole || "Software Developer";
+    
+    try {
+      const nlpResponse = await fetch("http://127.0.0.1:5001/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, targetRole })
       });
       
-      const matchedSkills = requiredSkills.filter(skill => extractedSkills.includes(skill));
-      
-      let calculatedMatchPercentage = requiredSkills.length > 0 
-        ? Math.round((matchedSkills.length / requiredSkills.length) * 100) 
-        : 0;
-        
-      // Viva-saver: Dynamically boost percentage if the CV is actually powerful (has many skills)
-      // This ensures examiners see realistic high percentages for good CVs.
-      if (extractedSkills.length >= 8 && calculatedMatchPercentage < 85) {
-        calculatedMatchPercentage = Math.min(98, calculatedMatchPercentage + 35);
-      } else if (extractedSkills.length >= 5 && calculatedMatchPercentage < 65) {
-        calculatedMatchPercentage = Math.min(85, calculatedMatchPercentage + 25);
+      if (!nlpResponse.ok) {
+         throw new Error("Python NLP service failed: " + nlpResponse.statusText);
       }
       
-      const missingSkills = requiredSkills.filter(skill => !extractedSkills.includes(skill));
-      const weakAreas = missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1));
-
-      console.log("extractedSkills:", extractedSkills);
-      console.log("requiredSkills:", requiredSkills);
-      console.log("matchedSkills:", matchedSkills);
-      console.log("calculatedMatchPercentage:", calculatedMatchPercentage);
-
-      if (extractedSkills.length === 0) {
-        return res.status(400).json({ error: "This CV does not appear to be related to the IT field. Please upload an IT-related CV." });
-      }
-
-      const emailMatch = text.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
-      const extractedEmail = emailMatch ? emailMatch[1] : "";
-      const phoneMatch = text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/);
-      const extractedPhone = phoneMatch ? phoneMatch[0] : "";
-      const firstLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-      const extractedName = firstLines.length > 0 && firstLines[0].length < 40 ? firstLines[0] : "";
-
-      // Smart Heuristic for Experience and Education
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      const eduKeywords = ["university", "college", "institute", "school", "bsc", "bachelor", "master", "degree", "diploma", "campus"];
-      const expKeywords = ["developer", "engineer", "manager", "intern", "ltd", "inc", "technologies", "solutions", "pvt", "software"];
-      
-      let eduLine = lines.find(l => eduKeywords.some(k => l.toLowerCase().includes(k)) && l.length > 10 && l.length < 80);
-      let expLine = lines.find(l => expKeywords.some(k => l.toLowerCase().includes(k)) && l.length > 10 && l.length < 80 && l !== eduLine);
-      
-      const dynamicEducation = eduLine ? [
-         { institution: eduLine, degree: "Higher Education", fieldOfStudy: "Computer Science / IT", startYear: "2019", endYear: "2023" }
-      ] : [
-         { institution: "Recognized University / Institute", degree: "Degree / Diploma", fieldOfStudy: "Computer Science", startYear: "2019", endYear: "2023" }
-      ];
-
-      const dynamicExperience = expLine ? [
-         { company: expLine, jobTitle: targetRole || "IT Professional", startDate: "2022", endDate: "Present", description: `Worked as a ${targetRole || "professional"} utilizing various technologies to build scalable solutions.` }
-      ] : [
-         { company: "Tech Solutions", jobTitle: targetRole || "Software Professional", startDate: "2022", endDate: "Present", description: "Contributed to IT projects and software development lifecycle." }
-      ];
-
-      data = {
-        name: extractedName,
-        email: extractedEmail,
-        phone: extractedPhone || "+94 71 000 0000",
-        targetRole: targetRole,
-        professionalSummary: `Professional with expertise in ${extractedSkills.slice(0, 3).join(", ")}. Focused on delivering high-quality solutions.`,
-        isITRelated: true,
-        primaryRole: { role: targetRole, confidence: 95, reason: "Matches target role directly based on extracted skills." },
-        topRoles: [
-          { role: targetRole, confidence: 95, reason: "Strong skill overlap." },
-          { role: "Software Engineer", confidence: 80, reason: "General programming skills." }
-        ],
-        technicalSkills: extractedSkills.slice(0, 8).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        softSkills: ["Problem Solving", "Teamwork", "Communication", "Time Management"],
-        programmingLanguages: extractedSkills.filter(s => ["javascript", "java", "python", "c++", "c#", "php", "go", "typescript"].includes(s)).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        frameworks: extractedSkills.filter(s => ["react", "angular", "vue", "node.js", "express", "django", "spring"].includes(s)).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        databases: extractedSkills.filter(s => ["sql", "mysql", "mongodb", "postgresql"].includes(s)).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        tools: ["Git", "VS Code"],
-        cloudTechnologies: [],
-        languages: ["English"],
-        achievements: [],
-        extracted: {
-          experience: dynamicExperience,
-          education: dynamicEducation,
-          projects: [
-            { projectName: "Academic / Personal Project", description: `Developed a system utilizing ${extractedSkills[0] || 'modern tech'}.`, technologies: extractedSkills.slice(0, 3) }
-          ],
-          certifications: [],
-          skills: extractedSkills
-        },
-        strongSkills: extractedSkills.slice(0, 3).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        weakSkills: weakAreas,
-        missingSkills: missingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
-        certifications: [],
-        targetRole: targetRole,
-        careerRecommendations: [targetRole, "Senior " + targetRole],
-        jobMatches: [],
-        skillMatchScore: calculatedMatchPercentage,
-        cvScore: Math.min(100, calculatedMatchPercentage + 10),
-        matchPercentage: calculatedMatchPercentage,
-        careerReadinessScore: Math.min(100, calculatedMatchPercentage + 10),
-        learningPath: missingSkills.map(s => `Learn ${s.charAt(0).toUpperCase() + s.slice(1)}`),
-        aiInsights: `Mock AI: Analyzed CV against ${targetRole}. Found ${extractedSkills.length} skills. Match is ${calculatedMatchPercentage}%.`
-      };
-      console.log("Mock payload created.");
-    } else {
-      console.log("Entering custom Python NLP mode...");
-      
-      const userProfile = await User.findOne({ uid: req.user.uid });
-      const targetRole = userProfile?.targetRole || "Software Developer";
-      
-      try {
-        const nlpResponse = await fetch("http://127.0.0.1:5001/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, targetRole })
-        });
-        
-        if (!nlpResponse.ok) {
-           throw new Error("Python NLP service failed: " + nlpResponse.statusText);
-        }
-        
-        data = await nlpResponse.json();
-      } catch (err) {
-        console.error("Error communicating with Python NLP service:", err);
-        throw new Error("Could not reach the NLP processing service. Ensure the Python server is running on port 5001.");
-      }
-      
-      if (data.isITRelated === false) {
-        return res.status(400).json({ error: "This CV does not appear to be related to the IT field. Please upload an IT-related CV." });
-      }
-
-      // Map new NLP AI schema to existing frontend field names backward compatibility
-      data.aiInsights = data.summary || data.aiInsights || "";
-      data.careerRecommendations = data.jobRecommendations || data.careerRecommendations || [];
-      data.learningPath = data.learningRoadmap || data.learningPath || [];
-      data.skillMatchScore = data.matchPercentage || data.skillMatchScore || 0;
-      data.cvScore = data.careerReadinessScore || data.cvScore || 0;
-
-      console.log("Python NLP payload created.");
+      data = await nlpResponse.json();
+    } catch (err) {
+      console.error("Error communicating with Python NLP service:", err);
+      throw new Error("Could not reach the NLP processing service. Ensure the Python server is running on port 5001.");
     }
+    
+    // We reject non-IT CVs directly with a 400 error now.
+    if (data.isITRelated === false) {
+      return res.status(400).json({ error: "This is not a software engineering field CV, please upload the correct field CV." });
+    }
+    
+    // Map new NLP AI schema to existing frontend field names backward compatibility
+    data.aiInsights = data.summary || data.aiInsights || "";
+    data.careerRecommendations = data.jobRecommendations || data.careerRecommendations || [];
+    data.learningPath = data.learningRoadmap || data.learningPath || [];
+    data.skillMatchScore = data.matchPercentage || data.skillMatchScore || 0;
+    data.cvScore = data.careerReadinessScore || data.cvScore || 0;
+
+    console.log("Python NLP payload created.");
 
     try {
       await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });

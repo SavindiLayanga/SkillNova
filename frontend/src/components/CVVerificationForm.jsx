@@ -17,9 +17,9 @@ const Field = ({ label, value, onChange, placeholder = "Not Detected", isTextare
   
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <label className="text-sm font-semibold text-ink-700 flex justify-between">
-        <span>{label} {required && <span className="text-rose-500">*</span>}</span>
-        {isMissing && <span className="text-xs font-medium text-rose-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Please Enter</span>}
+      <label className="text-sm font-semibold text-slate-300 flex justify-between">
+        <span>{label} {required && <span className="text-rose-400">*</span>}</span>
+        {isMissing && <span className="text-xs font-medium text-rose-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Please Enter</span>}
       </label>
       {isTextarea ? (
         <textarea
@@ -29,7 +29,7 @@ const Field = ({ label, value, onChange, placeholder = "Not Detected", isTextare
           rows={3}
           className={clsx(
             "w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:border-transparent transition-all resize-none",
-            isMissing ? "border-rose-300 focus:ring-rose-200 bg-rose-50/30 placeholder-rose-400" : "border-ink-200 focus:ring-primary-200 focus:border-primary-500"
+            isMissing ? "border-rose-500/50 focus:ring-rose-500/30 bg-rose-500/10 placeholder-rose-400 text-rose-100" : "border-white/10 focus:ring-primary-500/30 focus:border-primary-500 bg-white/5 text-slate-100 placeholder-slate-500"
           )}
         />
       ) : (
@@ -40,7 +40,7 @@ const Field = ({ label, value, onChange, placeholder = "Not Detected", isTextare
           placeholder={placeholder}
           className={clsx(
             "w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:border-transparent transition-all",
-            isMissing ? "border-rose-300 focus:ring-rose-200 bg-rose-50/30 placeholder-rose-400" : "border-ink-200 focus:ring-primary-200 focus:border-primary-500"
+            isMissing ? "border-rose-500/50 focus:ring-rose-500/30 bg-rose-500/10 placeholder-rose-400 text-rose-100" : "border-white/10 focus:ring-primary-500/30 focus:border-primary-500 bg-white/5 text-slate-100 placeholder-slate-500"
           )}
         />
       )}
@@ -69,14 +69,14 @@ const TagInput = ({ label, tags = [], onChange, placeholder = "Type and press en
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <label className="text-sm font-semibold text-ink-700">{label}</label>
-      <div className="min-h-[42px] w-full px-2 py-1.5 border border-ink-200 focus-within:ring-2 focus-within:ring-primary-200 focus-within:border-primary-500 rounded-lg bg-white flex flex-wrap gap-2 items-center transition-all">
+      <label className="text-sm font-semibold text-slate-300">{label}</label>
+      <div className="min-h-[42px] w-full px-2 py-1.5 border border-white/10 focus-within:ring-2 focus-within:ring-primary-500/30 focus-within:border-primary-500 rounded-lg bg-white/5 flex flex-wrap gap-2 items-center transition-all">
         {safeTags.map((tag, index) => {
           const safeTagStr = typeof tag === "object" ? JSON.stringify(tag) : String(tag);
           return (
-            <span key={index} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-100">
+            <span key={index} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-primary-900/30 text-primary-300 border border-primary-500/20">
               {safeTagStr}
-              <button type="button" onClick={() => removeTag(index)} className="hover:text-primary-900 focus:outline-none">
+              <button type="button" onClick={() => removeTag(index)} className="hover:text-primary-100 focus:outline-none">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -88,7 +88,7 @@ const TagInput = ({ label, tags = [], onChange, placeholder = "Type and press en
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={safeTags.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] text-sm bg-transparent outline-none py-0.5 px-1"
+          className="flex-1 min-w-[120px] text-sm bg-transparent outline-none py-0.5 px-1 text-slate-100 placeholder:text-slate-500"
         />
       </div>
     </div>
@@ -162,16 +162,16 @@ export default function CVVerificationForm({ initialData, onSave, onCancel }) {
   return (
     <div className="w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-ink-900 flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
           <Edit2 className="w-6 h-6 text-primary-500" /> Verify Your Information
         </h2>
-        <p className="text-ink-500 mt-1 text-sm">
+        <p className="text-slate-400 mt-1 text-sm">
           We extracted the following details from your CV. Please verify and correct any missing or inaccurate information.
         </p>
       </div>
 
-      <Card className="p-6 border border-ink-100 shadow-sm bg-white/60 backdrop-blur-sm">
-        <h3 className="text-lg font-bold text-ink-900 border-b border-ink-100 pb-3 mb-5">Personal Information</h3>
+      <Card className="p-6 border border-white/10 shadow-sm bg-[#1B2132]/60 backdrop-blur-sm">
+        <h3 className="text-lg font-bold text-slate-100 border-b border-white/10 pb-3 mb-5">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Field label="Full Name" value={formData.personalInformation.fullName} onChange={(val) => updatePersonalInfo("fullName", val)} required />
           <Field label="Target Role" value={formData.targetRole} onChange={(val) => setFormData(prev => ({...prev, targetRole: val}))} required />
@@ -187,18 +187,18 @@ export default function CVVerificationForm({ initialData, onSave, onCancel }) {
         </div>
       </Card>
 
-      <Card className="p-6 border border-ink-100 shadow-sm bg-white/60 backdrop-blur-sm">
-        <div className="flex justify-between items-center border-b border-ink-100 pb-3 mb-5">
-          <h3 className="text-lg font-bold text-ink-900">Experience</h3>
-          <button onClick={() => addArrayItem("experience", { jobTitle: "", company: "", employmentType: "", startDate: "", endDate: "", currentlyWorking: false, description: "" })} className="text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+      <Card className="p-6 border border-white/10 shadow-sm bg-[#1B2132]/60 backdrop-blur-sm">
+        <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-5">
+          <h3 className="text-lg font-bold text-slate-100">Experience</h3>
+          <button onClick={() => addArrayItem("experience", { jobTitle: "", company: "", employmentType: "", startDate: "", endDate: "", currentlyWorking: false, description: "" })} className="text-sm font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1">
             <Plus className="w-4 h-4" /> Add Experience
           </button>
         </div>
         <div className="space-y-6">
-          {(!Array.isArray(formData.experience) || formData.experience.length === 0) && <p className="text-sm text-ink-500 italic">No experience added.</p>}
+          {(!Array.isArray(formData.experience) || formData.experience.length === 0) && <p className="text-sm text-slate-400 italic">No experience added.</p>}
           {Array.isArray(formData.experience) && formData.experience.map((exp, idx) => (
-            <div key={idx} className="p-4 rounded-xl border border-ink-100 bg-ink-50/30 relative group">
-              <button onClick={() => removeArrayItem("experience", idx)} className="absolute top-4 right-4 text-ink-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div key={idx} className="p-4 rounded-xl border border-white/10 bg-white/5 relative group">
+              <button onClick={() => removeArrayItem("experience", idx)} className="absolute top-4 right-4 text-slate-400 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Trash2 className="w-4 h-4" />
               </button>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-6">
@@ -215,18 +215,18 @@ export default function CVVerificationForm({ initialData, onSave, onCancel }) {
         </div>
       </Card>
 
-      <Card className="p-6 border border-ink-100 shadow-sm bg-white/60 backdrop-blur-sm">
-        <div className="flex justify-between items-center border-b border-ink-100 pb-3 mb-5">
-          <h3 className="text-lg font-bold text-ink-900">Education</h3>
-          <button onClick={() => addArrayItem("education", { degree: "", fieldOfStudy: "", institution: "", startYear: "", endYear: "", gpa: "" })} className="text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+      <Card className="p-6 border border-white/10 shadow-sm bg-[#1B2132]/60 backdrop-blur-sm">
+        <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-5">
+          <h3 className="text-lg font-bold text-slate-100">Education</h3>
+          <button onClick={() => addArrayItem("education", { degree: "", fieldOfStudy: "", institution: "", startYear: "", endYear: "", gpa: "" })} className="text-sm font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1">
             <Plus className="w-4 h-4" /> Add Education
           </button>
         </div>
         <div className="space-y-6">
-          {(!Array.isArray(formData.education) || formData.education.length === 0) && <p className="text-sm text-ink-500 italic">No education added.</p>}
+          {(!Array.isArray(formData.education) || formData.education.length === 0) && <p className="text-sm text-slate-400 italic">No education added.</p>}
           {Array.isArray(formData.education) && formData.education.map((edu, idx) => (
-            <div key={idx} className="p-4 rounded-xl border border-ink-100 bg-ink-50/30 relative group">
-              <button onClick={() => removeArrayItem("education", idx)} className="absolute top-4 right-4 text-ink-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div key={idx} className="p-4 rounded-xl border border-white/10 bg-white/5 relative group">
+              <button onClick={() => removeArrayItem("education", idx)} className="absolute top-4 right-4 text-slate-400 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Trash2 className="w-4 h-4" />
               </button>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-6">
@@ -243,8 +243,8 @@ export default function CVVerificationForm({ initialData, onSave, onCancel }) {
         </div>
       </Card>
 
-      <Card className="p-6 border border-ink-100 shadow-sm bg-white/60 backdrop-blur-sm">
-        <h3 className="text-lg font-bold text-ink-900 border-b border-ink-100 pb-3 mb-5">Skills & Expertise</h3>
+      <Card className="p-6 border border-white/10 shadow-sm bg-[#1B2132]/60 backdrop-blur-sm">
+        <h3 className="text-lg font-bold text-slate-100 border-b border-white/10 pb-3 mb-5">Skills & Expertise</h3>
         <div className="space-y-5">
           <TagInput label="Technical Skills" tags={formData.technicalSkills} onChange={(tags) => setFormData(prev => ({...prev, technicalSkills: tags}))} />
           <TagInput label="Soft Skills" tags={formData.softSkills} onChange={(tags) => setFormData(prev => ({...prev, softSkills: tags}))} />
@@ -266,7 +266,7 @@ export default function CVVerificationForm({ initialData, onSave, onCancel }) {
         </Button>
         <Button 
           variant="secondary"
-          className="w-full sm:w-auto justify-center bg-white border-ink-200 text-ink-700 hover:bg-ink-50 py-3" 
+          className="w-full sm:w-auto justify-center bg-[#1B2132] border-white/10 text-slate-300 hover:bg-white/10 py-3" 
           icon={RotateCcw}
           onClick={onCancel}
         >

@@ -157,8 +157,8 @@ export default function AdminDashboard() {
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip cursor={{fill: '#f8fafc'}} />
                 <Legend />
-                <Bar dataKey="CV Uploads" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Progress Tracking" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="CV Uploads" fill="#000000" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Progress Tracking" fill="#9ca3af" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

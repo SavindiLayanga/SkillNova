@@ -112,7 +112,7 @@ export function CVAnalysisProvider({ children }) {
       const fullAnalysis = {
         analyzedAt: new Date().toISOString(),
         fileName: file.name,
-        targetRole: extractedData.targetRole || "Software Developer",
+        targetRole: extractedData.primaryRole?.role || extractedData.targetRole || "",
         name: extractedData.name || "",
         email: extractedData.email || "",
         technicalSkills: extractedData.technicalSkills || [],
