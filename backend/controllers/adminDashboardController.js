@@ -7,8 +7,8 @@ import { LibraryTest } from '../models/LibraryTest.js';
 export const getDashboardStats = async (req, res) => {
   try {
     const [
-      totalUsers,
-      totalCVUploads,
+      allUsers,
+      allCVs,
       totalJobs,
       totalCourses,
       totalSkills,
@@ -17,16 +17,19 @@ export const getDashboardStats = async (req, res) => {
       pendingCVs,
       reviewedCVs,
     ] = await Promise.all([
-      User.countDocuments({ role: 'user', isDeleted: false }),
-      CVAnalysis.countDocuments(),
+      User.find({ role: 'user', isDeleted: false }, 'createdAt').lean(),
+      CVAnalysis.find({}, 'createdAt').lean(),
       Job.countDocuments({ status: { $ne: 'deleted' } }),
       Course.countDocuments(),
       LibraryTest.countDocuments(),
       User.find({ role: 'user', isDeleted: false }).sort({ createdAt: -1 }).limit(2).lean(),
       CVAnalysis.find().sort({ createdAt: -1 }).limit(2).lean(),
-      CVAnalysis.countDocuments({ score: { $exists: false } }), // assuming pending means no score
+      CVAnalysis.countDocuments({ score: { $exists: false } }),
       CVAnalysis.countDocuments({ score: { $exists: true } }),
     ]);
+
+    const totalUsers = allUsers.length;
+    const totalCVUploads = allCVs.length;
 
     const stats = [
       { label: "Total Users", value: totalUsers, change: "Live from DB" },
@@ -41,29 +44,53 @@ export const getDashboardStats = async (req, res) => {
       ...recentCVs.map(cv => `${cv.name || 'A user'} uploaded a CV for analysis.`)
     ];
 
-    const chartData = {
-      weekly: [
-        { name: 'Mon', 'CV Uploads': Math.floor(totalCVUploads/7), 'Progress Tracking': Math.floor(totalUsers/7) },
-        { name: 'Tue', 'CV Uploads': Math.floor(totalCVUploads/6), 'Progress Tracking': Math.floor(totalUsers/6) },
-        { name: 'Wed', 'CV Uploads': Math.floor(totalCVUploads/5), 'Progress Tracking': Math.floor(totalUsers/5) },
-        { name: 'Thu', 'CV Uploads': Math.floor(totalCVUploads/4), 'Progress Tracking': Math.floor(totalUsers/4) },
-        { name: 'Fri', 'CV Uploads': Math.floor(totalCVUploads/3), 'Progress Tracking': Math.floor(totalUsers/3) },
-        { name: 'Sat', 'CV Uploads': Math.floor(totalCVUploads/2), 'Progress Tracking': Math.floor(totalUsers/2) },
-        { name: 'Sun', 'CV Uploads': totalCVUploads, 'Progress Tracking': totalUsers },
-      ],
-      monthly: [
-        { name: 'Week 1', 'CV Uploads': Math.floor(totalCVUploads/4), 'Progress Tracking': Math.floor(totalUsers/4) },
-        { name: 'Week 2', 'CV Uploads': Math.floor(totalCVUploads/3), 'Progress Tracking': Math.floor(totalUsers/3) },
-        { name: 'Week 3', 'CV Uploads': Math.floor(totalCVUploads/2), 'Progress Tracking': Math.floor(totalUsers/2) },
-        { name: 'Week 4', 'CV Uploads': totalCVUploads, 'Progress Tracking': totalUsers },
-      ],
-      yearly: [
-        { name: 'Q1', 'CV Uploads': Math.floor(totalCVUploads/4), 'Progress Tracking': Math.floor(totalUsers/4) },
-        { name: 'Q2', 'CV Uploads': Math.floor(totalCVUploads/3), 'Progress Tracking': Math.floor(totalUsers/3) },
-        { name: 'Q3', 'CV Uploads': Math.floor(totalCVUploads/2), 'Progress Tracking': Math.floor(totalUsers/2) },
-        { name: 'Q4', 'CV Uploads': totalCVUploads, 'Progress Tracking': totalUsers },
-      ]
-    };
+    const countItems = (items, start, end) => items.filter(i => {
+      const d = new Date(i.createdAt);
+      return d >= start && d <= end;
+    }).length;
+
+    const now = new Date();
+    const weekly = [];
+    for (let i = 6; i >= 0; i--) {
+      const start = new Date(now);
+      start.setDate(now.getDate() - i);
+      start.setHours(0,0,0,0);
+      const end = new Date(start);
+      end.setHours(23,59,59,999);
+      weekly.push({
+        name: start.toLocaleDateString('en-US', { weekday: 'short' }),
+        'CV Uploads': countItems(allCVs, start, end),
+        'Progress Tracking': countItems(allUsers, start, end)
+      });
+    }
+
+    const monthly = [];
+    for (let i = 3; i >= 0; i--) {
+      const start = new Date(now);
+      start.setDate(now.getDate() - (i * 7) - 7);
+      const end = new Date(now);
+      end.setDate(now.getDate() - (i * 7));
+      monthly.push({
+        name: `Week ${4 - i}`,
+        'CV Uploads': countItems(allCVs, start, end),
+        'Progress Tracking': countItems(allUsers, start, end)
+      });
+    }
+
+    const yearly = [];
+    for (let i = 3; i >= 0; i--) {
+      const start = new Date(now);
+      start.setMonth(now.getMonth() - (i * 3) - 3);
+      const end = new Date(now);
+      end.setMonth(now.getMonth() - (i * 3));
+      yearly.push({
+        name: `Q${4 - i}`,
+        'CV Uploads': countItems(allCVs, start, end),
+        'Progress Tracking': countItems(allUsers, start, end)
+      });
+    }
+
+    const chartData = { weekly, monthly, yearly };
 
     const reviewWorkload = {
       pending: pendingCVs,

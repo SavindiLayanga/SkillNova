@@ -151,7 +151,17 @@ export const updateAdminCredentials = async (req, res) => {
       admin.password = await bcrypt.hash(newPassword, saltRounds);
     }
 
-    await admin.save();
+    const updateData = {};
+    if (newUsername && newUsername.trim() !== '') {
+      updateData.username = newUsername;
+    }
+    if (newPassword && newPassword.trim() !== '') {
+      updateData.password = admin.password;
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await User.updateOne({ _id: adminId }, { $set: updateData });
+    }
 
     res.json({ message: 'Credentials updated successfully' });
   } catch (error) {
