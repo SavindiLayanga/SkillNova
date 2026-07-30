@@ -499,8 +499,8 @@ export default function AdminCourses() {
           )}
 
           {currentCourses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-amber-200 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-900/10 py-16 text-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-purple-600 dark:bg-purple-500 mb-6 shadow-md shadow-purple-500/20">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800/50 bg-slate-50/80 dark:bg-slate-900/10 py-16 text-center">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-800 dark:bg-slate-700 mb-6 shadow-md shadow-slate-500/20">
                 <BookOpen className="h-12 w-12 text-white" strokeWidth={2.5} />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No Courses Yet</h3>
@@ -509,7 +509,7 @@ export default function AdminCourses() {
                 icon={Plus} 
                 onClick={() => document.querySelector('form input[placeholder="Course title"]')?.focus()}
                 className="hover:scale-105"
-                style={{ backgroundColor: '#7851A9', backgroundImage: 'none', boxShadow: '0 4px 14px 0 rgba(120, 81, 169, 0.39)' }}
+                style={{ backgroundColor: '#000000', backgroundImage: 'none', boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.39)' }}
               >
                 Add Course
               </Button>
