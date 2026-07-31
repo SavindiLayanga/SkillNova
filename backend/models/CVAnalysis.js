@@ -62,6 +62,16 @@ const cvAnalysisSchema = new mongoose.Schema({
   targetRole: { type: String, default: '' },
   primaryRole: roleConfidenceSchema,
   topRoles: [roleConfidenceSchema],
+  professionalSummary: { type: String, default: '' },
+  personalInformation: {
+    fullName: { type: String, default: '' },
+    email: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    linkedin: { type: String, default: '' },
+    github: { type: String, default: '' },
+    address: { type: String, default: '' },
+    portfolio: { type: String, default: '' }
+  },
   careerRecommendations: [String],
   missingSkills: [String],
   jobMatches: [jobMatchSchema],

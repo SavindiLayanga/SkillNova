@@ -115,6 +115,8 @@ export function CVAnalysisProvider({ children }) {
         targetRole: extractedData.primaryRole?.role || extractedData.targetRole || "",
         name: extractedData.name || "",
         email: extractedData.email || "",
+        personalInformation: extractedData.personalInformation || {},
+        professionalSummary: extractedData.professionalSummary || "",
         technicalSkills: extractedData.technicalSkills || [],
         softSkills: extractedData.softSkills || [],
         extracted: {
@@ -173,6 +175,8 @@ export function CVAnalysisProvider({ children }) {
         targetRole: extractedData.targetRole || targetRole,
         name: extractedData.name || name || "SkillNova User",
         email: "",
+        personalInformation: extractedData.personalInformation || {},
+        professionalSummary: extractedData.professionalSummary || "",
         technicalSkills: extractedData.technicalSkills || [],
         softSkills: extractedData.softSkills || [],
         extracted: {
