@@ -7,7 +7,7 @@ export default function AuthLayout() {
         <section className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
           <Outlet />
         </section>
-        <section className="hidden bg-primary-500 p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
+        <section className="hidden bg-black p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-xl font-black text-primary-600">
               S

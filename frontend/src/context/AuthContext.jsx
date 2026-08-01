@@ -34,6 +34,10 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => {
     async function signup(details) {
       try {
+        // Clear local storage for a fresh start
+        localStorage.removeItem("skillnova_cv_analysis");
+        localStorage.removeItem("preferences");
+
         const userCredential = await createUserWithEmailAndPassword(auth, details.email, details.password);
         
         // After firebase signup, we notify our backend to create/upsert the MongoDB profile
@@ -63,6 +67,8 @@ export function AuthProvider({ children }) {
     }
 
     async function logout() {
+      localStorage.removeItem("skillnova_cv_analysis");
+      localStorage.removeItem("preferences");
       await signOut(auth);
     }
 

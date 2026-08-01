@@ -24,4 +24,4 @@ const libraryTestSchema = new mongoose.Schema({
   lastPlayed: { type: Date }
 }, { timestamps: true });
 
-export const LibraryTest = mongoose.model('LibraryTest', libraryTestSchema, 'user_librarytests');
+export const LibraryTest = mongoose.model('LibraryTest', libraryTestSchema, 'library_tests');

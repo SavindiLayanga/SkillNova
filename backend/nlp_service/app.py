@@ -49,34 +49,83 @@ def analyze_cv():
     
     # 2. Extract Entities (Name, Email, Phone, Address)
     lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 0]
+    lower_text = text.lower()
     
-    # Name Heuristic: First valid line that is short and not an email/phone
+    # 2.1 Detect Actual Role from CV First (to help find Name)
+    COMMON_ROLES = [
+        "software engineer", "software developer", "web developer", "frontend developer", "backend developer", "full stack developer",
+        "data scientist", "data analyst", "devops engineer", "ui/ux designer", "ui designer", "ux designer", "system administrator",
+        "quality assurance", "qa engineer", "business analyst", "project manager", "product manager", "scrum master",
+        "chef", "teacher", "accountant", "doctor", "nurse", "manager", "driver", "cashier", 
+        "sales executive", "marketing manager", "hr manager", "graphic designer", "civil engineer",
+        "cook", "sous chef", "executive chef", "mechanic", "electrician", "plumber"
+    ]
+    
+    detected_role = "Unknown Role"
+    role_line_index = -1
+    
+    # Priority 1: Check the first 15 lines (header/summary area) for the role
+    for i, line in enumerate(lines[:15]):
+        for role in COMMON_ROLES:
+            if re.search(rf'(?:^|\W){role}(?:$|\W)', line, re.IGNORECASE):
+                detected_role = role.title()
+                role_line_index = i
+                break
+        if detected_role != "Unknown Role":
+            break
+            
+    # Priority 2: If not in the header, search the whole text
+    if detected_role == "Unknown Role":
+        for i, line in enumerate(lines):
+            for role in COMMON_ROLES:
+                if re.search(rf'(?:^|\W){role}(?:$|\W)', line, re.IGNORECASE):
+                    detected_role = role.title()
+                    role_line_index = i
+                    break
+            if detected_role != "Unknown Role":
+                break
+                
+    # 2.2 Name Heuristic
     extracted_name = ""
-    for line in lines[:8]:
-        if not re.search(r'([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)', line) and not re.search(r'\d{7,}', line) and 2 < len(line) < 40:
-            extracted_name = line
+    
+    # Let's run Spacy specifically on the first 5 lines to find a PERSON
+    spacy_name_top = ""
+    for i, line in enumerate(lines[:5]):
+        doc_line = nlp(line)
+        for ent in doc_line.ents:
+            if ent.label_ == "PERSON":
+                spacy_name_top = ent.text
+                break
+        if spacy_name_top:
             break
             
-    # Spacy fallback if name seems wrong or missing
-    spacy_name = ""
-    for ent in doc.ents:
-        if ent.label_ == "PERSON" and not spacy_name:
-            spacy_name = ent.text
-            break
-            
-    # If heuristic failed completely, or if heuristic found 1 word but Spacy found multiple
-    if not extracted_name and spacy_name:
-        extracted_name = spacy_name
-    elif spacy_name and len(spacy_name.split()) > 1 and len(extracted_name.split()) == 1:
-        extracted_name = spacy_name
+    if spacy_name_top and len(spacy_name_top.split()) > 1:
+        extracted_name = spacy_name_top
         
+    # If Spacy couldn't find a multi-word name at the top, let's use heuristics
+    if not extracted_name:
+        # User's heuristic: if role is at the very top (line 1 or 2), the name is above it
+        if 0 < role_line_index <= 3:
+            candidate = lines[role_line_index - 1]
+            if not re.search(r'([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)', candidate) and not re.search(r'\d{7,}', candidate):
+                extracted_name = candidate
+                
+    # Fallback to normal heuristic: The very first valid line
+    if not extracted_name:
+        for line in lines[:5]:
+            # If it's short, not an email/phone, and doesn't have keywords like 'skills' or 'profile'
+            if not re.search(r'([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)', line) and not re.search(r'\d{7,}', line) and 2 < len(line) < 40:
+                if not any(k in line.lower() for k in ["profile", "summary", "skills", "objective", "curriculum vitae", "resume", "cv"]):
+                    extracted_name = line
+                    break
+            
     email_match = re.search(r'([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)', text)
     extracted_email = email_match.group(1) if email_match else ""
     
-    # Foolproof Name Fallback: If still no name, derive from email
+    # Foolproof Name Fallback: If still no name, derive from email or PDF title
     if not extracted_name and extracted_email:
         name_part = extracted_email.split('@')[0]
-        name_part = re.sub(r'[0-9]+', '', name_part) # remove numbers
+        name_part = re.sub(r'[0-9]+', '', name_part)
         extracted_name = name_part.replace('.', ' ').replace('_', ' ').title()
     elif not extracted_name:
         extracted_name = "Candidate Name"
@@ -103,7 +152,6 @@ def analyze_cv():
                     break
 
     # 3. Extract Skills using NLP tokens and pattern matching
-    lower_text = text.lower()
     extracted_skills = []
     
     # Simple token matching (we could use EntityRuler but this is faster for exact matches)
@@ -118,21 +166,6 @@ def analyze_cv():
     
     is_it_related = len(tech_skills) > 0
 
-    # 3.5 Detect Actual Role from CV
-    COMMON_ROLES = [
-        "software engineer", "software developer", "web developer", "frontend developer", "backend developer", "full stack developer",
-        "data scientist", "data analyst", "devops engineer", "ui/ux designer", "system administrator",
-        "chef", "teacher", "accountant", "doctor", "nurse", "manager", "driver", "cashier", 
-        "sales executive", "marketing manager", "hr manager", "graphic designer", "civil engineer",
-        "cook", "sous chef", "executive chef", "mechanic", "electrician", "plumber"
-    ]
-    
-    detected_role = "Unknown Role"
-    for role in COMMON_ROLES:
-        if re.search(rf'(?:^|\W){role}(?:$|\W)', lower_text, re.IGNORECASE):
-            detected_role = role.title()
-            break
-            
     # If no role detected but it has IT skills, infer IT role
     if detected_role == "Unknown Role" and is_it_related:
         detected_role = target_role
@@ -166,14 +199,127 @@ def analyze_cv():
 
     # 3.9 Smart Heuristic for Experience and Education
     lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 0]
-    edu_keywords = ["university", "college", "institute", "school", "bsc", "bachelor", "master", "degree", "diploma", "campus", "academy"]
+    
+    # Better Education Extraction (State Machine)
+    dynamic_education = []
+    edu_keywords = ["university", "college", "institute", "school", "bsc", "bachelor", "master", "degree", "diploma", "campus", "academy", "phd"]
+    date_regex = r'(?<!\d)((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?[a-z]*\s*\d{4})\s*(?:-|to|–)\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?[a-z]*\s*\d{4}|Present|Current|Now|Till Date)(?!\d)'
+    single_year_regex = r'(?<!\d)(20\d{2}|19\d{2})(?!\d)'
+    
+    in_edu_section = False
+    current_edu = None
+    
+    for i, line in enumerate(lines):
+        lower_line = line.lower()
+        if lower_line in ["education", "academic background", "qualifications", "academic qualifications"]:
+            in_edu_section = True
+            continue
+        elif lower_line in ["experience", "work experience", "skills", "projects", "certifications", "references", "employment"]:
+            in_edu_section = False
+            
+        if in_edu_section:
+            range_match = re.search(date_regex, line, re.IGNORECASE)
+            single_match = re.search(single_year_regex, line)
+            has_keyword = any(k in lower_line for k in edu_keywords)
+            
+            is_new_edu = range_match or single_match or (has_keyword and not current_edu)
+            
+            if is_new_edu:
+                if current_edu:
+                    dynamic_education.append(current_edu)
+                    
+                start_d = range_match.group(1) if range_match else "Unknown"
+                end_d = range_match.group(2) if range_match else (single_match.group(1) if single_match else "Unknown")
+                
+                text_without_date = line
+                if range_match: text_without_date = re.sub(date_regex, '', line, flags=re.IGNORECASE)
+                elif single_match: text_without_date = re.sub(single_year_regex, '', line)
+                text_without_date = text_without_date.strip(' -|,:')
+                
+                degree_guess = text_without_date if len(text_without_date) > 5 else "Detected Qualification"
+                institution_guess = lines[i-1] if i > 0 and len(lines[i-1]) < 80 else "Unknown Institution"
+                
+                if any(k in degree_guess.lower() for k in ["university", "college", "institute", "school"]):
+                    temp = institution_guess
+                    institution_guess = degree_guess
+                    degree_guess = temp if len(temp) > 5 else "Detected Qualification"
+                    
+                current_edu = {
+                    "institution": institution_guess,
+                    "degree": degree_guess,
+                    "fieldOfStudy": "General",
+                    "startYear": start_d,
+                    "endYear": end_d
+                }
+            elif current_edu and len(current_edu["degree"]) < 100:
+                if len(line) > 5:
+                    current_edu["degree"] += " | " + line
+
+    if current_edu:
+        dynamic_education.append(current_edu)
+        
+    if not dynamic_education:
+        edu_line = next((l for l in lines if any(k in l.lower() for k in edu_keywords) and 10 < len(l) < 80), None)
+        if edu_line:
+            dynamic_education.append({"institution": edu_line, "degree": "Detected Qualification", "fieldOfStudy": "General", "startYear": "2018", "endYear": "2022"})
+
+    # Better Experience Extraction (State Machine)
+    dynamic_experience = []
     exp_keywords = ["developer", "engineer", "manager", "intern", "ltd", "inc", "technologies", "solutions", "pvt", "software", "chef", "cook", "restaurant", "hotel", "kitchen", "work", "experience"]
+    job_title_keywords = ["developer", "engineer", "manager", "intern", "analyst", "designer", "consultant", "administrator", "lead", "architect"]
     
-    edu_line = next((l for l in lines if any(k in l.lower() for k in edu_keywords) and 10 < len(l) < 80), None)
-    exp_line = next((l for l in lines if any(k in l.lower() for k in exp_keywords) and 10 < len(l) < 80 and l != edu_line), None)
+    in_exp_section = False
+    current_exp = None
     
-    dynamic_education = [{"institution": edu_line, "degree": "Detected Qualification", "fieldOfStudy": "General", "startYear": "2018", "endYear": "2022"}] if edu_line else []
-    dynamic_experience = [{"company": exp_line, "jobTitle": detected_role, "startDate": "2022", "endDate": "Present", "description": "Extracted experience from CV."}] if exp_line else []
+    for i, line in enumerate(lines):
+        lower_line = line.lower()
+        if lower_line in ["experience", "work experience", "employment history", "professional experience", "work history", "employment"]:
+            in_exp_section = True
+            continue
+        elif lower_line in ["education", "skills", "projects", "certifications", "references", "academic background"]:
+            in_exp_section = False
+            
+        if in_exp_section:
+            match = re.search(date_regex, line, re.IGNORECASE)
+            has_keyword = any(k in lower_line for k in exp_keywords)
+            
+            is_new_exp = match or (len(line) < 80 and has_keyword and not current_exp)
+            
+            if is_new_exp:
+                if current_exp:
+                    dynamic_experience.append(current_exp)
+                    
+                start_d = match.group(1) if match else "Unknown"
+                end_d = match.group(2) if match else "Unknown"
+                
+                text_without_date = re.sub(date_regex, '', line, flags=re.IGNORECASE).strip(' -|,:')
+                
+                job_title_guess = text_without_date if len(text_without_date) > 5 else (detected_role if is_it_related else "Professional Role")
+                company_guess = lines[i-1] if i > 0 and len(lines[i-1]) < 80 else "Unknown Company"
+                
+                if any(k in company_guess.lower() for k in job_title_keywords) and not any(k in text_without_date.lower() for k in job_title_keywords):
+                    temp = company_guess
+                    company_guess = job_title_guess
+                    job_title_guess = temp if len(temp) > 5 else "Professional Role"
+                    
+                current_exp = {
+                    "company": company_guess,
+                    "jobTitle": job_title_guess,
+                    "startDate": start_d,
+                    "endDate": end_d,
+                    "description": ""
+                }
+            elif current_exp:
+                if len(line) > 5 and len(current_exp["description"]) < 300:
+                    current_exp["description"] += line + " "
+
+    if current_exp:
+        dynamic_experience.append(current_exp)
+        
+    if not dynamic_experience:
+        exp_line = next((l for l in lines if any(k in l.lower() for k in exp_keywords) and 10 < len(l) < 80), None)
+        if exp_line:
+            dynamic_experience.append({"company": exp_line, "jobTitle": detected_role, "startDate": "2020", "endDate": "Present", "description": "Extracted experience based on keywords."})
 
     summary_msg = f"NLP Analysis Complete. Found {len(tech_skills)} technical skills. Match percentage is {match_percentage}%."
     if not is_it_related:

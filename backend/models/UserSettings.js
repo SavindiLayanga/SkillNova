@@ -28,4 +28,4 @@ const UserSettingsSchema = new mongoose.Schema({
   accountActivity: { type: Boolean, default: true },
 }, { timestamps: true });
 
-export const UserSettings = mongoose.model("UserSettings", UserSettingsSchema, "user_settings");
+export const UserSettings = mongoose.model("UserSettings", UserSettingsSchema, "settings");

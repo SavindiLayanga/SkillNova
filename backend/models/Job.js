@@ -33,4 +33,4 @@ const jobSchema = new mongoose.Schema(
 jobSchema.index({ source: 1, externalId: 1 }, { unique: true, partialFilterExpression: { externalId: { $exists: true, $ne: null } } });
 jobSchema.index({ sourceUrl: 1 }, { unique: true, partialFilterExpression: { sourceUrl: { $exists: true, $ne: null } } });
 
-export default mongoose.model("Job", jobSchema, "admin_jobs");
+export default mongoose.model("Job", jobSchema, "jobs");

@@ -86,4 +86,4 @@ courseSchema.set('toJSON', {
   }
 });
 
-export const Course = mongoose.model('Course', courseSchema, 'admin_courses');
+export const Course = mongoose.model('Course', courseSchema, 'courses');

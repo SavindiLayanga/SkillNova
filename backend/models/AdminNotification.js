@@ -26,4 +26,4 @@ const adminNotificationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export const AdminNotification = mongoose.model("AdminNotification", adminNotificationSchema, "admin_notifications");
+export const AdminNotification = mongoose.model("AdminNotification", adminNotificationSchema, "notifications");

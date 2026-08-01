@@ -44,13 +44,21 @@ export function CVAnalysisProvider({ children }) {
     let isMounted = true;
     async function syncAnalysis() {
       if (!user) {
-        if (isMounted && !storedAnalysis) setStatus("noCV");
+        if (isMounted) {
+          setAnalysis(null);
+          setFileName("");
+          setStatus("noCV");
+        }
         return;
       }
       try {
         const token = await getToken();
         if (!token) {
-          if (isMounted && !storedAnalysis) setStatus("noCV");
+          if (isMounted) {
+            setAnalysis(null);
+            setFileName("");
+            setStatus("noCV");
+          }
           return;
         }
         const latest = await fetchLatestAnalysis(token);
@@ -59,8 +67,12 @@ export function CVAnalysisProvider({ children }) {
             setAnalysis(latest);
             setStatus("analyzed");
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysisData: latest }));
-          } else if (!storedAnalysis) {
+          } else {
+            // No CV found for the new/current user, clear the state
+            setAnalysis(null);
+            setFileName("");
             setStatus("noCV");
+            localStorage.removeItem(STORAGE_KEY);
           }
         }
       } catch (err) {
