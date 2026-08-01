@@ -89,7 +89,7 @@ export default function Settings() {
 
   const showToast = (message, type) => {
     setToast({ message, type });
-    setTimeout(() => setToast({ message: "", type: "" }), 3000);
+    setTimeout(() => setToast({ message: "", type: "" }), 1500);
   };
 
   const handleToggle = async (key, currentValue) => {
