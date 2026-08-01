@@ -47,3 +47,11 @@ export async function fetchUserSettings(token) {
   if (!res.ok) throw new Error("Failed to fetch settings");
   return res.json();
 }
+
+export async function fetchRecentActivity(token) {
+  const res = await fetch(`${API_BASE_URL}/recent-activity`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch recent activity");
+  return res.json();
+}

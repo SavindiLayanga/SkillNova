@@ -25,7 +25,8 @@ import {
   fetchLatestAnalysis,
   fetchLearningPath,
   fetchRecentTests,
-  fetchUserSettings
+  fetchUserSettings,
+  fetchRecentActivity
 } from "../services/dashboardService.js";
 
 const getMasteryBadge = (level) => {
@@ -123,6 +124,7 @@ export default function Dashboard() {
   const [learningPath, setLearningPath] = useState(null);
   const [recentTests, setRecentTests] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [recentActivity, setRecentActivity] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -136,13 +138,14 @@ export default function Dashboard() {
           return;
         }
 
-        const [sumRes, analysisRes, gapsRes, pathRes, testsRes, settingsRes] = await Promise.all([
+        const [sumRes, analysisRes, gapsRes, pathRes, testsRes, settingsRes, activityRes] = await Promise.all([
           fetchDashboardSummary(token).catch(() => ({})),
           fetchLatestAnalysis(token).catch(() => ({})),
           fetchSkillGaps(token).catch(() => ({ missingSkills: [] })),
           fetchLearningPath(token).catch(() => ({})),
           fetchRecentTests(token).catch(() => []),
-          fetchUserSettings(token).catch(() => ({}))
+          fetchUserSettings(token).catch(() => ({})),
+          fetchRecentActivity(token).catch(() => ([]))
         ]);
 
         if (isMounted) {
@@ -152,6 +155,7 @@ export default function Dashboard() {
           setLearningPath(pathRes);
           setRecentTests(testsRes);
           setSettings(settingsRes);
+          setRecentActivity(activityRes);
         }
       } catch (err) {
         console.error(err);
@@ -482,6 +486,40 @@ export default function Dashboard() {
               </Card>
             )}
           </section>
+
+          {/* RECENT ACTIVITY SECTION */}
+          {settings?.accountActivity !== false && (
+            <section>
+              <SectionHeader
+                description="A log of your recent career development activities."
+                title="Recent Activity"
+              />
+              <Card className="p-5 sm:p-6">
+                {recentActivity?.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentActivity.map((activity, idx) => (
+                      <div key={idx} className="flex items-start gap-4 border-b border-ink-100 pb-4 last:border-0 last:pb-0">
+                        <div className="rounded-full bg-primary-100 p-2 text-primary-600 shrink-0">
+                          {activity.type === 'analysis' ? <FileUp className="h-4 w-4" /> : <Target className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-ink-900">{activity.title}</h4>
+                          <p className="text-sm text-ink-600 mt-1">{activity.description}</p>
+                          <p className="text-xs text-ink-400 mt-2">
+                            {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(activity.date))}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-ink-600 font-medium">No recent activity found.</p>
+                  </div>
+                )}
+              </Card>
+            </section>
+          )}
 
           {/* CAREER RECOMMENDATIONS */}
           {latestAnalysis.careerRecommendations?.length > 0 && (

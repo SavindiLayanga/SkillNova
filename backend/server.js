@@ -1347,6 +1347,43 @@ app.get("/api/dashboard/recent-tests", verifyAuth, async (req, res) => {
   }
 });
 
+// Recent Activity
+app.get("/api/dashboard/recent-activity", verifyAuth, async (req, res) => {
+  try {
+    const activities = [];
+    
+    // 1. Fetch recent CV Analyses
+    const recentAnalyses = await CVAnalysis.find({ uid: req.user.uid }).sort({ createdAt: -1 }).limit(3);
+    for (const a of recentAnalyses) {
+      activities.push({
+        id: a._id.toString(),
+        type: 'analysis',
+        title: 'CV Analyzed',
+        description: `Your CV was analyzed resulting in a ${a.skillMatchScore || a.cvScore || 0}% career match score.`,
+        date: a.createdAt,
+      });
+    }
+
+    // 2. Fetch recent Skill Tests
+    const tests = await SkillTest.find({ userId: req.user.uid }).sort({ createdAt: -1 }).limit(3);
+    for (const t of tests) {
+      activities.push({
+        id: t._id.toString(),
+        type: 'test',
+        title: `Skill Test Completed`,
+        description: `You completed a test on ${t.skillName} with a score of ${t.score}%.`,
+        date: t.completedAt || t.createdAt,
+      });
+    }
+
+    activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json(activities.slice(0, 5));
+  } catch (error) {
+    console.error("Dashboard recent activity error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Backend server running on http://localhost:${port}`);
 });
