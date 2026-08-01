@@ -141,3 +141,61 @@ export const sendTestEmail = async () => {
     message: "This is a test email to verify that the SkillNova SMTP configuration is working correctly."
   });
 };
+
+/**
+ * Send a course recommendation email to a user
+ * @param {string} userEmail - The email of the user
+ * @param {string} userName - The name of the user
+ * @param {Array} courses - The matched courses
+ */
+export const sendCourseRecommendationsEmail = async (userEmail, userName, courses) => {
+  try {
+    const coursesHtml = courses.map(course => `
+      <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px;">${course.title}</h4>
+        <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">Platform: ${course.provider} | Level: ${course.level}</p>
+        <p style="margin: 0 0 10px 0; color: #334155; font-size: 14px;">Match Score: ${course.matchScore}</p>
+        <a href="${course.url || '#'}" style="color: #2563eb; text-decoration: none; font-weight: bold; font-size: 14px;">View Course</a>
+      </div>
+    `).join('');
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">SkillNova</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #0f172a; margin-top: 0;">Hi ${userName},</h2>
+          <p style="color: #334155; line-height: 1.6;">Based on your recent CV analysis and target role, we have found some new courses that will help you bridge your skill gaps.</p>
+          
+          <div style="margin-top: 25px;">
+            <h3 style="color: #0f172a; font-size: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">Top Recommended Courses</h3>
+            ${coursesHtml}
+          </div>
+
+          <div style="margin-top: 35px; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/learning" 
+               style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              View All Recommendations
+            </a>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
+          You are receiving this email because you opted into Course Recommendations in your SkillNova settings.<br>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" style="color: #64748b;">Manage Preferences</a>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      to: userEmail,
+      subject: `[SkillNova] New Course Recommendations for You!`,
+      html: html,
+    });
+    
+    console.log(`Course recommendation email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send course recommendation email:", error);
+  }
+};

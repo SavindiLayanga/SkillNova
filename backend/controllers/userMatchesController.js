@@ -81,3 +81,54 @@ export const getCourseMatches = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch course matches' });
   }
 };
+
+import { sendCourseRecommendationsEmail } from '../services/emailService.js';
+import UserSettings from '../models/UserSettings.js';
+
+export const sendCourseRecommendations = async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const userEmail = req.user.email;
+    const userName = req.user.name || 'User';
+
+    // 1. Check if user has opted into email recommendations
+    const settings = await UserSettings.findOne({ userId });
+    if (!settings || !settings.emailCourseRecommendations) {
+      return res.status(400).json({ error: 'User has not opted in for email course recommendations' });
+    }
+
+    // 2. Generate course recommendations (reusing logic)
+    const analysis = await CVAnalysis.findOne({ userId, isActive: true });
+    if (!analysis) {
+      return res.status(404).json({ error: 'No active CV analysis found. Cannot generate recommendations.' });
+    }
+
+    const missingSkills = (analysis.missingSkills || []).map(s => s.toLowerCase());
+    const courses = await Course.find({ status: 'Published' });
+
+    const matchedCourses = courses.map(course => {
+      const courseSkills = (course.skills || []).map(s => s.toLowerCase());
+      let overlapCount = 0;
+      courseSkills.forEach(skill => {
+        if (missingSkills.includes(skill)) overlapCount++;
+      });
+      return {
+        ...course.toObject(),
+        matchScore: overlapCount
+      };
+    });
+
+    matchedCourses.sort((a, b) => b.matchScore - a.matchScore);
+    let topCourses = matchedCourses.filter(c => c.matchScore > 0);
+    if (topCourses.length === 0) topCourses = matchedCourses.slice(0, 5);
+    else topCourses = topCourses.slice(0, 5); // Limit to top 5 in email
+
+    // 3. Send email
+    await sendCourseRecommendationsEmail(userEmail, userName, topCourses);
+
+    res.json({ message: 'Course recommendations email sent successfully' });
+  } catch (error) {
+    console.error('Error sending course recommendations email:', error);
+    res.status(500).json({ error: 'Failed to send course recommendations email' });
+  }
+};
