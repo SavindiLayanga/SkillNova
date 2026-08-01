@@ -519,6 +519,9 @@ app.patch("/api/settings", verifyAuth, require2FA, async (req, res) => {
     const updates = req.body;
 
     for (const key in updates) {
+      if (key.startsWith("twoFactor")) {
+        return res.status(400).json({ error: "Cannot modify 2FA settings directly." });
+      }
       if (typeof updates[key] !== "boolean") {
         return res.status(400).json({
           error: `Value for ${key} must be a boolean.`,
