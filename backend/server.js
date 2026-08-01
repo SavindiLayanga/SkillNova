@@ -9,6 +9,7 @@ import { connectDB } from "./db.js";
 import { initializeFirebaseAdmin } from "./firebase.js";
 import { verifyAuth } from "./middleware/auth.js";
 import { AI_API_KEY, AI_MODEL } from "./aiConfig.js";
+import { initializeCronJobs } from "./services/cronService.js";
 
 import { User } from "./models/User.js";
 import { CVAnalysis } from "./models/CVAnalysis.js";
@@ -76,6 +77,7 @@ console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 
 connectDB();
 initializeFirebaseAdmin();
+initializeCronJobs();
 
 app.get("/", (req, res) => {
   res.send("SkillNova Backend is running");

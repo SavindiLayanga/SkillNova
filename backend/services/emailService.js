@@ -199,3 +199,203 @@ export const sendCourseRecommendationsEmail = async (userEmail, userName, course
     console.error("Failed to send course recommendation email:", error);
   }
 };
+
+/**
+ * Send a weekly progress reminder email to a user
+ * @param {string} userEmail - The email of the user
+ * @param {string} userName - The name of the user
+ * @param {Object} stats - The progress stats of the user
+ */
+export const sendWeeklyProgressReminderEmail = async (userEmail, userName, stats = {}) => {
+  try {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">SkillNova Weekly Progress</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #0f172a; margin-top: 0;">Hi ${userName},</h2>
+          <p style="color: #334155; line-height: 1.6;">Here is your weekly progress update! Keep up the great work and continue pushing towards your career goals.</p>
+          
+          <div style="margin-top: 25px;">
+            <h3 style="color: #0f172a; font-size: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">Your Stats</h3>
+            <ul style="color: #334155; line-height: 1.6;">
+              <li><strong>Skill Tests Completed:</strong> ${stats.testsCompleted || 0}</li>
+              <li><strong>Average Score:</strong> ${stats.averageScore || 0}%</li>
+            </ul>
+          </div>
+
+          <div style="margin-top: 35px; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" 
+               style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              View Dashboard
+            </a>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
+          You are receiving this email because you opted into Weekly progress reminders in your SkillNova settings.<br>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" style="color: #64748b;">Manage Preferences</a>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      to: userEmail,
+      subject: `[SkillNova] Your Weekly Progress Update`,
+      html: html,
+    });
+    
+    console.log(`Weekly progress reminder email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send weekly progress reminder email:", error);
+  }
+};
+
+/**
+ * Send a job match alert email to a user
+ * @param {string} userEmail - The email of the user
+ * @param {string} userName - The name of the user
+ * @param {Array} jobs - The matched jobs
+ */
+export const sendJobMatchAlertEmail = async (userEmail, userName, jobs = []) => {
+  try {
+    const jobsHtml = jobs.map(job => `
+      <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px;">${job.title}</h4>
+        <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">${job.company} - ${job.location || 'Remote'}</p>
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobs" style="color: #2563eb; text-decoration: none; font-weight: bold; font-size: 14px;">View Job</a>
+      </div>
+    `).join('');
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">SkillNova Job Alerts</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #0f172a; margin-top: 0;">Hi ${userName},</h2>
+          <p style="color: #334155; line-height: 1.6;">We found some new jobs that match your profile!</p>
+          
+          <div style="margin-top: 25px;">
+            <h3 style="color: #0f172a; font-size: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">Top Matches</h3>
+            ${jobsHtml}
+          </div>
+
+          <div style="margin-top: 35px; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/jobs" 
+               style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              View All Jobs
+            </a>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
+          You are receiving this email because you opted into New job match alerts in your SkillNova settings.<br>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" style="color: #64748b;">Manage Preferences</a>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      to: userEmail,
+      subject: `[SkillNova] New Job Matches for You!`,
+      html: html,
+    });
+    
+    console.log(`Job match alert email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send job match alert email:", error);
+  }
+};
+
+/**
+ * Send a skill test availability alert email to a user
+ * @param {string} userEmail - The email of the user
+ * @param {string} userName - The name of the user
+ */
+export const sendSkillTestAvailabilityAlertEmail = async (userEmail, userName) => {
+  try {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">SkillNova Test Alerts</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #0f172a; margin-top: 0;">Hi ${userName},</h2>
+          <p style="color: #334155; line-height: 1.6;">New skill tests have been unlocked and are available in your library! Sharpen your skills and see how you stack up.</p>
+          
+          <div style="margin-top: 35px; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/skill-test" 
+               style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              Take a Skill Test
+            </a>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
+          You are receiving this email because you opted into Skill test availability alerts in your SkillNova settings.<br>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" style="color: #64748b;">Manage Preferences</a>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      to: userEmail,
+      subject: `[SkillNova] New Skill Tests are Available!`,
+      html: html,
+    });
+    
+    console.log(`Skill test alert email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send skill test alert email:", error);
+  }
+};
+
+/**
+ * Send a course completion reminder email to a user
+ * @param {string} userEmail - The email of the user
+ * @param {string} userName - The name of the user
+ * @param {Object} learningPath - The user's active learning path
+ */
+export const sendCourseCompletionReminderEmail = async (userEmail, userName, learningPath) => {
+  try {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">SkillNova Course Reminder</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #0f172a; margin-top: 0;">Hi ${userName},</h2>
+          <p style="color: #334155; line-height: 1.6;">You're making great progress towards becoming a <strong>${learningPath.targetRole}</strong>! Don't lose momentum now.</p>
+          
+          <div style="margin-top: 25px; padding: 15px; background-color: #f1f5f9; border-radius: 8px;">
+            <p style="color: #0f172a; margin: 0; font-weight: bold;">Current Progress: ${learningPath.progress || 0}%</p>
+          </div>
+
+          <div style="margin-top: 35px; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/learning" 
+               style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              Continue Learning
+            </a>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
+          You are receiving this email because you opted into Course completion reminders in your SkillNova settings.<br>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" style="color: #64748b;">Manage Preferences</a>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      to: userEmail,
+      subject: `[SkillNova] Keep up the momentum on your Learning Path!`,
+      html: html,
+    });
+    
+    console.log(`Course completion reminder email sent to: ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send course completion reminder email:", error);
+  }
+};

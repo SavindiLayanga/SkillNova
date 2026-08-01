@@ -1,7 +1,7 @@
 import { CVAnalysis } from '../models/CVAnalysis.js';
 import Job from '../models/Job.js';
 import { Course } from '../models/Course.js';
-import UserSettings from '../models/UserSettings.js';
+import { UserSettings } from '../models/UserSettings.js';
 import { User } from '../models/User.js';
 
 export const getJobMatches = async (req, res) => {

@@ -114,7 +114,33 @@ export default function Settings() {
         const errData = await res.json().catch(() => null);
         throw new Error(errData?.error || "Failed to update");
       }
-      showToast("Settings updated", "success");
+      let successMessage = "Settings updated successfully.";
+      if (newValue) {
+        switch(key) {
+          case "emailCourseRecommendations": successMessage = "You will now receive course recommendations via email."; break;
+          case "showRemoteJobsFirst": successMessage = "Remote jobs will now be prioritized in your matches."; break;
+          case "useCVDataForMatchScoring": successMessage = "Your CV data will now be used to provide accurate match scores."; break;
+          case "prioritizeBeginnerFriendlyPaths": successMessage = "Beginner-friendly courses will now be prioritized."; break;
+          case "weeklyProgressReminders": successMessage = "You will receive a weekly email summarizing your completed tests and average scores."; break;
+          case "newJobMatchAlerts": successMessage = "You will receive a daily email with the latest jobs matching your profile."; break;
+          case "skillTestAvailabilityAlerts": successMessage = "You will be alerted when new skill tests are added to your library."; break;
+          case "courseCompletionReminders": successMessage = "You will receive weekly reminders to complete your active learning paths."; break;
+          case "cvAnalysisStorage": successMessage = "CV analysis storage is enabled."; break;
+          case "personalizedRecommendations": successMessage = "Personalized recommendations are enabled."; break;
+          case "progressVisibility": successMessage = "Progress visibility is enabled."; break;
+          case "accountActivity": successMessage = "Account activity tracking is enabled."; break;
+          case "twoFactorAuth": successMessage = "Two-factor authentication is enabled."; break;
+        }
+      } else {
+        switch(key) {
+          case "emailCourseRecommendations": successMessage = "Email course recommendations disabled."; break;
+          case "showRemoteJobsFirst": successMessage = "Remote job prioritization disabled."; break;
+          case "useCVDataForMatchScoring": successMessage = "CV data match scoring disabled."; break;
+          case "prioritizeBeginnerFriendlyPaths": successMessage = "Beginner-friendly prioritization disabled."; break;
+          default: successMessage = "Setting disabled successfully."; break;
+        }
+      }
+      showToast(successMessage, newValue ? "success" : "info");
     } catch (error) {
       console.error("Failed to update setting", error);
       // Revert on failure
@@ -347,10 +373,14 @@ export default function Settings() {
             
             {/* Colored Header Area */}
             <div className={`flex justify-center py-8 ${
-              toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"
+              toast.type === "error" ? "bg-rose-500" : 
+              toast.type === "info" ? "bg-amber-500" : 
+              "bg-emerald-500"
             }`}>
               {toast.type === "error" ? (
                 <AlertCircle className="h-20 w-20 text-white/90" />
+              ) : toast.type === "info" ? (
+                <ShieldCheck className="h-20 w-20 text-white/90" />
               ) : (
                 <CheckCircle2 className="h-20 w-20 text-white/90" />
               )}
@@ -359,7 +389,9 @@ export default function Settings() {
             {/* Content Area */}
             <div className="px-6 py-6 text-center">
               <h3 className="mb-2 text-xl font-bold text-slate-800">
-                {toast.type === "error" ? "Error" : "Success"}
+                {toast.type === "error" ? "Error" : 
+                 toast.type === "info" ? "Setting Disabled" : 
+                 "Success"}
               </h3>
               <p className="text-slate-500 font-medium leading-relaxed mb-8">
                 {toast.message}
@@ -370,7 +402,9 @@ export default function Settings() {
                 <button 
                   onClick={() => setToast({ message: "", type: "" })}
                   className={`rounded-md px-8 py-2 text-sm font-semibold tracking-wide text-white transition-colors hover:opacity-90 ${
-                    toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"
+                    toast.type === "error" ? "bg-rose-500" : 
+                    toast.type === "info" ? "bg-amber-500" : 
+                    "bg-emerald-500"
                   }`}
                 >
                   OK
