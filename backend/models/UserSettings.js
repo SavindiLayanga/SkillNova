@@ -26,6 +26,12 @@ const UserSettingsSchema = new mongoose.Schema({
   personalizedRecommendations: { type: Boolean, default: true },
   progressVisibility: { type: Boolean, default: true },
   accountActivity: { type: Boolean, default: true },
+  
+  // Two-Factor Authentication (2FA) fields
+  twoFactorAuth: { type: Boolean, default: false },
+  twoFactorSecret: { type: String, default: null },
+  twoFactorEnabledAt: { type: Date, default: null },
+  twoFactorRecoveryCodes: { type: [String], default: [] },
 }, { timestamps: true });
 
 export const UserSettings = mongoose.model("UserSettings", UserSettingsSchema, "settings");
