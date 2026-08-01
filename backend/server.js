@@ -8,6 +8,8 @@ import { fileURLToPath } from "url";
 import { connectDB } from "./db.js";
 import { initializeFirebaseAdmin } from "./firebase.js";
 import { verifyAuth } from "./middleware/auth.js";
+import { require2FA } from "./middleware/require2FA.js";
+import twoFactorRoutes from "./routes/twoFactorRoutes.js";
 import { AI_API_KEY, AI_MODEL } from "./aiConfig.js";
 import { initializeCronJobs } from "./services/cronService.js";
 
@@ -73,6 +75,9 @@ app.use('/api/admin/cv-reviews', adminCvReviewsRoutes);
 
 app.use('/api/preferences', preferencesRoutes);
 
+// Mount 2FA Routes
+app.use('/api/2fa', twoFactorRoutes);
+
 console.log("MONGO_URI loaded:", process.env.MONGO_URI ? "YES" : "NO");
 
 connectDB();
@@ -94,7 +99,7 @@ const getAI = () => {
 };
 
 // User Profile
-app.get("/api/user/profile", verifyAuth, async (req, res) => {
+app.get("/api/user/profile", verifyAuth, require2FA, async (req, res) => {
   try {
     const user = await User.findOne({ uid: req.user.uid });
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -105,7 +110,7 @@ app.get("/api/user/profile", verifyAuth, async (req, res) => {
   }
 });
 
-app.post("/api/user/profile", verifyAuth, async (req, res) => {
+app.post("/api/user/profile", verifyAuth, require2FA, async (req, res) => {
   try {
     const { name, targetRole, location, experience } = req.body;
 
@@ -136,7 +141,7 @@ app.post("/api/user/profile", verifyAuth, async (req, res) => {
   }
 });
 
-app.get("/api/user/cv-analyses", verifyAuth, async (req, res) => {
+app.get("/api/user/cv-analyses", verifyAuth, require2FA, async (req, res) => {
   try {
     const analyses = await CVAnalysis.find({ userId: req.user.uid }).sort({
       createdAt: -1,
@@ -148,7 +153,7 @@ app.get("/api/user/cv-analyses", verifyAuth, async (req, res) => {
   }
 });
 
-app.delete("/api/user/cv-analyses/:id", verifyAuth, async (req, res) => {
+app.delete("/api/user/cv-analyses/:id", verifyAuth, require2FA, async (req, res) => {
   try {
     const result = await CVAnalysis.findOneAndDelete({
       _id: req.params.id,
@@ -164,7 +169,7 @@ app.delete("/api/user/cv-analyses/:id", verifyAuth, async (req, res) => {
   }
 });
 
-app.get("/api/user/manual-analyses", verifyAuth, async (req, res) => {
+app.get("/api/user/manual-analyses", verifyAuth, require2FA, async (req, res) => {
   try {
     const analyses = await ManualAnalysis.find({ userId: req.user.uid }).sort({
       createdAt: -1,
@@ -176,7 +181,7 @@ app.get("/api/user/manual-analyses", verifyAuth, async (req, res) => {
   }
 });
 
-app.delete("/api/user/manual-analyses/:id", verifyAuth, async (req, res) => {
+app.delete("/api/user/manual-analyses/:id", verifyAuth, require2FA, async (req, res) => {
   try {
     const result = await ManualAnalysis.findOneAndDelete({
       _id: req.params.id,
@@ -192,7 +197,7 @@ app.delete("/api/user/manual-analyses/:id", verifyAuth, async (req, res) => {
   }
 });
 
-app.get("/api/user/all-analyses", verifyAuth, async (req, res) => {
+app.get("/api/user/all-analyses", verifyAuth, require2FA, async (req, res) => {
   try {
     const cvAnalyses = await CVAnalysis.find({ userId: req.user.uid }).lean();
     const manualAnalyses = await ManualAnalysis.find({ userId: req.user.uid }).lean();
@@ -209,7 +214,7 @@ app.get("/api/user/all-analyses", verifyAuth, async (req, res) => {
   }
 });
 
-app.get("/api/user/skill-tests", verifyAuth, async (req, res) => {
+app.get("/api/user/skill-tests", verifyAuth, require2FA, async (req, res) => {
   try {
     const tests = await SkillTest.find({ userId: req.user.uid }).sort({
       createdAt: -1,
@@ -287,7 +292,7 @@ const generateFallbackTests = (skill, count, existingTests = []) => {
 };
 
 // Skill Test Library API
-app.get("/api/skill-tests/library/:skill", verifyAuth, async (req, res) => {
+app.get("/api/skill-tests/library/:skill", verifyAuth, require2FA, async (req, res) => {
   try {
     const skill = req.params.skill;
     let tests = await LibraryTest.find({ userId: req.user.uid, skill }).sort({ createdAt: 1 });
@@ -371,7 +376,7 @@ CRITICAL REQUIREMENTS:
   }
 });
 
-app.post("/api/skill-tests/library/generate-more", verifyAuth, async (req, res) => {
+app.post("/api/skill-tests/library/generate-more", verifyAuth, require2FA, async (req, res) => {
   try {
     const { skill, existingTests, count = 3 } = req.body;
     
@@ -458,7 +463,7 @@ CRITICAL REQUIREMENTS:
   }
 });
 
-app.get("/api/skill-tests/library/test/:id", verifyAuth, async (req, res) => {
+app.get("/api/skill-tests/library/test/:id", verifyAuth, require2FA, async (req, res) => {
   try {
     const test = await LibraryTest.findOne({ _id: req.params.id, userId: req.user.uid });
     if (!test) return res.status(404).json({ error: "Test not found" });
@@ -469,7 +474,7 @@ app.get("/api/skill-tests/library/test/:id", verifyAuth, async (req, res) => {
   }
 });
 
-app.put("/api/skill-tests/library/:id/complete", verifyAuth, async (req, res) => {
+app.put("/api/skill-tests/library/:id/complete", verifyAuth, require2FA, async (req, res) => {
   try {
     const { score } = req.body;
     const test = await LibraryTest.findOne({ _id: req.params.id, userId: req.user.uid });
@@ -493,7 +498,7 @@ app.put("/api/skill-tests/library/:id/complete", verifyAuth, async (req, res) =>
 });
 
 // Settings
-app.get("/api/settings", verifyAuth, async (req, res) => {
+app.get("/api/settings", verifyAuth, require2FA, async (req, res) => {
   try {
     let settings = await UserSettings.findOne({ userId: req.user.uid });
 
@@ -509,7 +514,7 @@ app.get("/api/settings", verifyAuth, async (req, res) => {
   }
 });
 
-app.patch("/api/settings", verifyAuth, async (req, res) => {
+app.patch("/api/settings", verifyAuth, require2FA, async (req, res) => {
   try {
     const updates = req.body;
 
@@ -540,7 +545,7 @@ app.patch("/api/settings", verifyAuth, async (req, res) => {
 });
 
 // Analyze CV
-app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
+app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
   const { text } = req.body;
 
   try {
@@ -647,7 +652,7 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
 });
 
 // Manual Skill Analysis
-app.post("/api/analyze-manual-skills", verifyAuth, async (req, res) => {
+app.post("/api/analyze-manual-skills", verifyAuth, require2FA, async (req, res) => {
   try {
     const { name, skills, targetRole, experience, education } = req.body;
 
@@ -742,7 +747,7 @@ Return ONLY valid JSON:
 });
 
 // Archive Active Analysis
-app.post("/api/user/analyses/archive-active", verifyAuth, async (req, res) => {
+app.post("/api/user/analyses/archive-active", verifyAuth, require2FA, async (req, res) => {
   try {
     await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
     await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
@@ -754,7 +759,7 @@ app.post("/api/user/analyses/archive-active", verifyAuth, async (req, res) => {
 });
 
 // Generate Skill Test
-app.post("/api/generate-test", verifyAuth, async (req, res) => {
+app.post("/api/generate-test", verifyAuth, require2FA, async (req, res) => {
   const { skillName, type, topic } = req.body;
   const actualTopic = topic || type || "Conceptual Quiz";
 
@@ -918,7 +923,7 @@ Return ONLY JSON array:
 });
 
 // Submit Skill Test
-app.post("/api/user/skill-tests/:id/submit", verifyAuth, async (req, res) => {
+app.post("/api/user/skill-tests/:id/submit", verifyAuth, require2FA, async (req, res) => {
   try {
     const { userAnswers } = req.body;
     const testId = req.params.id;
@@ -977,7 +982,7 @@ app.post("/api/user/skill-tests/:id/submit", verifyAuth, async (req, res) => {
 });
 
 // Chat
-app.post("/api/chat", verifyAuth, async (req, res) => {
+app.post("/api/chat", verifyAuth, require2FA, async (req, res) => {
   try {
     const { messages } = req.body;
 
@@ -1006,7 +1011,7 @@ app.post("/api/chat", verifyAuth, async (req, res) => {
 
 // ==================== PRACTICE SESSION ====================
 
-app.get("/api/user/current-practice", verifyAuth, async (req, res) => {
+app.get("/api/user/current-practice", verifyAuth, require2FA, async (req, res) => {
   try {
     let session = await PracticeSession.findOne({ userId: req.user.uid });
     if (!session) {
@@ -1020,7 +1025,7 @@ app.get("/api/user/current-practice", verifyAuth, async (req, res) => {
   }
 });
 
-app.post("/api/user/current-practice", verifyAuth, async (req, res) => {
+app.post("/api/user/current-practice", verifyAuth, require2FA, async (req, res) => {
   try {
     const { selectedTest, currentQuestionIndex, userAnswers, timeLeft, isFinished } = req.body;
     let session = await PracticeSession.findOne({ userId: req.user.uid });
@@ -1042,7 +1047,7 @@ app.post("/api/user/current-practice", verifyAuth, async (req, res) => {
   }
 });
 
-app.delete("/api/user/current-practice", verifyAuth, async (req, res) => {
+app.delete("/api/user/current-practice", verifyAuth, require2FA, async (req, res) => {
   try {
     await PracticeSession.findOneAndDelete({ userId: req.user.uid });
     res.json({ message: "Practice session cleared" });
@@ -1053,7 +1058,7 @@ app.delete("/api/user/current-practice", verifyAuth, async (req, res) => {
 });
 
 // Custom Learning Path
-app.post("/api/custom-learning-path", verifyAuth, async (req, res) => {
+app.post("/api/custom-learning-path", verifyAuth, require2FA, async (req, res) => {
   try {
     const { targetRole, missingSkills } = req.body;
 
@@ -1180,7 +1185,7 @@ Return ONLY valid JSON array:
 });
 
 // Dashboard Summary
-app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
+app.get("/api/dashboard/summary", verifyAuth, require2FA, async (req, res) => {
   try {
     const uid = req.user.uid;
 
@@ -1256,7 +1261,7 @@ app.get("/api/dashboard/summary", verifyAuth, async (req, res) => {
 });
 
 // Latest Analysis
-app.get("/api/dashboard/latest-analysis", verifyAuth, async (req, res) => {
+app.get("/api/dashboard/latest-analysis", verifyAuth, require2FA, async (req, res) => {
   try {
     const uid = req.user.uid;
 
@@ -1285,7 +1290,7 @@ app.get("/api/dashboard/latest-analysis", verifyAuth, async (req, res) => {
 });
 
 // Skill Gaps
-app.get("/api/dashboard/skill-gaps", verifyAuth, async (req, res) => {
+app.get("/api/dashboard/skill-gaps", verifyAuth, require2FA, async (req, res) => {
   try {
     const uid = req.user.uid;
 
@@ -1316,7 +1321,7 @@ app.get("/api/dashboard/skill-gaps", verifyAuth, async (req, res) => {
 });
 
 // Learning Path
-app.get("/api/dashboard/learning-path", verifyAuth, async (req, res) => {
+app.get("/api/dashboard/learning-path", verifyAuth, require2FA, async (req, res) => {
   try {
     const latestPath = await LearningPath.findOne({
       userId: req.user.uid,
@@ -1332,7 +1337,7 @@ app.get("/api/dashboard/learning-path", verifyAuth, async (req, res) => {
 });
 
 // Recent Tests
-app.get("/api/dashboard/recent-tests", verifyAuth, async (req, res) => {
+app.get("/api/dashboard/recent-tests", verifyAuth, require2FA, async (req, res) => {
   try {
     const recentTests = await SkillTest.find({
       userId: req.user.uid,
@@ -1348,7 +1353,7 @@ app.get("/api/dashboard/recent-tests", verifyAuth, async (req, res) => {
 });
 
 // Recent Activity
-app.get("/api/dashboard/recent-activity", verifyAuth, async (req, res) => {
+app.get("/api/dashboard/recent-activity", verifyAuth, require2FA, async (req, res) => {
   try {
     const activities = [];
     
