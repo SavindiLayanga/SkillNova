@@ -1,7 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { setup2FA, verify2FA, disable2FA, validateSession } from "../controllers/twoFactorController.js";
-import { verifyToken } from "../middleware/auth.js"; // Assuming verifyToken is standard firebase verify
+import { verifyAuth } from "../middleware/auth.js"; // Assuming verifyToken is standard firebase verify
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ const twoFactorLimiter = rateLimit({
 });
 
 // All 2FA routes require the user to be authenticated via Firebase
-router.use(verifyToken);
+router.use(verifyAuth);
 
 router.post("/setup", setup2FA);
 router.post("/verify", twoFactorLimiter, verify2FA);
