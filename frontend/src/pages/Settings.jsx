@@ -1,5 +1,6 @@
 import { Bell, BriefcaseBusiness, Lock, Mail, Save, ShieldCheck, User, CheckCircle2, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
 import FormField from "../components/ui/FormField.jsx";
@@ -335,20 +336,51 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* Toast Notification */}
-      {toast.message && (
-        <div className={`fixed bottom-6 right-6 z-50 rounded-xl border p-4 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-6 duration-300 ${
-          toast.type === "error" 
-            ? "bg-rose-50 border-rose-200 text-rose-800" 
-            : "bg-emerald-50 border-emerald-200 text-emerald-800"
-        }`}>
-          {toast.type === "error" ? (
-            <AlertCircle className="h-5 w-5 text-rose-600" />
-          ) : (
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          )}
-          <p className="text-sm font-semibold">{toast.message}</p>
-        </div>
+      {/* Toast Notification Modal */}
+      {toast.message && createPortal(
+        <>
+          {/* Backdrop */}
+          <div className={`fixed inset-0 z-[100] bg-slate-900/20 animate-in fade-in duration-300 ${toast.type === "error" ? "backdrop-blur-sm" : ""}`} />
+          
+          {/* Modal Container */}
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-11/12 max-w-sm rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+            
+            {/* Colored Header Area */}
+            <div className={`flex justify-center py-8 ${
+              toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"
+            }`}>
+              {toast.type === "error" ? (
+                <AlertCircle className="h-20 w-20 text-white/90" />
+              ) : (
+                <CheckCircle2 className="h-20 w-20 text-white/90" />
+              )}
+            </div>
+
+            {/* Content Area */}
+            <div className="px-6 py-6 text-center">
+              <h3 className="mb-2 text-xl font-bold text-slate-800">
+                {toast.type === "error" ? "Error" : "Success"}
+              </h3>
+              <p className="text-slate-500 font-medium leading-relaxed mb-8">
+                {toast.message}
+              </p>
+              
+              {/* Action Button */}
+              <div className="flex justify-end">
+                <button 
+                  onClick={() => setToast({ message: "", type: "" })}
+                  className={`rounded-md px-8 py-2 text-sm font-semibold tracking-wide text-white transition-colors hover:opacity-90 ${
+                    toast.type === "error" ? "bg-rose-500" : "bg-emerald-500"
+                  }`}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );
