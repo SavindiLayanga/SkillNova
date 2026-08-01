@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Award,
   BookOpen,
@@ -20,6 +20,7 @@ import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import useAuth from "../hooks/useAuth.js";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
+import { fetchUserSettings } from "../services/dashboardService.js";
 
 const tabs = [
   "Overview",
@@ -65,9 +66,26 @@ function Pill({ children }) {
 }
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const { analysis, status } = useCVAnalysis();
   const [activeTab, setActiveTab] = useState("Overview");
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function getSettings() {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const s = await fetchUserSettings(token);
+        if (isMounted) setSettings(s);
+      } catch (err) {
+        console.error("Failed to fetch settings for profile", err);
+      }
+    }
+    getSettings();
+    return () => { isMounted = false; };
+  }, [getToken]);
 
   if (status === "noCV") {
     return (
@@ -207,7 +225,11 @@ export default function Profile() {
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-500">
                   Career Match Score
                 </p>
-                <p className="mt-2 font-bold text-ink-900">{skillScore}%</p>
+                {settings?.progressVisibility === false ? (
+                  <p className="mt-2 font-medium text-ink-500">Hidden by settings</p>
+                ) : (
+                  <p className="mt-2 font-bold text-ink-900">{skillScore}%</p>
+                )}
               </div>
             </div>
           </Card>
@@ -378,41 +400,49 @@ export default function Profile() {
                   icon={ChartNoAxesCombined}
                   title="Skill Gap Analysis"
                 />
-                <div className="grid gap-5 md:grid-cols-[0.45fr_1fr]">
-                  <div className="rounded-lg bg-primary-50 p-6 text-center">
-                    <p className="text-sm font-bold uppercase tracking-[0.12em] text-primary-700">
-                      Target Role Match
-                    </p>
-                    <p className="mt-3 text-5xl font-black text-primary-600">
-                      {skillScore}%
-                    </p>
-                    <p className="mt-3 text-sm leading-6 text-primary-800">
-                      Your CV score is {analysis?.cvScore}%. Fill your skill gaps to improve your match confidence.
-                    </p>
+                {settings?.progressVisibility === false ? (
+                  <div className="rounded-lg border border-dashed border-ink-200 p-8 text-center">
+                    <ChartNoAxesCombined className="h-10 w-10 text-ink-300 mx-auto mb-3" />
+                    <p className="text-ink-600 font-medium">Skill gap progress is hidden.</p>
+                    <p className="text-sm text-ink-500 mt-1">You can enable progress visibility in your Settings.</p>
                   </div>
-                  <div className="space-y-4">
-                    {missingSkills.map((gap, idx) => (
-                      <div className="rounded-lg border border-ink-100 p-4" key={idx}>
-                        <div className="mb-2 flex justify-between text-sm">
-                          <span className="font-bold text-ink-800">
-                            {typeof gap === "string" ? gap : gap.skill}
-                          </span>
-                          {typeof gap !== "string" && gap.required && (
-                            <span className="text-ink-500">
-                              {gap.current}% / {gap.required}%
+                ) : (
+                  <div className="grid gap-5 md:grid-cols-[0.45fr_1fr]">
+                    <div className="rounded-lg bg-primary-50 p-6 text-center">
+                      <p className="text-sm font-bold uppercase tracking-[0.12em] text-primary-700">
+                        Target Role Match
+                      </p>
+                      <p className="mt-3 text-5xl font-black text-primary-600">
+                        {skillScore}%
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-primary-800">
+                        Your CV score is {analysis?.cvScore}%. Fill your skill gaps to improve your match confidence.
+                      </p>
+                    </div>
+                    <div className="space-y-4">
+                      {missingSkills.map((gap, idx) => (
+                        <div className="rounded-lg border border-ink-100 p-4" key={idx}>
+                          <div className="mb-2 flex justify-between text-sm">
+                            <span className="font-bold text-ink-800">
+                              {typeof gap === "string" ? gap : gap.skill}
                             </span>
+                            {typeof gap !== "string" && gap.required && (
+                              <span className="text-ink-500">
+                                {gap.current}% / {gap.required}%
+                              </span>
+                            )}
+                          </div>
+                          {typeof gap !== "string" && gap.required && (
+                            <ProgressBar value={gap.current} />
+                          )}
+                          {typeof gap !== "string" && gap.recommendation && (
+                            <p className="mt-2 text-xs text-ink-500">{gap.recommendation}</p>
                           )}
                         </div>
-                        {typeof gap !== "string" && gap.required && (
-                          <ProgressBar value={gap.current} />
-                        )}
-                        {typeof gap !== "string" && gap.recommendation && (
-                          <p className="mt-2 text-xs text-ink-500">{gap.recommendation}</p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </Card>
             )}
           </div>

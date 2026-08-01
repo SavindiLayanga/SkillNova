@@ -23,9 +23,9 @@ import useAuth from "../hooks/useAuth.js";
 import {
   fetchDashboardSummary,
   fetchLatestAnalysis,
-  fetchSkillGaps,
   fetchLearningPath,
-  fetchRecentTests
+  fetchRecentTests,
+  fetchUserSettings
 } from "../services/dashboardService.js";
 
 const getMasteryBadge = (level) => {
@@ -122,6 +122,7 @@ export default function Dashboard() {
   const [skillGaps, setSkillGaps] = useState(null);
   const [learningPath, setLearningPath] = useState(null);
   const [recentTests, setRecentTests] = useState(null);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -135,12 +136,13 @@ export default function Dashboard() {
           return;
         }
 
-        const [sumRes, analysisRes, gapsRes, pathRes, testsRes] = await Promise.all([
+        const [sumRes, analysisRes, gapsRes, pathRes, testsRes, settingsRes] = await Promise.all([
           fetchDashboardSummary(token).catch(() => ({})),
           fetchLatestAnalysis(token).catch(() => ({})),
           fetchSkillGaps(token).catch(() => ({ missingSkills: [] })),
           fetchLearningPath(token).catch(() => ({})),
-          fetchRecentTests(token).catch(() => [])
+          fetchRecentTests(token).catch(() => []),
+          fetchUserSettings(token).catch(() => ({}))
         ]);
 
         if (isMounted) {
@@ -149,6 +151,7 @@ export default function Dashboard() {
           setSkillGaps(gapsRes);
           setLearningPath(pathRes);
           setRecentTests(testsRes);
+          setSettings(settingsRes);
         }
       } catch (err) {
         console.error(err);
@@ -301,35 +304,43 @@ export default function Dashboard() {
               description="A quick overview of your career readiness based on your latest analysis."
               title="Career Readiness Score"
             />
-            <Card className="p-5 sm:p-6 grid gap-6 lg:grid-cols-2 items-center bg-gradient-to-br from-white to-primary-50/30">
-              <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
-                 <div className="relative inline-flex items-center justify-center">
-                    <svg className="w-32 h-32 transform -rotate-90 drop-shadow-sm">
-                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-ink-100/50" />
-                      <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * (latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0)) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
-                    </svg>
-                    <span className="absolute text-3xl font-extrabold text-ink-900">{latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0}%</span>
-                 </div>
-                 <h3 className="mt-4 text-xl font-bold text-ink-900 tracking-tight">Overall Score</h3>
-                 <p className="mt-2 text-sm leading-relaxed text-ink-600 max-w-sm text-center lg:text-left">
-                   Your profile is looking strong! Focus on bridging your technical skill gaps to boost your job match score and stand out to employers.
-                 </p>
-              </div>
-              <div className="space-y-5">
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Total Skills Extracted</span><span className="font-bold text-ink-900">{summary?.totalSkills || 0}</span></div>
-                  <ProgressBar value={summary?.totalSkills ? 100 : 0} className="h-2 opacity-90" />
+            {settings?.progressVisibility === false ? (
+              <Card className="p-8 text-center border-dashed border-2">
+                <Target className="h-10 w-10 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-600 font-medium">Progress tracking is hidden.</p>
+                <p className="text-sm text-ink-500 mt-1">You can enable it in your Settings to view your scores.</p>
+              </Card>
+            ) : (
+              <Card className="p-5 sm:p-6 grid gap-6 lg:grid-cols-2 items-center bg-gradient-to-br from-white to-primary-50/30">
+                <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
+                   <div className="relative inline-flex items-center justify-center">
+                      <svg className="w-32 h-32 transform -rotate-90 drop-shadow-sm">
+                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-ink-100/50" />
+                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * (latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0)) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
+                      </svg>
+                      <span className="absolute text-3xl font-extrabold text-ink-900">{latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0}%</span>
+                   </div>
+                   <h3 className="mt-4 text-xl font-bold text-ink-900 tracking-tight">Overall Score</h3>
+                   <p className="mt-2 text-sm leading-relaxed text-ink-600 max-w-sm text-center lg:text-left">
+                     Your profile is looking strong! Focus on bridging your technical skill gaps to boost your job match score and stand out to employers.
+                   </p>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">{summary?.totalTechnicalSkills || 0}</span></div>
-                  <ProgressBar value={summary?.totalSkills ? ((summary.totalTechnicalSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Total Skills Extracted</span><span className="font-bold text-ink-900">{summary?.totalSkills || 0}</span></div>
+                    <ProgressBar value={summary?.totalSkills ? 100 : 0} className="h-2 opacity-90" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">{summary?.totalTechnicalSkills || 0}</span></div>
+                    <ProgressBar value={summary?.totalSkills ? ((summary.totalTechnicalSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">{summary?.totalSoftSkills || 0}</span></div>
+                    <ProgressBar value={summary?.totalSkills ? ((summary.totalSoftSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
+                  </div>
                 </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">{summary?.totalSoftSkills || 0}</span></div>
-                  <ProgressBar value={summary?.totalSkills ? ((summary.totalSoftSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
-                </div>
-              </div>
-            </Card>
+              </Card>
+            )}
           </section>
 
           {summary?.aiInsights && (
@@ -411,7 +422,13 @@ export default function Dashboard() {
               description="Personalized learning roadmap to fill your skill gaps."
               title="Learning Path"
             />
-            {learningPath?.modules?.length > 0 ? (
+            {settings?.progressVisibility === false ? (
+              <Card className="p-8 text-center border-dashed border-2">
+                <BookOpen className="h-10 w-10 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-600 font-medium">Learning path progress is hidden.</p>
+                <p className="text-sm text-ink-500 mt-1">You can enable it in your Settings.</p>
+              </Card>
+            ) : learningPath?.modules?.length > 0 ? (
               <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
                 {learningPath.modules.map((module, idx) => (
                   <Card className="p-5 flex flex-col justify-between" key={idx}>

@@ -3,6 +3,7 @@ import Job from '../models/Job.js';
 import { Course } from '../models/Course.js';
 import { UserSettings } from '../models/UserSettings.js';
 import { User } from '../models/User.js';
+import { LearningPath } from '../models/LearningPath.js';
 
 export const getJobMatches = async (req, res) => {
   try {
@@ -24,6 +25,23 @@ export const getJobMatches = async (req, res) => {
       const user = await User.findOne({ uid: req.user.uid });
       if (user && user.targetRole) {
         targetRole = user.targetRole.toLowerCase();
+      }
+    }
+
+    if (!targetRole) {
+      const user = await User.findOne({ uid: req.user.uid });
+      if (user && user.targetRole) {
+        targetRole = user.targetRole.toLowerCase();
+      }
+    }
+
+    const isPersonalized = settings?.personalizedRecommendations !== false;
+    let userProgress = 0;
+    
+    if (isPersonalized) {
+      const activePath = await LearningPath.findOne({ userId: req.user.uid, status: 'active' });
+      if (activePath) {
+        userProgress = activePath.progress || 0;
       }
     }
 
@@ -51,6 +69,22 @@ export const getJobMatches = async (req, res) => {
         } else {
           matchPercentage = 50 + Math.floor(Math.random() * 20); // Random 50-70 for variety
         }
+      }
+
+      if (isPersonalized) {
+        // Boost score if job matches their target role explicitly
+        const jobTitle = (job.title || '').toLowerCase();
+        if (targetRole && jobTitle.includes(targetRole)) {
+          matchPercentage += 10;
+        }
+        
+        // Boost score based on their learning progress (shows readiness)
+        if (userProgress > 0) {
+          matchPercentage += Math.round(userProgress * 0.15); // Up to 15% boost for 100% progress
+        }
+        
+        // Cap at 100
+        matchPercentage = Math.min(matchPercentage, 100);
       }
 
       const isRemote = (job.location && job.location.toLowerCase().includes('remote')) || 
@@ -103,6 +137,23 @@ export const getCourseMatches = async (req, res) => {
       }
     }
 
+    if (!targetRole) {
+      const user = await User.findOne({ uid: req.user.uid });
+      if (user && user.targetRole) {
+        targetRole = user.targetRole.toLowerCase();
+      }
+    }
+
+    const isPersonalized = settings?.personalizedRecommendations !== false;
+    let userProgress = 0;
+    
+    if (isPersonalized) {
+      const activePath = await LearningPath.findOne({ userId: req.user.uid, status: 'active' });
+      if (activePath) {
+        userProgress = activePath.progress || 0;
+      }
+    }
+
     // Fetch published courses
     const courses = await Course.find({ status: 'Published' });
 
@@ -122,6 +173,21 @@ export const getCourseMatches = async (req, res) => {
           matchScore = 3; // Give a higher score for direct match
         } else {
           matchScore = Math.floor(Math.random() * 2); // Random 0 or 1
+        }
+      }
+
+      if (isPersonalized) {
+        // Boost if course matches target role explicitly
+        const title = (course.title || '').toLowerCase();
+        if (targetRole && title.includes(targetRole)) {
+          matchScore += 2;
+        }
+        
+        // If user is far along in progress, boost advanced courses; if early, boost beginner
+        if (userProgress > 50 && course.difficulty?.toLowerCase() === 'advanced') {
+          matchScore += 1;
+        } else if (userProgress <= 50 && course.difficulty?.toLowerCase() === 'beginner') {
+          matchScore += 1;
         }
       }
 

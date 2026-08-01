@@ -39,3 +39,11 @@ export async function fetchRecentTests(token) {
   if (!res.ok) throw new Error("Failed to fetch recent tests");
   return res.json();
 }
+
+export async function fetchUserSettings(token) {
+  const res = await fetch("http://localhost:5000/api/settings", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch settings");
+  return res.json();
+}

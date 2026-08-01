@@ -591,23 +591,34 @@ app.post("/api/analyze-cv", verifyAuth, async (req, res) => {
     console.log("Python NLP payload created.");
 
     try {
-      await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
-      await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+      const settings = await UserSettings.findOne({ userId: req.user.uid });
+      const shouldStore = settings ? (settings.cvAnalysisStorage !== false) : true;
+      
+      if (shouldStore) {
+        await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+        await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
 
-      const newAnalysis = new CVAnalysis({
-        userId: req.user.uid,
-        isActive: true,
-        originalText: text,
-        ...data,
-      });
+        const newAnalysis = new CVAnalysis({
+          userId: req.user.uid,
+          isActive: true,
+          originalText: text,
+          ...data,
+        });
 
-      await newAnalysis.save();
-      console.log("MongoDB save SUCCESS.");
+        await newAnalysis.save();
+        console.log("MongoDB save SUCCESS.");
 
-      return res.json({
-        ...data,
-        _id: newAnalysis._id,
-      });
+        return res.json({
+          ...data,
+          _id: newAnalysis._id,
+        });
+      } else {
+        console.log("CV Analysis Storage is disabled. Returning analysis without saving.");
+        return res.json({
+          ...data,
+          _id: "temp_id_" + Date.now(),
+        });
+      }
     } catch (saveError) {
       console.error("MongoDB save FAILURE:", saveError);
       throw saveError; // Re-throw to be caught by the outer catch
@@ -692,28 +703,38 @@ Return ONLY valid JSON:
       throw new Error("Failed to extract data or invalid format.");
     }
 
-    await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
-    await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+    const settings = await UserSettings.findOne({ userId: req.user.uid });
+    const shouldStore = settings ? (settings.cvAnalysisStorage !== false) : true;
+    
+    if (shouldStore) {
+      await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
+      await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
 
-    const newAnalysis = new ManualAnalysis({
-      userId: req.user.uid,
-      isActive: true,
-      name,
-      skills: Array.isArray(skills)
-        ? skills
-        : skills.split(",").map((s) => s.trim()),
-      targetRole,
-      experience,
-      education,
-      ...data,
-    });
+      const newAnalysis = new ManualAnalysis({
+        userId: req.user.uid,
+        isActive: true,
+        name,
+        skills: Array.isArray(skills)
+          ? skills
+          : skills.split(",").map((s) => s.trim()),
+        targetRole,
+        experience,
+        education,
+        ...data,
+      });
 
-    await newAnalysis.save();
+      await newAnalysis.save();
 
-    res.json({
-      ...data,
-      _id: newAnalysis._id,
-    });
+      res.json({
+        ...data,
+        _id: newAnalysis._id,
+      });
+    } else {
+      res.json({
+        ...data,
+        _id: "temp_id_" + Date.now(),
+      });
+    }
   } catch (error) {
     console.error("Manual Analysis Error:", error);
     res.status(500).json({ error: error.message });
