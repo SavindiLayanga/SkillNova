@@ -2,34 +2,56 @@ import { CVAnalysis } from '../models/CVAnalysis.js';
 import Job from '../models/Job.js';
 import { Course } from '../models/Course.js';
 import UserSettings from '../models/UserSettings.js';
+import { User } from '../models/User.js';
 
 export const getJobMatches = async (req, res) => {
   try {
-    const analysis = await CVAnalysis.findOne({ userId: req.user.uid, isActive: true });
-    if (!analysis) {
-      return res.status(404).json({ error: 'No active CV analysis found.' });
-    }
-
-    const userSkills = (analysis.skills || []).map(s => s.toLowerCase());
-    
     // Fetch user settings
     const settings = await UserSettings.findOne({ userId: req.user.uid });
     const showRemoteFirst = settings?.showRemoteJobsFirst || false;
+    const useCVData = settings?.useCVDataForMatchScoring ?? true; // Default to true if not set
+
+    let userSkills = [];
+    let targetRole = '';
+
+    if (useCVData) {
+      const analysis = await CVAnalysis.findOne({ userId: req.user.uid, isActive: true });
+      if (analysis) {
+        userSkills = (analysis.skills || []).map(s => s.toLowerCase());
+      }
+    } else {
+      // Fallback: Use user's manual profile data (targetRole)
+      const user = await User.findOne({ uid: req.user.uid });
+      if (user && user.targetRole) {
+        targetRole = user.targetRole.toLowerCase();
+      }
+    }
 
     // Fetch active jobs
     const jobs = await Job.find({ status: { $in: ['active', 'Active'] } });
 
     // Calculate match score
     const matchedJobs = jobs.map(job => {
-      const jobSkills = (job.skills || []).map(s => s.toLowerCase());
-      let matchedCount = 0;
-      jobSkills.forEach(skill => {
-        if (userSkills.includes(skill)) matchedCount++;
-      });
-      
-      const matchPercentage = jobSkills.length > 0 
-        ? Math.round((matchedCount / jobSkills.length) * 100) 
-        : 50; // Default if job has no specific skills listed
+      let matchPercentage = 50; // Default
+
+      if (useCVData && userSkills.length > 0) {
+        const jobSkills = (job.skills || []).map(s => s.toLowerCase());
+        let matchedCount = 0;
+        jobSkills.forEach(skill => {
+          if (userSkills.includes(skill)) matchedCount++;
+        });
+        matchPercentage = jobSkills.length > 0 
+          ? Math.round((matchedCount / jobSkills.length) * 100) 
+          : 50;
+      } else if (!useCVData && targetRole) {
+        // Simple fallback matching based on target role vs job title
+        const jobTitle = (job.title || '').toLowerCase();
+        if (jobTitle.includes(targetRole) || targetRole.includes(jobTitle)) {
+          matchPercentage = 85;
+        } else {
+          matchPercentage = 50 + Math.floor(Math.random() * 20); // Random 50-70 for variety
+        }
+      }
 
       const isRemote = (job.location && job.location.toLowerCase().includes('remote')) || 
                        (job.jobType && job.jobType.toLowerCase().includes('remote'));
@@ -60,27 +82,51 @@ export const getJobMatches = async (req, res) => {
 
 export const getCourseMatches = async (req, res) => {
   try {
-    const analysis = await CVAnalysis.findOne({ userId: req.user.uid, isActive: true });
-    if (!analysis) {
-      return res.status(404).json({ error: 'No active CV analysis found.' });
+    // Fetch user settings
+    const settings = await UserSettings.findOne({ userId: req.user.uid });
+    const useCVData = settings?.useCVDataForMatchScoring ?? true; // Default to true if not set
+
+    let missingSkills = [];
+    let targetRole = '';
+
+    if (useCVData) {
+      const analysis = await CVAnalysis.findOne({ userId: req.user.uid, isActive: true });
+      if (analysis) {
+        missingSkills = (analysis.missingSkills || []).map(s => s.toLowerCase());
+      }
+    } else {
+      // Fallback: Use user's manual profile data
+      const user = await User.findOne({ uid: req.user.uid });
+      if (user && user.targetRole) {
+        targetRole = user.targetRole.toLowerCase();
+      }
     }
 
-    const missingSkills = (analysis.missingSkills || []).map(s => s.toLowerCase());
-    
     // Fetch published courses
     const courses = await Course.find({ status: 'Published' });
 
-    // Match courses that teach the missing skills
+    // Match courses
     const matchedCourses = courses.map(course => {
-      const courseSkills = (course.skills || []).map(s => s.toLowerCase());
-      let overlapCount = 0;
-      courseSkills.forEach(skill => {
-        if (missingSkills.includes(skill)) overlapCount++;
-      });
+      let matchScore = 0;
+
+      if (useCVData && missingSkills.length > 0) {
+        const courseSkills = (course.skills || []).map(s => s.toLowerCase());
+        courseSkills.forEach(skill => {
+          if (missingSkills.includes(skill)) matchScore++;
+        });
+      } else if (!useCVData && targetRole) {
+        // Fallback matching: title contains target role keywords
+        const title = (course.title || '').toLowerCase();
+        if (title.includes(targetRole) || targetRole.includes(title)) {
+          matchScore = 3; // Give a higher score for direct match
+        } else {
+          matchScore = Math.floor(Math.random() * 2); // Random 0 or 1
+        }
+      }
 
       return {
         ...course.toObject(),
-        matchScore: overlapCount
+        matchScore
       };
     });
 
