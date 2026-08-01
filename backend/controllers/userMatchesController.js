@@ -1,6 +1,7 @@
 import { CVAnalysis } from '../models/CVAnalysis.js';
 import Job from '../models/Job.js';
 import { Course } from '../models/Course.js';
+import UserSettings from '../models/UserSettings.js';
 
 export const getJobMatches = async (req, res) => {
   try {
@@ -11,6 +12,10 @@ export const getJobMatches = async (req, res) => {
 
     const userSkills = (analysis.skills || []).map(s => s.toLowerCase());
     
+    // Fetch user settings
+    const settings = await UserSettings.findOne({ userId: req.user.uid });
+    const showRemoteFirst = settings?.showRemoteJobsFirst || false;
+
     // Fetch active jobs
     const jobs = await Job.find({ status: { $in: ['active', 'Active'] } });
 
@@ -26,14 +31,25 @@ export const getJobMatches = async (req, res) => {
         ? Math.round((matchedCount / jobSkills.length) * 100) 
         : 50; // Default if job has no specific skills listed
 
+      const isRemote = (job.location && job.location.toLowerCase().includes('remote')) || 
+                       (job.jobType && job.jobType.toLowerCase().includes('remote'));
+
       return {
         ...job.toObject(),
-        match: matchPercentage
+        match: matchPercentage,
+        isRemote
       };
     });
 
-    // Sort by match percentage descending
-    matchedJobs.sort((a, b) => b.match - a.match);
+    // Sort jobs
+    matchedJobs.sort((a, b) => {
+      if (showRemoteFirst) {
+        if (a.isRemote && !b.isRemote) return -1;
+        if (!a.isRemote && b.isRemote) return 1;
+      }
+      // Then sort by match percentage descending
+      return b.match - a.match;
+    });
 
     res.json(matchedJobs.slice(0, 10)); // Return top 10 matches
   } catch (error) {
@@ -83,7 +99,6 @@ export const getCourseMatches = async (req, res) => {
 };
 
 import { sendCourseRecommendationsEmail } from '../services/emailService.js';
-import UserSettings from '../models/UserSettings.js';
 
 export const sendCourseRecommendations = async (req, res) => {
   try {
