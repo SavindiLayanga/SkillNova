@@ -544,6 +544,34 @@ app.patch("/api/settings", verifyAuth, require2FA, async (req, res) => {
   }
 });
 
+// Security Review
+app.get("/api/user/security-review", verifyAuth, require2FA, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    
+    // Fetch user settings for 2FA status
+    const settings = await UserSettings.findOne({ userId });
+    
+    // Dynamically import AuditLog since it might not be imported in server.js
+    const { AuditLog } = await import("./models/AuditLog.js");
+    
+    // Fetch recent security events
+    const recentLogs = await AuditLog.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('event ipAddress userAgent success createdAt');
+
+    res.json({
+      twoFactorEnabled: settings?.twoFactorAuth || false,
+      twoFactorEnabledAt: settings?.twoFactorEnabledAt || null,
+      recentActivity: recentLogs
+    });
+  } catch (error) {
+    console.error("Security review fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Analyze CV
 app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
   const { text } = req.body;

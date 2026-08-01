@@ -61,6 +61,8 @@ export default function Settings() {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ message: "", type: "" }); // type: "success" | "error"
+  const [securityReview, setSecurityReview] = useState(null);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -86,6 +88,25 @@ export default function Settings() {
       setLoading(false);
     }
   }, [user, getToken]);
+
+  const handleSecurityReview = async () => {
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No token found");
+      
+      const res = await fetch("http://localhost:5000/api/user/security-review", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Failed to load security details");
+      
+      const data = await res.json();
+      setSecurityReview(data);
+      setShowSecurityModal(true);
+    } catch (error) {
+      console.error("Security review error:", error);
+      showToast("Could not load security review.", "error");
+    }
+  };
 
   const showToast = (message, type) => {
     setToast({ message, type });
@@ -316,7 +337,7 @@ export default function Settings() {
                     </p>
                   </div>
                 </div>
-                <Button variant="secondary">Review security</Button>
+                <Button variant="secondary" onClick={handleSecurityReview}>Review security</Button>
               </div>
 
               <div className="border-t border-ink-100 pt-6">
@@ -412,6 +433,60 @@ export default function Settings() {
               </div>
             </div>
             
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Security Review Modal */}
+      {showSecurityModal && securityReview && createPortal(
+        <>
+          <div className="fixed inset-0 z-[100] bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-300" />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-11/12 max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-300 overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-ink-100 px-6 py-4 bg-ink-50">
+              <h3 className="text-xl font-bold text-ink-900">Security Review</h3>
+              <button onClick={() => setShowSecurityModal(false)} className="text-ink-500 hover:text-ink-700 font-bold text-xl">&times;</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <div className="mb-6 rounded-lg bg-primary-50 p-4 border border-primary-100 flex items-start gap-3">
+                <ShieldCheck className="h-6 w-6 text-primary-600 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-primary-900">Two-Factor Authentication (2FA)</h4>
+                  <p className="text-primary-700 text-sm mt-1">
+                    Status: {securityReview.twoFactorEnabled ? <span className="font-bold text-emerald-600">Enabled</span> : <span className="font-bold text-rose-500">Disabled</span>}
+                  </p>
+                  {securityReview.twoFactorEnabledAt && (
+                    <p className="text-primary-600 text-xs mt-1">
+                      Enabled on: {new Date(securityReview.twoFactorEnabledAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <h4 className="font-bold text-ink-900 mb-4">Recent Security Activity</h4>
+              {securityReview.recentActivity && securityReview.recentActivity.length > 0 ? (
+                <div className="space-y-3">
+                  {securityReview.recentActivity.map((log) => (
+                    <div key={log._id} className="text-sm p-3 rounded-lg border border-ink-100 bg-white flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-ink-800">{log.event.replace(/_/g, ' ')}</p>
+                        <p className="text-xs text-ink-500 mt-0.5">{new Date(log.createdAt).toLocaleString()}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${log.success ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {log.success ? 'SUCCESS' : 'FAILED'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-ink-500 italic">No recent security events found.</p>
+              )}
+            </div>
+            
+            <div className="border-t border-ink-100 px-6 py-4 flex justify-end bg-ink-50">
+              <Button onClick={() => setShowSecurityModal(false)}>Close</Button>
+            </div>
           </div>
         </>,
         document.body
