@@ -85,6 +85,7 @@ export const getCourseMatches = async (req, res) => {
     // Fetch user settings
     const settings = await UserSettings.findOne({ userId: req.user.uid });
     const useCVData = settings?.useCVDataForMatchScoring ?? true; // Default to true if not set
+    const prioritizeBeginner = settings?.prioritizeBeginnerFriendlyPaths || false;
 
     let missingSkills = [];
     let targetRole = '';
@@ -130,8 +131,17 @@ export const getCourseMatches = async (req, res) => {
       };
     });
 
-    // Sort by how many missing skills they cover
-    matchedCourses.sort((a, b) => b.matchScore - a.matchScore);
+    // Sort courses
+    matchedCourses.sort((a, b) => {
+      if (prioritizeBeginner) {
+        const aIsBeginner = a.difficulty?.toLowerCase() === 'beginner';
+        const bIsBeginner = b.difficulty?.toLowerCase() === 'beginner';
+        if (aIsBeginner && !bIsBeginner) return -1;
+        if (!aIsBeginner && bIsBeginner) return 1;
+      }
+      // Then sort by match score descending
+      return b.matchScore - a.matchScore;
+    });
 
     // Return courses that cover at least one missing skill, or top 5 if none cover it exactly
     let results = matchedCourses.filter(c => c.matchScore > 0);
