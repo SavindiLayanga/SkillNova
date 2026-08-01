@@ -72,6 +72,7 @@ export default function Settings() {
         
         const res = await fetch("http://localhost:5000/api/settings", {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store"
         });
         if (!res.ok) throw new Error("Network response was not ok");
         const data = await res.json();
