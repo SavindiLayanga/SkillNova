@@ -10,27 +10,15 @@ import useAuth from "../hooks/useAuth.js";
 
 const preferenceGroups = [
   {
-    title: "Recommendation preferences",
+    title: "Recommendation Preferences",
     description: "Control how SkillNova prioritizes course and job suggestions.",
     icon: BriefcaseBusiness,
     items: [
-      { label: "Email course recommendations", key: "emailCourseRecommendations" },
       { label: "Show remote jobs first", key: "showRemoteJobsFirst" },
       { label: "Use CV data for match scoring", key: "useCVDataForMatchScoring" },
       { label: "Prioritize beginner-friendly learning paths", key: "prioritizeBeginnerFriendlyPaths" },
     ],
-  },
-  {
-    title: "Notification preferences",
-    description: "Choose the reminders that help you keep steady progress.",
-    icon: Bell,
-    items: [
-      { label: "Weekly progress reminders", key: "weeklyProgressReminders" },
-      { label: "New job match alerts", key: "newJobMatchAlerts" },
-      { label: "Skill test availability alerts", key: "skillTestAvailabilityAlerts" },
-      { label: "Course completion reminders", key: "courseCompletionReminders" },
-    ],
-  },
+  }
 ];
 
 const privacyItems = [
@@ -167,6 +155,30 @@ export default function Settings() {
       console.error("Failed to update setting", error);
       // Revert on failure
       setSettings((prev) => ({ ...prev, [key]: currentValue }));
+      showToast(error.message || "Could not update settings", "error");
+    }
+  };
+
+  const handleSettingChange = async (key, value) => {
+    const previousValue = settings?.[key];
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No token found");
+
+      const res = await fetch("http://localhost:5000/api/settings", {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ [key]: value })
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      showToast("Settings updated successfully.", "success");
+    } catch (error) {
+      console.error("Failed to update setting", error);
+      setSettings((prev) => ({ ...prev, [key]: previousValue }));
       showToast(error.message || "Could not update settings", "error");
     }
   };
@@ -363,22 +375,216 @@ export default function Settings() {
           </Card>
 
           <Card>
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary-50 p-2 text-primary-600">
-                  <Mail className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-ink-900">
-                    Communication settings
-                  </h2>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-500">
-                    Choose how SkillNova contacts you about course updates, CV
-                    review changes, and job recommendation improvements.
-                  </p>
+            <div className="space-y-6">
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-primary-50 p-2 text-primary-600">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-ink-900">
+                      Notification Preferences
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-500">
+                      Choose which types of alerts and updates you want to receive.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <Button variant="secondary">Manage email</Button>
+
+              <div className="space-y-10 border-t border-ink-100 pt-8 mt-6">
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div>
+                    <h3 className="text-base font-bold text-ink-900 mb-4 flex items-center gap-2">
+                       <span className="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center shadow-sm">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                       </span>
+                       Activity & Recommendations
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: "Job Match Alerts", key: "newJobMatchAlerts", desc: "Alerts when new matching jobs are found." },
+                        { label: "Course Recommendation Alerts", key: "courseRecommendations", desc: "Personalized learning path updates." },
+                        { label: "CV Review Updates", key: "cvReviewUpdates", desc: "Feedback on your uploaded resumes." },
+                        { label: "Skill Assessment Results", key: "skillAssessmentResults", desc: "Results and feedback from your tests." },
+                        { label: "Learning Reminders", key: "learningProgressReminders", desc: "Nudges to keep your streak alive." },
+                        { label: "Course Completion Reminders", key: "courseCompletionReminders", desc: "Reminders to finish active courses." },
+                      ].map((item) => {
+                         const checked = settings?.[item.key] ?? false;
+                         return (
+                          <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 cursor-pointer ${checked ? 'bg-primary-50/40 border-primary-100 shadow-sm' : 'bg-ink-50/50 border-ink-100 hover:bg-ink-50'}`} onClick={() => handleToggle(item.key, checked)}>
+                            <div>
+                              <p className={`font-bold ${checked ? 'text-primary-900' : 'text-ink-800'}`}>{item.label}</p>
+                              <p className={`text-xs mt-1 ${checked ? 'text-primary-700/80' : 'text-ink-500'}`}>{item.desc}</p>
+                            </div>
+                            <button
+                              type="button"
+                              className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${checked ? 'bg-primary-500' : 'bg-ink-200'}`}
+                              role="switch"
+                              aria-checked={checked}
+                            >
+                              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+                            </button>
+                          </div>
+                         );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-base font-bold text-ink-900 mb-4 flex items-center gap-2">
+                         <span className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                         </span>
+                         System Updates
+                      </h3>
+                      <div className="space-y-3">
+                        {[
+                          { label: "Weekly Progress Summary", key: "weeklyCareerDigest", desc: "A summary of your week's progress." },
+                          { label: "Security Alerts", key: "securityAlerts", desc: "Important notices about your account security." },
+                          { label: "New Feature Announcements", key: "announcementsNewFeatures", desc: "Updates on SkillNova platform changes." },
+                        ].map((item) => {
+                           const checked = settings?.[item.key] ?? false;
+                           return (
+                            <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 cursor-pointer ${checked ? 'bg-amber-50/40 border-amber-100 shadow-sm' : 'bg-ink-50/50 border-ink-100 hover:bg-ink-50'}`} onClick={() => handleToggle(item.key, checked)}>
+                              <div>
+                                <p className={`font-bold ${checked ? 'text-amber-900' : 'text-ink-800'}`}>{item.label}</p>
+                                <p className={`text-xs mt-1 ${checked ? 'text-amber-700/80' : 'text-ink-500'}`}>{item.desc}</p>
+                              </div>
+                              <button
+                                type="button"
+                                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${checked ? 'bg-amber-500' : 'bg-ink-200'}`}
+                                role="switch"
+                                aria-checked={checked}
+                              >
+                                <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+                              </button>
+                            </div>
+                           );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="space-y-6">
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-primary-50 p-2 text-primary-600">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-ink-900">
+                      Communication Settings
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-500">
+                      Choose how and when SkillNova contacts you across different channels.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-10 border-t border-ink-100 pt-8 mt-6">
+                
+                {/* Delivery Methods */}
+                <div>
+                  <h3 className="text-base font-bold text-ink-900 mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5h11C20 5 22 7 22 9.5v7.5Z"/><polyline points="2 9 12 15 22 9"/></svg>
+                    </span>
+                    Delivery Channels
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {[
+                      { label: "Email", key: "emailNotifications", icon: "✉️" },
+                      { label: "Push", key: "pushNotifications", icon: "🔔" },
+                      { label: "SMS", key: "smsNotifications", icon: "📱" },
+                    ].map((item) => {
+                      const checked = settings?.[item.key] ?? (item.key === 'emailNotifications');
+                      return (
+                        <div key={item.key} className="flex items-center justify-between p-5 bg-white rounded-2xl border border-ink-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all cursor-pointer" onClick={() => handleToggle(item.key, checked)}>
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl drop-shadow-sm">{item.icon}</span>
+                            <span className="font-bold text-ink-800">{item.label}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${checked ? 'bg-primary-500' : 'bg-ink-200'}`}
+                            role="switch"
+                            aria-checked={checked}
+                          >
+                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div className="lg:col-span-2">
+                      <h3 className="text-base font-bold text-ink-900 mb-4 flex items-center gap-2">
+                         <span className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shadow-sm">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                         </span>
+                         Frequency & Timing
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-2 gap-3">
+                          {["Real-time", "Daily", "Weekly", "Important Only"].map((freq) => {
+                            const isActive = (settings?.notificationFrequency || "Real-time") === freq;
+                            return (
+                              <button
+                                key={freq}
+                                onClick={() => handleSettingChange("notificationFrequency", freq)}
+                                className={`relative flex items-center justify-center rounded-xl border p-4 focus:outline-none transition-all duration-300 ${
+                                  isActive 
+                                    ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-sm font-bold' 
+                                    : 'border-ink-200 bg-white text-ink-600 hover:border-ink-300 hover:bg-ink-50 font-semibold'
+                                }`}
+                              >
+                                <span className="text-sm">{freq}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="p-5 bg-gradient-to-br from-ink-50/80 to-ink-100/50 rounded-2xl border border-ink-100 shadow-inner">
+                          <div className="flex items-center gap-2 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-500"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+                            <h4 className="text-sm font-bold text-ink-800">Quiet Hours</h4>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1 bg-white rounded-xl p-3 border border-ink-100 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all">
+                              <label className="text-[10px] font-bold text-ink-400 uppercase tracking-wider block mb-1">Start Time</label>
+                              <input 
+                                type="time" 
+                                className="w-full bg-transparent border-none p-0 text-ink-900 font-bold focus:ring-0 text-base" 
+                                value={settings?.quietHoursStart || "22:00"}
+                                onChange={(e) => handleSettingChange("quietHoursStart", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex-1 bg-white rounded-xl p-3 border border-ink-100 shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all">
+                              <label className="text-[10px] font-bold text-ink-400 uppercase tracking-wider block mb-1">End Time</label>
+                              <input 
+                                type="time" 
+                                className="w-full bg-transparent border-none p-0 text-ink-900 font-bold focus:ring-0 text-base" 
+                                value={settings?.quietHoursEnd || "07:00"}
+                                onChange={(e) => handleSettingChange("quietHoursEnd", e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
         </div>
