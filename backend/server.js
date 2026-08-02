@@ -1064,9 +1064,15 @@ app.post("/api/user/current-practice", verifyAuth, require2FA, async (req, res) 
       session = new PracticeSession({ userId: req.user.uid });
     }
     
-    if (selectedTest !== undefined) session.selectedTest = selectedTest;
+    if (selectedTest !== undefined) {
+      session.selectedTest = selectedTest;
+      session.markModified('selectedTest');
+    }
     if (currentQuestionIndex !== undefined) session.currentQuestionIndex = currentQuestionIndex;
-    if (userAnswers !== undefined) session.userAnswers = userAnswers;
+    if (userAnswers !== undefined) {
+      session.userAnswers = userAnswers;
+      session.markModified('userAnswers');
+    }
     if (timeLeft !== undefined) session.timeLeft = timeLeft;
     if (isFinished !== undefined) session.isFinished = isFinished;
     
