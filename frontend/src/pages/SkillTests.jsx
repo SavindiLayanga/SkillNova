@@ -577,8 +577,6 @@ export default function SkillTests() {
           body: JSON.stringify({ score: scorePercentage })
         });
         
-        await clearSession();
-        navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`);
         return;
       } catch (e) {
         showToast("Failed to submit library test.", "error");
@@ -601,9 +599,6 @@ export default function SkillTests() {
     } else {
       // General test score (Not tracked in mongo currently)
     }
-    
-    // Clear practice session now that it is finished
-    await clearSession();
   };
 
   const updateProfileImprovements = () => {
