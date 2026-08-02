@@ -18,10 +18,31 @@ const UserSettingsSchema = new mongoose.Schema({
   showRemoteJobsFirst: { type: Boolean, default: true },
   useCVDataForMatchScoring: { type: Boolean, default: true },
   prioritizeBeginnerFriendlyPaths: { type: Boolean, default: false },
-  weeklyProgressReminders: { type: Boolean, default: true },
+  
+  // Notification Preferences
   newJobMatchAlerts: { type: Boolean, default: true },
-  skillTestAvailabilityAlerts: { type: Boolean, default: true },
+  courseRecommendations: { type: Boolean, default: true },
+  cvReviewUpdates: { type: Boolean, default: true },
+  skillAssessmentResults: { type: Boolean, default: true },
+  learningProgressReminders: { type: Boolean, default: true },
   courseCompletionReminders: { type: Boolean, default: false },
+  weeklyCareerDigest: { type: Boolean, default: true },
+  securityAlerts: { type: Boolean, default: true },
+  announcementsNewFeatures: { type: Boolean, default: false },
+
+  // Communication Settings (Delivery)
+  emailNotifications: { type: Boolean, default: true },
+  pushNotifications: { type: Boolean, default: false },
+  smsNotifications: { type: Boolean, default: false },
+
+  // Frequency & Timing
+  notificationFrequency: { type: String, default: "Real-time" },
+  quietHoursStart: { type: String, default: "22:00" },
+  quietHoursEnd: { type: String, default: "07:00" },
+
+  // Legacy/Other Privacy Settings
+  weeklyProgressReminders: { type: Boolean, default: true },
+  skillTestAvailabilityAlerts: { type: Boolean, default: true },
   cvAnalysisStorage: { type: Boolean, default: true },
   personalizedRecommendations: { type: Boolean, default: true },
   progressVisibility: { type: Boolean, default: true },

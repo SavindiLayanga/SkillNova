@@ -22,6 +22,7 @@ import { UserSettings } from "./models/UserSettings.js";
 import { PracticeSession } from "./models/PracticeSession.js";
 import { LibraryTest } from "./models/LibraryTest.js";
 import { generateDynamicTitle, generateDynamicDescription } from "./utils/testFallbackHelper.js";
+import { sendCVAnalysisEmail } from "./services/emailService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -518,11 +519,15 @@ app.patch("/api/settings", verifyAuth, require2FA, async (req, res) => {
   try {
     const updates = req.body;
 
+    const allowedStringKeys = ["notificationFrequency", "quietHoursStart", "quietHoursEnd", "language", "timezone", "dateFormat", "timeFormat", "theme", "currency"];
+
     for (const key in updates) {
       if (key.startsWith("twoFactor")) {
         return res.status(400).json({ error: "Cannot modify 2FA settings directly." });
       }
-      if (typeof updates[key] !== "boolean") {
+      
+      const isStringAllowed = allowedStringKeys.includes(key);
+      if (!isStringAllowed && typeof updates[key] !== "boolean") {
         return res.status(400).json({
           error: `Value for ${key} must be a boolean.`,
         });
@@ -643,6 +648,31 @@ app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
 
         await newAnalysis.save();
         console.log("MongoDB save SUCCESS.");
+
+        // Async Email Notification Logic
+        (async () => {
+          try {
+            const settings = await UserSettings.findOne({ userId: req.user.uid });
+            if (settings?.emailNotifications && settings?.cvReviewUpdates) {
+              let emailToSend = data.personalInformation?.email || data.email;
+              if (!emailToSend) {
+                const userRecord = await User.findOne({ uid: req.user.uid });
+                emailToSend = userRecord?.email;
+              }
+              
+              if (emailToSend) {
+                await sendCVAnalysisEmail(emailToSend, {
+                  cvScore: data.cvScore || 0,
+                  targetRole: data.targetRole || targetRole
+                });
+              } else {
+                console.warn("Email warning: Could not find extracted email or account email. Skipping CV analysis email.");
+              }
+            }
+          } catch (emailErr) {
+            console.error("Async email error during CV Analysis:", emailErr);
+          }
+        })();
 
         return res.json({
           ...data,

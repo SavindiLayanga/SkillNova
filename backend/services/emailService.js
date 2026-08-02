@@ -399,3 +399,75 @@ export const sendCourseCompletionReminderEmail = async (userEmail, userName, lea
     console.error("Failed to send course completion reminder email:", error);
   }
 };
+
+let etherealTransporter = null;
+
+export const sendCVAnalysisEmail = async (toEmail, analysisData) => {
+  try {
+    const { cvScore, targetRole } = analysisData;
+    const date = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+    const dashboardUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+    const html = `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0;">
+          <h1 style="color: #0f172a; margin: 0; font-size: 24px;">SkillNova</h1>
+        </div>
+        <h2 style="color: #334155; font-size: 20px; margin-top: 0;">Your CV Analysis is Ready!</h2>
+        <p style="color: #475569; font-size: 16px; line-height: 1.5;">
+          Great news! We have successfully analyzed your recently uploaded CV.
+        </p>
+        <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 24px 0;">
+          <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px; text-transform: uppercase; font-weight: bold;">Analysis Summary</p>
+          <p style="margin: 4px 0; color: #0f172a; font-size: 15px;"><strong>Target Role:</strong> ${targetRole || "Software Developer"}</p>
+          <p style="margin: 4px 0; color: #0f172a; font-size: 15px;"><strong>Career Readiness Score:</strong> <span style="color: #2563eb; font-weight: bold;">${cvScore}%</span></p>
+          <p style="margin: 4px 0; color: #0f172a; font-size: 15px;"><strong>Analyzed On:</strong> ${date}</p>
+        </div>
+        <p style="color: #475569; font-size: 16px; line-height: 1.5;">
+          Log in to your dashboard to view your AI-powered career insights, identify missing skills, and discover personalized job matches tailored to your profile.
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${dashboardUrl}/dashboard" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+            View AI Insights
+          </a>
+        </div>
+        <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 12px;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} SkillNova. All rights reserved.</p>
+          <p style="margin: 4px 0;">You received this email because you opted in to CV Review Updates in your Communication Settings.</p>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      to: toEmail,
+      subject: "Your CV Analysis is Ready – SkillNova",
+      html: html,
+    };
+
+    let info;
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      info = await transporter.sendMail(mailOptions);
+    } else {
+      if (!etherealTransporter) {
+        console.log("No SMTP credentials found. Creating Ethereal test account...");
+        const testAccount = await nodemailer.createTestAccount();
+        etherealTransporter = nodemailer.createTransport({
+          host: "smtp.ethereal.email",
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+      }
+      info = await etherealTransporter.sendMail(mailOptions);
+      console.log(`[Ethereal Preview URL] -> ${nodemailer.getTestMessageUrl(info)}`);
+    }
+
+    console.log(`CV Analysis email sent successfully to ${toEmail}`);
+  } catch (error) {
+    console.error("Failed to send CV analysis email:", error);
+  }
+};
