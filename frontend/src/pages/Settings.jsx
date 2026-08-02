@@ -481,7 +481,7 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div className="space-y-10 border-t border-ink-100 pt-8 mt-6">
+              <div className="space-y-10 border-t border-ink-100 pt-8 mt-6 pb-12">
                 
                 {/* Delivery Methods */}
                 <div>
