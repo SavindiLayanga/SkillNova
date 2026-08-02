@@ -1426,6 +1426,10 @@ app.get("/api/dashboard/recent-activity", verifyAuth, require2FA, async (req, re
   }
 });
 
-app.listen(port, () => {
-  console.log(`Backend server running on http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Backend server running on http://localhost:${port}`);
+  });
+}
+
+export default app;
