@@ -26,7 +26,8 @@ import {
   fetchLearningPath,
   fetchRecentTests,
   fetchUserSettings,
-  fetchRecentActivity
+  fetchRecentActivity,
+  fetchSkillGaps
 } from "../services/dashboardService.js";
 
 const getMasteryBadge = (level) => {
