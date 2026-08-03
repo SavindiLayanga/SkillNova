@@ -98,7 +98,7 @@ export default function CVAnalysisHistory() {
                <Card key={analysis._id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:-translate-y-1 transition-transform duration-300">
                  <div className="flex-1">
                    <h3 className="text-lg font-bold text-ink-900 flex items-center flex-wrap gap-2">
-                     {analysis.targetRole || "Unknown Role"}
+                     {analysis.targetRole || "Software Developer"}
                      <span className="text-xs font-semibold bg-ink-100 text-ink-600 px-2 py-1 rounded-full uppercase tracking-wider">
                        {analysis.analysisType === 'manual' ? 'Manual' : 'CV'}
                      </span>

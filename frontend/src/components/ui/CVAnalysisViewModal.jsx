@@ -45,7 +45,7 @@ export default function CVAnalysisViewModal({ analysis, onClose }) {
       <div className="space-y-4">
         {exp.map((job, idx) => (
           <div key={idx} className="border-l-2 border-primary-200 pl-4 py-1">
-            <h4 className="font-bold text-ink-900">{job.role || job.title || "Unknown Role"}</h4>
+            <h4 className="font-bold text-ink-900">{job.role || job.title || "Software Developer"}</h4>
             <p className="text-sm font-medium text-ink-600">{job.company || "Unknown Company"} | {job.duration || job.years || ""}</p>
             {job.description && <p className="text-sm text-ink-500 mt-1">{job.description}</p>}
           </div>
@@ -63,7 +63,7 @@ export default function CVAnalysisViewModal({ analysis, onClose }) {
           <div>
             <h2 className="text-xl font-bold text-ink-900 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-primary-600" />
-              Analysis: {analysis.primaryRole?.role || analysis.targetRole || "Unknown Role"}
+              Analysis: {analysis.primaryRole?.role || analysis.targetRole || "Software Developer"}
             </h2>
             <div className="flex gap-4 mt-2">
               {analysis.matchPercentage !== undefined && (

@@ -181,7 +181,7 @@ export default function Dashboard() {
   const firstName = displayName.split(" ")[0];
   const targetRole = latestAnalysis?.targetRole && latestAnalysis.targetRole !== "Unknown Role" 
     ? latestAnalysis.targetRole 
-    : user?.targetRole || "Unknown Role";
+    : user?.targetRole || "Software Developer";
   
   const initials = getInitials(displayName) || "SN";
   const today = new Intl.DateTimeFormat("en", {

@@ -32,7 +32,7 @@ export default function Navbar({ onMenuClick, onChatClick }) {
     : user?.name || "SkillNova User";
   const track = analysis?.targetRole && analysis.targetRole !== "Unknown Role" 
     ? analysis.targetRole 
-    : user?.targetRole || "Unknown Role";
+    : user?.targetRole || "Software Developer";
   const initials = getInitials(displayName) || "SN";
   
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);

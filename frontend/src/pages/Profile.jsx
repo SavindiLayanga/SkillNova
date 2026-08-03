@@ -121,7 +121,7 @@ export default function Profile() {
   
   const targetRole = analysis?.targetRole && analysis.targetRole !== "Unknown Role" 
     ? analysis.targetRole 
-    : user?.targetRole || "Unknown Role";
+    : user?.targetRole || "Software Developer";
     
   const email = analysis?.email && analysis.email !== "Candidate's email address"
     ? analysis.email 
