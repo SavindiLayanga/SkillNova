@@ -96,9 +96,9 @@ function SectionHeader({ title, description, action }) {
   );
 }
 
-function SummaryCard({ icon: Icon, label, value, caption, tone = "orange" }) {
-  return (
-    <Card className="group flex min-h-36 flex-col justify-between p-5 hover:-translate-y-1 transition-transform duration-300">
+function SummaryCard({ icon: Icon, label, value, caption, tone = "orange", path }) {
+  const content = (
+    <Card className={`group flex min-h-36 flex-col justify-between p-5 transition-transform duration-300 ${path ? 'hover:-translate-y-1 hover:shadow-md cursor-pointer' : 'hover:-translate-y-1'} h-full`}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-ink-500 group-hover:text-ink-600 transition-colors">{label}</p>
@@ -111,6 +111,8 @@ function SummaryCard({ icon: Icon, label, value, caption, tone = "orange" }) {
       <p className="mt-4 text-sm leading-6 text-ink-500">{caption}</p>
     </Card>
   );
+
+  return path ? <Link to={path} className="block h-full">{content}</Link> : content;
 }
 
 export default function Dashboard() {
@@ -211,6 +213,7 @@ export default function Dashboard() {
       caption: "Gaps detected for target role.",
       icon: AlertCircle,
       tone: "rose",
+      path: "/skill-gap",
     },
     {
       label: "Career Match",
