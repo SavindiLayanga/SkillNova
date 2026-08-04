@@ -24,11 +24,11 @@ async function fetchWithAuth(url, options = {}) {
   return await response.json();
 }
 
-export async function analyzeCV(text, fileName) {
+export async function analyzeCV(text, fileName, fileBase64) {
   try {
     return await fetchWithAuth('/api/analyze-cv', {
       method: 'POST',
-      body: JSON.stringify({ text, fileName }),
+      body: JSON.stringify({ text, fileName, fileBase64 }),
     });
   } catch (error) {
     console.error('API Error:', error);

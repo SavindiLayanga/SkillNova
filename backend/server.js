@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 import { connectDB } from "./db.js";
 import { initializeFirebaseAdmin } from "./firebase.js";
@@ -61,6 +62,14 @@ app.use(cors({
   credentials: true
 }));
 app.use(cookieParser());
+
+// Static file serving for uploads
+const uploadsDir = path.join(__dirname, "public", "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsDir));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -612,7 +621,7 @@ app.get("/api/user/security-review", verifyAuth, require2FA, async (req, res) =>
 
 // Analyze CV
 app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
-  const { text, fileName } = req.body;
+  const { text, fileName, fileBase64 } = req.body;
 
   try {
     if (!text || typeof text !== "string" || text.trim() === "") {
@@ -669,11 +678,25 @@ app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
         await CVAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
         await ManualAnalysis.updateMany({ userId: req.user.uid }, { isActive: false });
 
+        let savedFileUrl = "";
+        if (fileBase64) {
+          try {
+            const base64Data = fileBase64.replace(/^data:application\/pdf;base64,/, "");
+            const uniqueName = `cv_${req.user.uid}_${Date.now()}.pdf`;
+            const filePath = path.join(uploadsDir, uniqueName);
+            fs.writeFileSync(filePath, base64Data, 'base64');
+            savedFileUrl = `/uploads/${uniqueName}`;
+          } catch (e) {
+            console.error("Failed to save CV file:", e);
+          }
+        }
+
         const newAnalysis = new CVAnalysis({
           userId: req.user.uid,
           isActive: true,
           originalText: text,
           fileName: fileName || "",
+          fileUrl: savedFileUrl,
           ...data,
         });
 

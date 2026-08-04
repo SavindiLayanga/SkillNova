@@ -49,6 +49,7 @@ const cvAnalysisSchema = new mongoose.Schema({
   email: { type: String, default: '' },
   phone: { type: String, default: '' },
   fileName: { type: String, default: '' },
+  fileUrl: { type: String, default: '' },
   isActive: { type: Boolean, default: true },
   isITRelated: { type: Boolean, default: true },
   technicalSkills: [String],

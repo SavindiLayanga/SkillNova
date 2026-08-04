@@ -67,6 +67,10 @@ export function CVAnalysisProvider({ children }) {
           if (latest && Object.keys(latest).length > 0) {
             setAnalysis(latest);
             setFileName(latest.fileName || "Uploaded CV");
+            if (latest.fileUrl) {
+              const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+              setFileUrl(latest.fileUrl.startsWith('http') ? latest.fileUrl : `${baseUrl}${latest.fileUrl}`);
+            }
             setStatus("analyzed");
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysisData: latest }));
           } else {
@@ -119,10 +123,23 @@ export function CVAnalysisProvider({ children }) {
       
       setStatus("analyzing");
       
+      // Convert file to base64 for persistent storage
+      let fileBase64 = null;
+      try {
+        fileBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      } catch (err) {
+        console.error("Failed to convert file to base64:", err);
+      }
+
       // 2. Analyze with AI
       let extractedData;
       try {
-        extractedData = await analyzeCV(text, file.name);
+        extractedData = await analyzeCV(text, file.name, fileBase64);
       } catch (aiError) {
         console.error("AI Analysis failed:", aiError);
         throw new Error(aiError.message || "Failed to analyze CV using AI. Please try again.");
