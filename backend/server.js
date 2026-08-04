@@ -612,7 +612,7 @@ app.get("/api/user/security-review", verifyAuth, require2FA, async (req, res) =>
 
 // Analyze CV
 app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
-  const { text } = req.body;
+  const { text, fileName } = req.body;
 
   try {
     if (!text || typeof text !== "string" || text.trim() === "") {
@@ -673,6 +673,7 @@ app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
           userId: req.user.uid,
           isActive: true,
           originalText: text,
+          fileName: fileName || "",
           ...data,
         });
 

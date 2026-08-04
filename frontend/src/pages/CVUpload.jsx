@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, RotateCcw, UploadCloud, Sparkles, Type, Trash2 } from "lucide-react";
+import { CheckCircle2, FileText, RotateCcw, UploadCloud, Sparkles, Type, Trash2, Download } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import Button from "../components/ui/Button.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -21,7 +21,7 @@ const checklist = [
 export default function CVUpload() {
   const fileInputRef = useRef(null);
   const { getToken } = useAuth();
-  const { analysis, fileName, hasAnalysis, resetAnalysis, startAnalysis, startManualAnalysis, updateLocalAnalysis, status, error } =
+  const { analysis, fileName, fileUrl, hasAnalysis, resetAnalysis, startAnalysis, startManualAnalysis, updateLocalAnalysis, status, error } =
     useCVAnalysis();
   
   const [activeTab, setActiveTab] = useState("upload"); // 'upload' | 'manual'
@@ -154,53 +154,81 @@ export default function CVUpload() {
             
             {hasAnalysis || isProcessing ? (
               // Processing or Completed State
-              <div className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 text-primary-600 shadow-sm transition-transform duration-300">
-                  {isProcessing ? (
-                    <Loader variant="glass" size="md" />
-                  ) : (
-                    <UploadCloud className="h-8 w-8" />
-                  )}
-                </div>
-                {!isProcessing && (
-                  <h2 className="mt-5 text-xl font-bold text-ink-900">
-                    Skill analysis completed
-                  </h2>
+              <div className="relative flex flex-col items-center justify-center w-full h-full min-h-[600px] overflow-hidden rounded-xl border border-primary-200 shadow-inner bg-white">
+                
+                {/* Background CV Preview */}
+                {!isProcessing && fileUrl && (
+                  <div className="absolute inset-0 w-full h-full z-0">
+                    <iframe src={`${fileUrl}#toolbar=0`} className="w-full h-full border-none opacity-20 pointer-events-none" title="CV Preview" />
+                  </div>
                 )}
-                {error && <p className="mt-2 text-sm text-rose-600 font-medium">{error}</p>}
-                <p className="mt-2 max-w-md text-sm leading-6 text-ink-500">
-                  {fileName ? `Source: ${fileName}` : ""}
-                </p>
+                
+                {/* Overlay Content */}
+                <div className="relative z-10 flex flex-col items-center justify-center pointer-events-auto">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 text-primary-600 shadow-sm transition-transform duration-300">
+                    {isProcessing ? (
+                      <Loader variant="glass" size="md" />
+                    ) : (
+                      <UploadCloud className="h-8 w-8" />
+                    )}
+                  </div>
+                  {!isProcessing && (
+                    <h2 className="mt-5 text-2xl font-extrabold text-ink-900 bg-white/60 px-5 py-1.5 rounded-full backdrop-blur-md shadow-sm">
+                      Skill analysis completed
+                    </h2>
+                  )}
+                  {error && <p className="mt-2 text-sm text-rose-600 font-medium bg-white/80 px-2 py-1 rounded">{error}</p>}
+                  
+                  {!isProcessing && !fileUrl && fileName && (
+                    <div className="mt-4 flex items-center gap-3 rounded-lg border border-primary-100 bg-white/80 backdrop-blur-sm px-4 py-3 shadow-sm">
+                      <FileText className="h-5 w-5 text-primary-600" />
+                      <p className="text-sm font-semibold text-primary-800">{fileName}</p>
+                    </div>
+                  )}
 
-                {isProcessing ? (
-                  <div className="mt-6 w-full max-w-md">
-                    <Loader 
-                      text={status === "uploading" ? "Uploading your CV..." : "Analyzing your CV with AI..."}
-                      secondaryText="This may take a few seconds."
-                    />
-                    <div className="mt-8 flex justify-center">
+                  {isProcessing ? (
+                    <div className="mt-6 w-full max-w-md">
+                      <Loader 
+                        text={status === "uploading" ? "Uploading your CV..." : "Analyzing your CV with AI..."}
+                        secondaryText="This may take a few seconds."
+                      />
+                      <div className="mt-8 flex justify-center">
+                        <Button 
+                          icon={Trash2} 
+                          onClick={() => setShowConfirmModal(true)} 
+                          variant="secondary" 
+                          disabled={isProcessing}
+                          className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm disabled:opacity-50"
+                        >
+                          Remove CV
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                       <Button 
-                        icon={Trash2} 
+                        icon={RotateCcw} 
                         onClick={() => setShowConfirmModal(true)} 
                         variant="secondary" 
-                        disabled={isProcessing}
-                        className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 bg-white shadow-sm disabled:opacity-50"
+                        className="text-primary-700 border-primary-200 hover:bg-primary-50 bg-white/90 backdrop-blur-sm shadow-sm"
                       >
-                        Remove CV
+                        Replace Current CV
                       </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <Button 
-                      icon={RotateCcw} 
-                      onClick={() => setShowConfirmModal(true)} 
-                      variant="secondary" 
-                      className="text-primary-700 border-primary-200 hover:bg-primary-50 bg-white shadow-sm"
-                    >
-                      Replace Current CV
-                    </Button>
-                  </div>
+                  )}
+                </div>
+
+                {/* Download Button floating at top right */}
+                {!isProcessing && fileUrl && (
+                  <a 
+                    href={fileUrl} 
+                    download={fileName || "CV.pdf"}
+                    className="absolute top-4 right-4 z-20 bg-white border border-primary-200 text-primary-700 p-2.5 rounded-xl shadow-md hover:bg-primary-50 hover:text-primary-800 transition flex items-center gap-2 font-semibold text-sm backdrop-blur-sm"
+                    title="Download CV"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
                 )}
               </div>
             ) : (

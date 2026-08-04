@@ -38,6 +38,7 @@ export function CVAnalysisProvider({ children }) {
     return storedAnalysis;
   });
   const [fileName, setFileName] = useState(storedAnalysis?.fileName ?? "");
+  const [fileUrl, setFileUrl] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export function CVAnalysisProvider({ children }) {
         if (isMounted) {
           if (latest && Object.keys(latest).length > 0) {
             setAnalysis(latest);
+            setFileName(latest.fileName || "Uploaded CV");
             setStatus("analyzed");
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ analysisData: latest }));
           } else {
@@ -95,6 +97,12 @@ export function CVAnalysisProvider({ children }) {
     localStorage.removeItem(STORAGE_KEY);
     setAnalysis(null);
     setFileName(file.name);
+    
+    // Create object URL for preview
+    if (fileUrl) URL.revokeObjectURL(fileUrl);
+    const newFileUrl = URL.createObjectURL(file);
+    setFileUrl(newFileUrl);
+
     setStatus("uploading");
     setError(null);
 
@@ -114,7 +122,7 @@ export function CVAnalysisProvider({ children }) {
       // 2. Analyze with AI
       let extractedData;
       try {
-        extractedData = await analyzeCV(text);
+        extractedData = await analyzeCV(text, file.name);
       } catch (aiError) {
         console.error("AI Analysis failed:", aiError);
         throw new Error(aiError.message || "Failed to analyze CV using AI. Please try again.");
@@ -229,9 +237,13 @@ export function CVAnalysisProvider({ children }) {
     localStorage.removeItem(STORAGE_KEY);
     setAnalysis(null);
     setFileName("");
+    if (fileUrl) {
+      URL.revokeObjectURL(fileUrl);
+      setFileUrl(null);
+    }
     setStatus("noCV");
     setError(null);
-  }, []);
+  }, [fileUrl]);
 
   const updateLocalAnalysis = useCallback((updatedData) => {
     setAnalysis((prev) => {
@@ -250,6 +262,7 @@ export function CVAnalysisProvider({ children }) {
     () => ({
       analysis,
       fileName,
+      fileUrl,
       hasAnalysis: status === "analyzed" && Boolean(analysis),
       resetAnalysis,
       startAnalysis,
@@ -258,7 +271,7 @@ export function CVAnalysisProvider({ children }) {
       status,
       error,
     }),
-    [analysis, fileName, resetAnalysis, startAnalysis, startManualAnalysis, updateLocalAnalysis, status, error]
+    [analysis, fileName, fileUrl, resetAnalysis, startAnalysis, startManualAnalysis, updateLocalAnalysis, status, error]
   );
 
   return (
