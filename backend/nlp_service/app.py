@@ -276,15 +276,32 @@ def analyze_cv():
 
     # 1. Role Extraction (Header)
     lines = [l.strip() for l in text.split('\n') if len(l.strip()) > 0]
+    
+    EXTENDED_ROLES = COMMON_ROLES + ["associate software engineer", "senior software engineer", "tech lead", "architect", "data engineer", "intern", "trainee", "lead developer"]
     detected_role = "Unknown Role"
     role_line_index = -1
-    for i, line in enumerate(lines[:15]):
-        for role in COMMON_ROLES:
-            if re.search(rf'(?:^|\W){role}(?:$|\W)', line, re.IGNORECASE):
+    
+    # Since PDF parser might merge everything into one line, search only the first 500 characters (Header)
+    # Pick the role that appears FIRST in the text to avoid picking up random roles mentioned later.
+    header_text = text[:500]
+    best_pos = 9999
+    
+    for role in EXTENDED_ROLES:
+        match = re.search(rf'(?:^|\W)({role})(?:$|\W)', header_text, re.IGNORECASE)
+        if match:
+            pos = match.start()
+            if pos < best_pos:
+                best_pos = pos
                 detected_role = role.title()
-                role_line_index = i
-                break
-        if detected_role != "Unknown Role":
+                
+    # Fallback to the user-provided target_role if we couldn't find a standard role in the header
+    if detected_role == "Unknown Role" and target_role:
+        detected_role = target_role.title()
+                
+    # Still need role_line_index for Name extraction heuristic
+    for i, line in enumerate(lines[:10]):
+        if detected_role.lower() in line.lower():
+            role_line_index = i
             break
             
     # Basic Contact Info (Extract these first so we can use email as fallback for name)
@@ -296,6 +313,29 @@ def analyze_cv():
         extracted_phone = broad_phone.group(0).strip()
     else:
         extracted_phone = phone_match.group(0).strip() if phone_match else ""
+        
+    # Address Extraction
+    extracted_address = ""
+    address_match = re.search(r'(?i)(?:no\.?|number)\s*\d+.*?(?:road|rd|street|st|lane|avenue|ave|mawatha|colombo|kandy|galle|gampaha|matara|kurunegala|sri lanka|\d{5})', text)
+    if address_match:
+        extracted_address = address_match.group(0)
+    else:
+        # Fallback for City, City (e.g. Induruwa, Bentota) anywhere in the text
+        fallback_match = re.search(r'([A-Z][a-z]+(?:[ \-][A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:[ \-][A-Z][a-z]+)*(?:,\s*Sri\sLanka)?)', text)
+        if fallback_match:
+            candidate = fallback_match.group(1).strip()
+            # Avoid false positives
+            if not any(w in candidate.lower() for w in ["skill", "experience", "education", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "monday", "tuesday", "wednesday"]):
+                extracted_address = candidate
+    
+    # URL Extraction
+    linkedin_match = re.search(r'((?:https?://)?(?:www\.)?linkedin\.com/[^\s]+)', text, re.IGNORECASE)
+    github_match = re.search(r'((?:https?://)?(?:www\.)?github\.com/[^\s]+)', text, re.IGNORECASE)
+    portfolio_match = re.search(r'(https?://(?:www\.)?(?!linkedin\.com|github\.com)[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)', text, re.IGNORECASE)
+    
+    extracted_linkedin = linkedin_match.group(1) if linkedin_match else ""
+    extracted_github = github_match.group(1) if github_match else ""
+    extracted_portfolio = portfolio_match.group(1) if portfolio_match else ""
 
     # Name extraction via spaCy (Try first 5 lines)
     extracted_name = ""
@@ -400,10 +440,10 @@ def analyze_cv():
             "fullName": extracted_name,
             "email": extracted_email,
             "phone": extracted_phone,
-            "linkedin": "",
-            "github": "",
-            "address": "",
-            "portfolio": ""
+            "linkedin": extracted_linkedin,
+            "github": extracted_github,
+            "address": extracted_address,
+            "portfolio": extracted_portfolio
         },
         "professionalSummary": f"Professional detected as {detected_role}.",
         "primaryRole": { "role": detected_role, "confidence": 95, "reason": "Detected in header." },
