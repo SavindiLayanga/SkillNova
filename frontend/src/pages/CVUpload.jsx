@@ -7,7 +7,7 @@ import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import clsx from "../utils/clsx.js";
-import { archiveActiveAnalysis } from "../services/cvAnalysisService.js";
+import { archiveActiveAnalysis, updateAnalysis } from "../services/cvAnalysisService.js";
 import CVVerificationForm from "../components/CVVerificationForm.jsx";
 import useAuth from "../hooks/useAuth.js";
 
@@ -21,7 +21,7 @@ const checklist = [
 export default function CVUpload() {
   const fileInputRef = useRef(null);
   const { getToken } = useAuth();
-  const { analysis, fileName, hasAnalysis, resetAnalysis, startAnalysis, startManualAnalysis, status, error } =
+  const { analysis, fileName, hasAnalysis, resetAnalysis, startAnalysis, startManualAnalysis, updateLocalAnalysis, status, error } =
     useCVAnalysis();
   
   const [activeTab, setActiveTab] = useState("upload"); // 'upload' | 'manual'
@@ -88,11 +88,28 @@ export default function CVUpload() {
   }
 
   const handleSaveVerifiedData = async (verifiedData) => {
-    console.log("Verified Data to save:", verifiedData);
-    setToastMessage("CV profile saved successfully!");
-    setShowVerificationForm(false);
-    setTimeout(() => setToastMessage(""), 3000);
-    // TODO: Connect this to backend API when ready
+    try {
+      const token = await getToken();
+      if (!token) {
+        setToastMessage("You must be logged in to save.");
+        return;
+      }
+      if (!analysis || !analysis._id) {
+        setToastMessage("No active analysis found to update.");
+        return;
+      }
+
+      await updateAnalysis(analysis._id, verifiedData, token);
+      updateLocalAnalysis(verifiedData);
+      
+      setToastMessage("CV profile updated successfully!");
+      setShowVerificationForm(false);
+      setTimeout(() => setToastMessage(""), 3000);
+    } catch (err) {
+      console.error("Failed to update analysis:", err);
+      setToastMessage("Failed to save changes. Please try again.");
+      setTimeout(() => setToastMessage(""), 3000);
+    }
   };
 
   return (

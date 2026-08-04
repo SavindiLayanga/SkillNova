@@ -42,3 +42,16 @@ export async function archiveActiveAnalysis(token) {
   if (!res.ok) throw new Error("Failed to archive active analysis");
   return res.json();
 }
+
+export async function updateAnalysis(id, updateData, token) {
+  const res = await fetch(`${API_BASE_URL}/analyses/${id}`, {
+    method: "PUT",
+    headers: { 
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify(updateData)
+  });
+  if (!res.ok) throw new Error("Failed to update analysis");
+  return res.json();
+}

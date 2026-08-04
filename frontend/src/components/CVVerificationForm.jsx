@@ -260,7 +260,11 @@ export default function CVVerificationForm({ initialData, onSave, onCancel }) {
         <Button 
           className="w-full sm:flex-1 justify-center bg-primary-600 hover:bg-primary-700 text-white shadow-md border-transparent text-base py-3" 
           icon={Save}
-          onClick={() => onSave(formData)}
+          onClick={() => onSave({
+            ...formData,
+            name: formData.personalInformation.fullName,
+            email: formData.personalInformation.email
+          })}
         >
           Confirm & Save Profile
         </Button>

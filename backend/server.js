@@ -215,6 +215,36 @@ app.get("/api/user/all-analyses", verifyAuth, require2FA, async (req, res) => {
   }
 });
 
+app.put("/api/user/analyses/:id", verifyAuth, require2FA, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    let analysis = await CVAnalysis.findOne({ _id: id, userId: req.user.uid });
+    let model = CVAnalysis;
+    
+    if (!analysis) {
+      analysis = await ManualAnalysis.findOne({ _id: id, userId: req.user.uid });
+      model = ManualAnalysis;
+    }
+
+    if (!analysis) {
+      return res.status(404).json({ error: "Analysis not found" });
+    }
+
+    const updated = await model.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+    
+    res.json(updated);
+  } catch (error) {
+    console.error("Analysis update error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.get("/api/user/skill-tests", verifyAuth, require2FA, async (req, res) => {
   try {
     const tests = await SkillTest.find({ userId: req.user.uid }).sort({

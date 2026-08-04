@@ -233,6 +233,19 @@ export function CVAnalysisProvider({ children }) {
     setError(null);
   }, []);
 
+  const updateLocalAnalysis = useCallback((updatedData) => {
+    setAnalysis((prev) => {
+      const newAnalysis = { ...prev, ...updatedData };
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          analysisData: newAnalysis,
+        })
+      );
+      return newAnalysis;
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       analysis,
@@ -241,10 +254,11 @@ export function CVAnalysisProvider({ children }) {
       resetAnalysis,
       startAnalysis,
       startManualAnalysis,
+      updateLocalAnalysis,
       status,
       error,
     }),
-    [analysis, fileName, resetAnalysis, startAnalysis, startManualAnalysis, status, error]
+    [analysis, fileName, resetAnalysis, startAnalysis, startManualAnalysis, updateLocalAnalysis, status, error]
   );
 
   return (
