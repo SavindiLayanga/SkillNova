@@ -159,7 +159,7 @@ export default function CVUpload() {
                 {/* Background CV Preview */}
                 {!isProcessing && fileUrl && (
                   <div className="absolute inset-0 w-full h-full z-0">
-                    <iframe src={`${fileUrl}#toolbar=0`} className="w-full h-full border-none opacity-20 pointer-events-none" title="CV Preview" />
+                    <iframe src={`${fileUrl}#toolbar=0`} className="w-full h-full border-none opacity-40 pointer-events-none" title="CV Preview" />
                   </div>
                 )}
                 
