@@ -396,9 +396,11 @@ export default function CVUpload() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-emerald-50 border border-emerald-200 p-4 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-6 duration-300">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          <p className="text-sm font-semibold text-emerald-800">{toastMessage}</p>
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] rounded-2xl bg-white border border-emerald-100 p-6 shadow-2xl flex flex-col items-center gap-3 animate-in fade-in zoom-in-95 duration-300 min-w-[300px] text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 mb-2">
+            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+          </div>
+          <p className="text-lg font-bold text-ink-900">{toastMessage}</p>
         </div>
       )}
     </div>
