@@ -291,7 +291,11 @@ def analyze_cv():
     email_match = re.search(r'([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)', text)
     extracted_email = email_match.group(1) if email_match else ""
     phone_match = re.search(r'(?:(?:\+|00)\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}', text)
-    extracted_phone = phone_match.group(0).strip() if phone_match else ""
+    broad_phone = re.search(r'(?:(?:\+|00)\d{1,3})?[\s.-]*\(?\d{2,4}\)?(?:[\s.-]*\d){6,9}', text)
+    if broad_phone:
+        extracted_phone = broad_phone.group(0).strip()
+    else:
+        extracted_phone = phone_match.group(0).strip() if phone_match else ""
 
     # Name extraction via spaCy (Try first 5 lines)
     extracted_name = ""
