@@ -103,7 +103,6 @@ export default function CVUpload() {
       updateLocalAnalysis(verifiedData);
       
       setToastMessage("CV profile updated successfully!");
-      setShowVerificationForm(false);
       setTimeout(() => setToastMessage(""), 3000);
     } catch (err) {
       console.error("Failed to update analysis:", err);
