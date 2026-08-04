@@ -159,12 +159,12 @@ export default function CVUpload() {
                 {/* Background CV Preview */}
                 {!isProcessing && fileUrl && (
                   <div className="absolute inset-0 w-full h-full z-0">
-                    <iframe src={`${fileUrl}#toolbar=0`} className="w-full h-full border-none opacity-40 pointer-events-none" title="CV Preview" />
+                    <iframe src={`${fileUrl}#toolbar=0`} className="w-full h-full border-none opacity-40" title="CV Preview" />
                   </div>
                 )}
                 
                 {/* Overlay Content */}
-                <div className="relative z-10 flex flex-col items-center justify-center pointer-events-auto">
+                <div className="relative z-10 flex flex-col items-center justify-center pointer-events-none w-full h-full">
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-100 to-primary-50 text-primary-600 shadow-sm transition-transform duration-300">
                     {isProcessing ? (
                       <Loader variant="glass" size="md" />
@@ -205,7 +205,7 @@ export default function CVUpload() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row pointer-events-auto">
                       <Button 
                         icon={RotateCcw} 
                         onClick={() => setShowConfirmModal(true)} 
@@ -223,7 +223,7 @@ export default function CVUpload() {
                   <a 
                     href={fileUrl} 
                     download={fileName || "CV.pdf"}
-                    className="absolute top-4 right-4 z-20 bg-white border border-primary-200 text-primary-700 p-2.5 rounded-xl shadow-md hover:bg-primary-50 hover:text-primary-800 transition flex items-center gap-2 font-semibold text-sm backdrop-blur-sm"
+                    className="absolute top-4 right-4 z-20 pointer-events-auto bg-white border border-primary-200 text-primary-700 p-2.5 rounded-xl shadow-md hover:bg-primary-50 hover:text-primary-800 transition flex items-center gap-2 font-semibold text-sm backdrop-blur-sm"
                     title="Download CV"
                   >
                     <Download className="w-4 h-4" />
