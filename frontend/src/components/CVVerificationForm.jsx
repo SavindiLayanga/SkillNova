@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle2, X, Plus, Trash2, Edit2, AlertCircle, Save, RotateCcw } from "lucide-react";
 import Button from "./ui/Button";
 import Card from "./ui/Card";
@@ -96,33 +96,43 @@ const TagInput = ({ label, tags = [], onChange, placeholder = "Type and press en
 };
 
 export default function CVVerificationForm({ initialData, onSave, onCancel }) {
-  // Initialize state safely mapping from actual CV analysis data structure
   const [formData, setFormData] = useState({
-    personalInformation: {
-      fullName: initialData?.name || initialData?.personalInformation?.fullName || "", 
-      email: initialData?.email || initialData?.personalInformation?.email || "", 
-      phone: initialData?.personalInformation?.phone || "", 
-      address: initialData?.personalInformation?.address || "", 
-      linkedin: initialData?.personalInformation?.linkedin || "", 
-      github: initialData?.personalInformation?.github || "", 
-      portfolio: initialData?.personalInformation?.portfolio || ""
-    },
-    targetRole: initialData?.targetRole || "",
-    professionalSummary: initialData?.professionalSummary || "",
-    education: Array.isArray(initialData?.extracted?.education) ? initialData.extracted.education : (Array.isArray(initialData?.education) ? initialData.education : []),
-    experience: Array.isArray(initialData?.extracted?.experience) ? initialData.extracted.experience : (Array.isArray(initialData?.experience) ? initialData.experience : []),
-    projects: Array.isArray(initialData?.extracted?.projects) ? initialData.extracted.projects : (Array.isArray(initialData?.projects) ? initialData.projects : []),
-    technicalSkills: Array.isArray(initialData?.technicalSkills) ? initialData.technicalSkills : [],
-    softSkills: Array.isArray(initialData?.softSkills) ? initialData.softSkills : [],
-    programmingLanguages: Array.isArray(initialData?.programmingLanguages) ? initialData.programmingLanguages : [],
-    frameworks: Array.isArray(initialData?.frameworks) ? initialData.frameworks : [],
-    databases: Array.isArray(initialData?.databases) ? initialData.databases : [],
-    tools: Array.isArray(initialData?.tools) ? initialData.tools : [],
-    cloudTechnologies: Array.isArray(initialData?.cloudTechnologies) ? initialData.cloudTechnologies : [],
-    certifications: Array.isArray(initialData?.extracted?.certifications) ? initialData.extracted.certifications : (Array.isArray(initialData?.certifications) ? initialData.certifications : []),
-    languages: Array.isArray(initialData?.languages) ? initialData.languages : [],
-    achievements: Array.isArray(initialData?.achievements) ? initialData.achievements : []
+    personalInformation: { fullName: "", email: "", phone: "", address: "", linkedin: "", github: "", portfolio: "" },
+    targetRole: "", professionalSummary: "", education: [], experience: [], projects: [], technicalSkills: [],
+    softSkills: [], programmingLanguages: [], frameworks: [], databases: [], tools: [], cloudTechnologies: [],
+    certifications: [], languages: [], achievements: []
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        personalInformation: {
+          fullName: initialData?.name || initialData?.personalInformation?.fullName || "", 
+          email: initialData?.email || initialData?.personalInformation?.email || "", 
+          phone: initialData?.personalInformation?.phone || "", 
+          address: initialData?.personalInformation?.address || "", 
+          linkedin: initialData?.personalInformation?.linkedin || "", 
+          github: initialData?.personalInformation?.github || "", 
+          portfolio: initialData?.personalInformation?.portfolio || ""
+        },
+        targetRole: initialData?.targetRole || "",
+        professionalSummary: initialData?.professionalSummary || "",
+        education: Array.isArray(initialData?.extracted?.education) ? initialData.extracted.education : (Array.isArray(initialData?.education) ? initialData.education : []),
+        experience: Array.isArray(initialData?.extracted?.experience) ? initialData.extracted.experience : (Array.isArray(initialData?.experience) ? initialData.experience : []),
+        projects: Array.isArray(initialData?.extracted?.projects) ? initialData.extracted.projects : (Array.isArray(initialData?.projects) ? initialData.projects : []),
+        technicalSkills: Array.isArray(initialData?.technicalSkills) ? initialData.technicalSkills : [],
+        softSkills: Array.isArray(initialData?.softSkills) ? initialData.softSkills : [],
+        programmingLanguages: Array.isArray(initialData?.programmingLanguages) ? initialData.programmingLanguages : [],
+        frameworks: Array.isArray(initialData?.frameworks) ? initialData.frameworks : [],
+        databases: Array.isArray(initialData?.databases) ? initialData.databases : [],
+        tools: Array.isArray(initialData?.tools) ? initialData.tools : [],
+        cloudTechnologies: Array.isArray(initialData?.cloudTechnologies) ? initialData.cloudTechnologies : [],
+    certifications: Array.isArray(initialData?.extracted?.certifications) ? initialData.extracted.certifications : (Array.isArray(initialData?.certifications) ? initialData.certifications : []),
+        languages: Array.isArray(initialData?.languages) ? initialData.languages : [],
+        achievements: Array.isArray(initialData?.achievements) ? initialData.achievements : []
+      });
+    }
+  }, [initialData]);
 
   const updatePersonalInfo = (field, value) => {
     setFormData((prev) => ({

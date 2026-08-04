@@ -8,13 +8,16 @@ const skillSchema = new mongoose.Schema({
 const educationSchema = new mongoose.Schema({
   institution: String,
   degree: String,
-  year: String,
+  fieldOfStudy: String,
+  startYear: String,
+  endYear: String,
 });
 
 const experienceSchema = new mongoose.Schema({
   company: String,
-  role: String,
-  duration: String,
+  jobTitle: String,
+  startDate: String,
+  endDate: String,
   description: String,
 });
 
