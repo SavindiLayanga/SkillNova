@@ -10,6 +10,9 @@ from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
+from skillnova_ai import SkillNovaAI
+skillnova_ai_engine = SkillNovaAI()
+
 # --- Initialization ---
 app = Flask(__name__)
 CORS(app)
@@ -99,20 +102,20 @@ def extract_sections(text):
     current_section = "contact"
     
     for line in lines:
-        lower_line = line.strip().lower()
-        if lower_line in ["experience", "work experience", "employment history", "professional experience"]:
+        lower_line = re.sub(r'[^a-z]', '', line.lower())
+        if lower_line in ["experience", "workexperience", "employmenthistory", "professionalexperience", "jobexperience", "professionalbackground"]:
             current_section = "experience"
             continue
-        elif lower_line in ["education", "academic background", "qualifications"]:
+        elif lower_line in ["education", "academicbackground", "qualifications", "educationbackground"]:
             current_section = "education"
             continue
-        elif lower_line in ["projects", "personal projects", "academic projects"]:
+        elif lower_line in ["projects", "personalprojects", "academicprojects"]:
             current_section = "projects"
             continue
-        elif lower_line in ["certifications", "licenses & certifications"]:
+        elif lower_line in ["certifications", "licensescertifications", "licensesandcertifications"]:
             current_section = "certifications"
             continue
-        elif lower_line in ["skills", "technical skills", "core competencies"]:
+        elif lower_line in ["skills", "technicalskills", "corecompetencies"]:
             current_section = "skills" # we just ignore appending skills as text, use global text
             continue
             
@@ -186,6 +189,14 @@ def extract_experience(exp_text, primary_role):
                     
     if current_exp:
         experiences.append(current_exp)
+        
+    if not experiences and exp_text.strip():
+        experiences.append({
+            "company": "Not Detected",
+            "jobTitle": primary_role if primary_role else "Professional Role",
+            "duration": "Unknown Duration",
+            "description": exp_text.strip()
+        })
         
     # Map duration to startDate and endDate for frontend compatibility
     for exp in experiences:
@@ -420,14 +431,38 @@ def analyze_cv():
     matched_key = next((k for k in ROLE_SKILLS_MAP if k in lower_role), "default")
     required_skills = ROLE_SKILLS_MAP[matched_key]
     
-    missing_skills = [s for s in required_skills if s not in tech_skills_list]
-    matched_skills = [s for s in required_skills if s in tech_skills_list]
-    
-    match_percentage = 0
-    if required_skills and len(tech_skills_list) > 0:
-        match_percentage = math.floor((len(matched_skills) / len(required_skills)) * 100)
-    if len(tech_skills_list) >= 5 and match_percentage < 65:
-        match_percentage = min(85, match_percentage + 25)
+    # Attempt SkillNovaAI Analysis First
+    ai_result = None
+    if skillnova_ai_engine.is_available():
+        all_nlp_skills = tech_skills_list + soft_skills_list
+        ai_result = skillnova_ai_engine.analyze_cv(
+            target_role=target_role,
+            candidate_name=extracted_name,
+            extracted_skills=all_nlp_skills,
+            clean_text=normalized_text
+        )
+
+    if ai_result:
+        # Success with AI
+        final_skills = ai_result.get("skills", tech_skills_list + soft_skills_list)
+        missing_skills = ai_result.get("missingSkills", [])
+        match_percentage = ai_result.get("matchPercentage", 0)
+        ai_summary = ai_result.get("summary", "Analysis Complete using SkillNova AI.")
+        growth_plan = ai_result.get("growthPlan", [])
+    else:
+        # Fallback to deterministic NLP logic
+        missing_skills = [s for s in required_skills if s not in tech_skills_list]
+        matched_skills = [s for s in required_skills if s in tech_skills_list]
+        
+        match_percentage = 0
+        if required_skills and len(tech_skills_list) > 0:
+            match_percentage = math.floor((len(matched_skills) / len(required_skills)) * 100)
+        if len(tech_skills_list) >= 5 and match_percentage < 65:
+            match_percentage = min(85, match_percentage + 25)
+            
+        final_skills = tech_skills_list + soft_skills_list
+        ai_summary = "NLP Analysis Complete using NLTK and spaCy (Fallback Mode)."
+        growth_plan = []
 
     is_it_related = len(tech_skills_list) > 0
     
@@ -449,7 +484,7 @@ def analyze_cv():
         "primaryRole": { "role": detected_role, "confidence": 95, "reason": "Detected in header." },
         "technicalSkills": [s.title() for s in tech_skills_list],
         "softSkills": [s.title() for s in soft_skills_list],
-        "skills": tech_skills_list + soft_skills_list,
+        "skills": final_skills,
         "missingSkills": [s.title() for s in missing_skills],
         "education": dynamic_education,
         "experience": dynamic_experience,
@@ -458,7 +493,8 @@ def analyze_cv():
         "matchPercentage": match_percentage,
         "careerReadinessScore": match_percentage if is_it_related else 0,
         "jobRecommendations": [target_role] if is_it_related else [],
-        "summary": "NLP Analysis Complete using NLTK and spaCy."
+        "summary": ai_summary,
+        "growthPlan": growth_plan
     }
     
     return jsonify(response)

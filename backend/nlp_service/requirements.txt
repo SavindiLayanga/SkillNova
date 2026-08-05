@@ -2,3 +2,5 @@ flask
 flask-cors
 spacy
 nltk
+groq
+python-dotenv

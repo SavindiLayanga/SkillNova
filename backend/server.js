@@ -634,26 +634,85 @@ app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
 
     let data;
 
-    console.log("Entering custom Python NLP mode...");
+    console.log("Entering GenAI NLP mode...");
       
     const userProfile = await User.findOne({ uid: req.user.uid });
     const targetRole = userProfile?.targetRole || "Software Developer";
     
     try {
-      const nlpResponse = await fetch("http://127.0.0.1:5001/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, targetRole })
-      });
+      const ai = getAI();
+      const prompt = `
+Analyze the attached PDF CV and extract the details strictly matching this JSON structure. If any field is not found, use an empty string or an empty array. Do NOT use placeholder text like "Not Detected". Pay special attention to "experience", "work experience", or "job experience" sections and extract them accurately into the experience array.
+
+JSON Structure:
+{
+    "isITRelated": boolean (true if the CV is related to IT/Software/Tech, false otherwise),
+    "name": "string",
+    "email": "string",
+    "phone": "string",
+    "personalInformation": {
+        "fullName": "string", "email": "string", "phone": "string", "linkedin": "string", "github": "string", "address": "string", "portfolio": "string"
+    },
+    "professionalSummary": "string",
+    "primaryRole": { "role": "string", "confidence": 90, "reason": "string" },
+    "technicalSkills": ["string"],
+    "softSkills": ["string"],
+    "skills": ["string"],
+    "missingSkills": ["string"],
+    "education": [{ "institution": "string", "degree": "string", "fieldOfStudy": "string", "startYear": "string", "endYear": "string" }],
+    "experience": [{ "company": "string", "jobTitle": "string", "startDate": "string", "endDate": "string", "description": "string" }],
+    "projects": [],
+    "certifications": [],
+    "matchPercentage": 85,
+    "careerReadinessScore": 85,
+    "jobRecommendations": ["string"],
+    "summary": "string"
+}
+
+Target Role: ${targetRole}
+      `;
+
+      let contentsPayload = prompt;
       
-      if (!nlpResponse.ok) {
-         throw new Error("Python NLP service failed: " + nlpResponse.statusText);
+      // If we have the raw PDF, send it directly to Gemini for OCR and deep reading
+      if (fileBase64 && fileName && fileName.toLowerCase().endsWith(".pdf")) {
+        const base64Data = fileBase64.replace(/^data:application\/pdf;base64,/, "");
+        contentsPayload = [
+          { text: prompt + "\n\nFallback CV Text:\n" + text },
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: "application/pdf"
+            }
+          }
+        ];
+      } else {
+        contentsPayload = prompt + "\n\nCV Text:\n" + text;
       }
-      
-      data = await nlpResponse.json();
+
+      const response = await ai.models.generateContent({
+        model: AI_MODEL,
+        contents: contentsPayload,
+        config: { responseMimeType: "application/json" },
+      });
+      let responseText = response.text;
+      if (responseText.includes("\`\`\`")) {
+        responseText = responseText.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim();
+      }
+      data = JSON.parse(responseText);
     } catch (err) {
-      console.error("Error communicating with Python NLP service:", err);
-      throw new Error("Could not reach the NLP processing service. Ensure the Python server is running on port 5001.");
+      console.error("GenAI failed, falling back to python server:", err);
+      try {
+        const nlpResponse = await fetch("http://127.0.0.1:5001/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, targetRole })
+        });
+        if (!nlpResponse.ok) throw new Error("Python NLP service failed");
+        data = await nlpResponse.json();
+      } catch (pythonErr) {
+        throw new Error("Could not parse the CV using AI or Python fallback.");
+      }
     }
     
     // We reject non-IT CVs directly with a 400 error now.

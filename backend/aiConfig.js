@@ -8,4 +8,4 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 export const AI_API_KEY = process.env.GEMINI_API_KEY;
-export const AI_MODEL = "gemini-2.0-flash";
+export const AI_MODEL = "gemini-flash-latest";
