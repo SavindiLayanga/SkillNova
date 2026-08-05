@@ -1,4 +1,4 @@
-import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
+import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
@@ -20,7 +20,7 @@ export default function SkillGapAnalysis() {
   ) || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-10">
       <PageHeader
         action={
           hasAnalysis ? (
@@ -41,179 +41,199 @@ export default function SkillGapAnalysis() {
 
       {hasAnalysis && missingSkills.length > 0 ? (
         <>
-          <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
-          <div className="flex items-center gap-3">
-            <Target className="h-5 w-5 text-primary-600" />
-            <h2 className="text-lg font-bold text-ink-900">
-              Gap breakdown
-            </h2>
-          </div>
-          <div className="mt-6 space-y-5">
-            {missingSkills.map((gap, idx) => {
-              const skillName = typeof gap === "string" ? gap : (gap.name || gap.skill);
-              const current = gap.current || 0;
-              const required = gap.required || 100;
-              
-              const radius = 20;
-              const circumference = radius * 2 * Math.PI;
-              const offset = circumference - (current / 100) * circumference;
+          {/* Skill Gaps Section (Full Width, 3 Columns) */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between pb-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary-600" />
+                <h2 className="text-xl font-bold text-ink-900">
+                  Identified Gaps
+                </h2>
+              </div>
+              <span className="text-sm font-medium text-ink-500">{missingSkills.length} skills to improve</span>
+            </div>
+            
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {missingSkills.map((gap, idx) => {
+                const skillName = typeof gap === "string" ? gap : (gap.name || gap.skill);
+                const current = gap.current || 0;
+                const required = gap.required || 100;
+                
+                const radius = 24;
+                const circumference = radius * 2 * Math.PI;
+                const offset = circumference - (current / 100) * circumference;
 
-              return (
-              <div 
-                onClick={() => navigate(`/skill-library/${encodeURIComponent(skillName)}`)}
-                className="block"
-                key={idx}
-              >
-                <div className="rounded-lg border border-ink-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-colors hover:border-primary-200 hover:bg-ink-50/30 cursor-pointer">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-ink-900 text-base group-hover:text-primary-600 transition-colors">{skillName}</h3>
-                      {gap.priority && (
-                        <span className="rounded-full bg-primary-50 px-2.5 py-0.5 text-[10px] font-bold text-primary-700 uppercase tracking-wide">
-                          {gap.priority}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-sm text-ink-500 max-w-lg leading-relaxed">
-                      {gap.recommendation || `Essential skill for your target role. Click to take a test and close this gap.`}
-                    </p>
-                  </div>
-                  
-                  <div className="shrink-0 flex items-center gap-4 bg-ink-50/50 p-2.5 rounded-lg border border-ink-100/50">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-xs font-bold text-ink-900">Current Mastery</p>
-                      <p className="text-[10px] font-medium text-ink-500">Target: {required}%</p>
-                    </div>
-                    
-                    <div className="relative flex items-center justify-center w-[50px] h-[50px]">
-                      <svg className="transform -rotate-90 w-full h-full">
-                        <circle
-                          className="text-ink-100"
-                          strokeWidth="5"
-                          stroke="currentColor"
-                          fill="transparent"
-                          r={radius}
-                          cx="25"
-                          cy="25"
-                        />
-                        <circle
-                          className="text-primary-500 transition-all duration-1000 ease-in-out"
-                          strokeWidth="5"
-                          strokeDasharray={circumference}
-                          strokeDashoffset={offset}
-                          strokeLinecap="round"
-                          stroke="currentColor"
-                          fill="transparent"
-                          r={radius}
-                          cx="25"
-                          cy="25"
-                        />
-                      </svg>
-                      <div className="absolute flex flex-col items-center justify-center text-ink-900">
-                        <span className="text-xs font-bold">{Math.round((current / 100) * 100)}%</span>
+                return (
+                  <Card 
+                    key={idx}
+                    className="group cursor-pointer hover:border-primary-300 hover:shadow-md transition-all flex flex-col h-full"
+                    onClick={() => navigate(`/skill-library/${encodeURIComponent(skillName)}`)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex flex-col gap-1.5 pr-4">
+                        <h3 className="font-bold text-ink-900 text-lg group-hover:text-primary-600 transition-colors">
+                          {skillName}
+                        </h3>
+                        {gap.priority && (
+                          <span className="inline-block self-start rounded bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary-700 uppercase tracking-wide border border-primary-100">
+                            {gap.priority} Priority
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Circular Progress */}
+                      <div className="relative flex items-center justify-center w-[54px] h-[54px] shrink-0">
+                        <svg className="transform -rotate-90 w-full h-full">
+                          <circle
+                            className="text-ink-50"
+                            strokeWidth="5"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r={radius}
+                            cx="27"
+                            cy="27"
+                          />
+                          <circle
+                            className="text-primary-500 transition-all duration-1000 ease-in-out"
+                            strokeWidth="5"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={offset}
+                            strokeLinecap="round"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r={radius}
+                            cx="27"
+                            cy="27"
+                          />
+                        </svg>
+                        <div className="absolute flex flex-col items-center justify-center text-ink-900">
+                          <span className="text-xs font-bold">{Math.round((current / 100) * 100)}%</span>
+                        </div>
                       </div>
                     </div>
+                    
+                    <p className="text-sm text-ink-500 leading-relaxed mb-6 flex-grow">
+                      {gap.recommendation || `Essential skill for your target role. Click to take a test and close this gap.`}
+                    </p>
+                    
+                    <div className="pt-4 border-t border-ink-50 flex items-center justify-between text-sm mt-auto">
+                      <span className="font-medium text-ink-500">Target: {required}%</span>
+                      <span className="flex items-center gap-1 font-bold text-primary-600 group-hover:text-primary-700">
+                        Take test <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Bottom Section: Courses and Market Demand Grid */}
+          <section className="mt-8 grid gap-6 xl:grid-cols-3">
+            
+            {/* Left Column: Recommended Courses */}
+            <div className="xl:col-span-1 space-y-4">
+              <div className="flex items-center gap-2 pb-2">
+                <BookOpen className="h-5 w-5 text-primary-600" />
+                <h2 className="text-lg font-bold text-ink-900">Recommended Courses</h2>
+              </div>
+              
+              {recommendedCourses.length > 0 ? (
+                <div className="space-y-4">
+                  {recommendedCourses.map((course, idx) => (
+                    <Card key={idx} className="hover:border-ink-200 transition-colors">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="font-semibold text-ink-900 leading-tight">
+                            {course.title}
+                          </h3>
+                          <span className="shrink-0 rounded-full bg-ink-100 px-2.5 py-0.5 text-[10px] font-bold text-ink-700">
+                            Top Pick
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-500">
+                          Helps with: <span className="font-semibold text-ink-700">{course.skill}</span>
+                        </p>
+                        <Button className="w-full mt-2" variant="secondary" size="sm">
+                          View Course
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="text-center py-10 h-full flex flex-col justify-center">
+                  <p className="text-sm text-ink-500">No course recommendations available right now.</p>
+                </Card>
+              )}
+            </div>
+
+            {/* Right Column: Market Demand */}
+            <div className="xl:col-span-2 space-y-4">
+            <Card>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-ink-50 rounded-lg text-ink-700 border border-ink-100">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-ink-900">Market Demand Analysis</h2>
+                    <p className="text-sm text-ink-500">Compare your skills with current industry demands.</p>
                   </div>
                 </div>
               </div>
-            )})}
-          </div>
-        </Card>
-
-        {recommendedCourses.length > 0 && (
-          <Card>
-            <h2 className="text-lg font-bold text-ink-900">Course matches</h2>
-            <p className="mt-1 text-sm text-ink-500">
-              Suggested courses to help you bridge your skill gaps.
-            </p>
-            <div className="mt-6 space-y-4">
-              {recommendedCourses.map((course, idx) => (
-                <div className="rounded-lg bg-ink-50 p-4" key={idx}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-semibold text-ink-900">
-                        {course.title}
-                      </h3>
-                      <p className="mt-1 text-sm text-ink-500">
-                        Recommended for: {course.skill}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-primary-700">
-                      Top Pick
-                    </span>
-                  </div>
-                  <Button className="mt-4 w-full" variant="secondary">
-                    View Course
-                  </Button>
-                </div>
-              ))}
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-ink-100 text-ink-500 uppercase tracking-wider text-xs">
+                      <th className="pb-3 font-semibold px-4 w-1/4">Skill</th>
+                      <th className="pb-3 font-semibold px-4 w-1/4">Your Status</th>
+                      <th className="pb-3 font-semibold px-4 w-1/4">Market Demand</th>
+                      <th className="pb-3 font-semibold px-4 w-1/4 text-right">Priority</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink-50">
+                    {[
+                      { skill: "React.js", status: "User has", demand: 88, priority: "High" },
+                      { skill: "Node.js", status: "User has", demand: 85, priority: "High" },
+                      { skill: "Docker", status: "Missing", demand: 81, priority: "High" },
+                      { skill: "AWS", status: "Missing", demand: 79, priority: "Medium" },
+                      { skill: "GraphQL", status: "Missing", demand: 72, priority: "Medium" },
+                    ].map((item, idx) => (
+                      <tr key={idx} className="hover:bg-ink-50/30 transition-colors">
+                        <td className="py-4 px-4 font-bold text-ink-900">{item.skill}</td>
+                        <td className="py-4 px-4">
+                          {item.status === "User has" ? (
+                            <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-xs font-bold border border-emerald-100">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Has Skill
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md text-xs font-bold border border-rose-100">
+                              <XCircle className="h-3.5 w-3.5" /> Missing
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                             <span className="font-bold text-ink-700 w-9 text-right">{item.demand}%</span>
+                             <ProgressBar value={item.demand} className="w-32 h-2 opacity-80" />
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <span className={`inline-flex px-2.5 py-1 rounded text-xs font-bold border ${
+                            item.priority === 'High' ? 'text-orange-700 bg-orange-50 border-orange-100' : 'text-blue-700 bg-blue-50 border-blue-100'
+                          }`}>
+                            {item.priority}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
             </div>
-          </Card>
-        )}
-      </section>
-
-      <section className="mt-6 animate-fade-in-slide-up">
-        <Card>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-primary-50 rounded-lg text-primary-600">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-ink-900">Market Demand Analysis</h2>
-              <p className="mt-1 text-sm text-ink-500">Compare your skills with current industry demands.</p>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-ink-100 text-ink-500 uppercase tracking-wider text-xs">
-                  <th className="pb-3 font-semibold px-4">Skill</th>
-                  <th className="pb-3 font-semibold px-4">Your Status</th>
-                  <th className="pb-3 font-semibold px-4">Market Demand</th>
-                  <th className="pb-3 font-semibold px-4">Priority Level</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-50">
-                {[
-                  { skill: "React.js", status: "User has", demand: 88, priority: "High" },
-                  { skill: "Node.js", status: "User has", demand: 85, priority: "High" },
-                  { skill: "Docker", status: "Missing", demand: 81, priority: "High" },
-                  { skill: "AWS", status: "Missing", demand: 79, priority: "Medium" },
-                  { skill: "GraphQL", status: "Missing", demand: 72, priority: "Medium" },
-                ].map((item, idx) => (
-                  <tr key={idx} className="hover:bg-ink-50/50 transition-colors">
-                    <td className="py-4 px-4 font-bold text-ink-900">{item.skill}</td>
-                    <td className="py-4 px-4">
-                      {item.status === "User has" ? (
-                        <span className="inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-100">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Has Skill
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full text-xs font-bold border border-rose-100">
-                          <XCircle className="h-3.5 w-3.5" /> Missing
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                         <span className="font-bold text-ink-700 w-9">{item.demand}%</span>
-                         <ProgressBar value={item.demand} className="w-32 h-2 opacity-80" />
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded text-xs font-bold border ${
-                        item.priority === 'High' ? 'text-orange-700 bg-orange-50 border-orange-100' : 'text-blue-700 bg-blue-50 border-blue-100'
-                      }`}>
-                        {item.priority}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
           </section>
         </>
       ) : hasAnalysis && missingSkills.length === 0 ? (
