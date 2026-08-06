@@ -11,6 +11,7 @@ export function PracticeProvider({ children }) {
   const [completedTests, setCompletedTests] = useState({});
   const [pathScores, setPathScores] = useState({});
   const [dynamicTestsCache, setDynamicTestsCache] = useState({});
+  const [skillDifficultyScores, setSkillDifficultyScores] = useState({});
   
   // Active practice session
   const [activeSession, setActiveSession] = useState(null);
@@ -32,6 +33,7 @@ export function PracticeProvider({ children }) {
       const newCompleted = {};
       const newPathScores = {};
       const newDynamicCache = {};
+      const newDifficultyScores = {};
       
       if (Array.isArray(tests)) {
         tests.forEach(test => {
@@ -47,6 +49,13 @@ export function PracticeProvider({ children }) {
             if (!newPathScores[test.skillName]) newPathScores[test.skillName] = {};
             newPathScores[test.skillName][topic] = test.score;
             
+            // Track max score per difficulty
+            if (test.difficulty) {
+              if (!newDifficultyScores[test.skillName]) newDifficultyScores[test.skillName] = {};
+              const currentMax = newDifficultyScores[test.skillName][test.difficulty] || 0;
+              newDifficultyScores[test.skillName][test.difficulty] = Math.max(currentMax, test.score);
+            }
+            
             // Also store in general completed just in case
             newCompleted[test.skillName] = test.score;
           }
@@ -56,6 +65,7 @@ export function PracticeProvider({ children }) {
       setCompletedTests(newCompleted);
       setPathScores(newPathScores);
       setDynamicTestsCache(newDynamicCache);
+      setSkillDifficultyScores(newDifficultyScores);
       
       if (practice && practice.selectedTest) {
         setActiveSession(practice);
@@ -101,11 +111,12 @@ export function PracticeProvider({ children }) {
     completedTests,
     pathScores,
     dynamicTestsCache,
+    skillDifficultyScores,
     activeSession,
     updateSession,
     clearSession,
     refreshTests
-  }), [loading, completedTests, pathScores, dynamicTestsCache, activeSession, updateSession, clearSession, refreshTests]);
+  }), [loading, completedTests, pathScores, dynamicTestsCache, skillDifficultyScores, activeSession, updateSession, clearSession, refreshTests]);
 
   return (
     <PracticeContext.Provider value={value}>

@@ -284,7 +284,7 @@ export const submitSkillTest = async (req, res) => {
 
 // Generate General Skill Test
 export const generateSkillTest = async (req, res) => {
-  const { skillName, type, topic } = req.body;
+  const { skillName, type, topic, targetDifficulty: reqDifficulty } = req.body;
   const actualTopic = topic || type || "Conceptual Quiz";
 
   try {
@@ -292,26 +292,35 @@ export const generateSkillTest = async (req, res) => {
       return res.status(400).json({ error: "Skill name is required" });
     }
 
-    const previousTest = await SkillTest.findOne({ userId: req.user.uid, skillName, topic: actualTopic }).sort({ createdAt: -1 });
     let difficultyContext = "";
-    let targetDifficulty = "Intermediate";
+    let targetDifficulty = reqDifficulty || "Intermediate";
     let attemptsCount = 1;
 
+    const previousTest = await SkillTest.findOne({ userId: req.user.uid, skillName, topic: actualTopic }).sort({ createdAt: -1 });
+    
     if (previousTest) {
       attemptsCount = previousTest.attempts + 1;
-      if (previousTest.masteryLevel === "Needs Improvement") {
-        difficultyContext = "The user previously struggled with this skill. Generate easier, beginner-level questions to build confidence.";
-        targetDifficulty = "Beginner";
-      } else if (previousTest.masteryLevel === "Basic") {
-        difficultyContext = "The user has basic knowledge. Generate intermediate-level questions.";
-        targetDifficulty = "Intermediate";
-      } else if (previousTest.masteryLevel === "Good") {
-        difficultyContext = "The user has good mastery. Generate intermediate to advanced questions to challenge them.";
-        targetDifficulty = "Intermediate-Advanced";
-      } else if (previousTest.masteryLevel === "Excellent") {
-        difficultyContext = "The user has excellent mastery. Generate advanced-level, complex problem-solving questions.";
-        targetDifficulty = "Advanced";
+      // Only auto-scale difficulty if the frontend didn't explicitly request one
+      if (!reqDifficulty) {
+        if (previousTest.masteryLevel === "Needs Improvement") {
+          targetDifficulty = "Beginner";
+        } else if (previousTest.masteryLevel === "Basic") {
+          targetDifficulty = "Intermediate";
+        } else if (previousTest.masteryLevel === "Good") {
+          targetDifficulty = "Intermediate-Advanced";
+        } else if (previousTest.masteryLevel === "Excellent") {
+          targetDifficulty = "Advanced";
+        }
       }
+    }
+
+    // Strictly define the characteristics of each difficulty level
+    if (targetDifficulty.includes("Beginner")) {
+      difficultyContext = "STRICTLY BEGINNER: Generate extremely basic, fundamental 101-level questions. Focus ONLY on simple syntax, definitions, and basic usage. Avoid any complex scenarios or advanced features.";
+    } else if (targetDifficulty.includes("Advanced") || targetDifficulty.includes("Pro")) {
+      difficultyContext = "STRICTLY ADVANCED/PRO: Generate highly complex, expert-level questions. Focus on edge cases, deep architecture, performance optimization, and difficult debugging scenarios. These should be hard for even senior developers.";
+    } else {
+      difficultyContext = "INTERMEDIATE: Generate moderate level questions. Focus on practical scenarios, standard patterns, and common pitfalls. Not too basic, but not overly convoluted.";
     }
 
     const ai = getAI();
@@ -321,9 +330,10 @@ Generate 10 unique multiple choice questions for ${skillName}.
 Topic/Focus: ${actualTopic}
 Type: ${type || "quiz"}
 Target Difficulty: ${targetDifficulty}
-${difficultyContext ? `Context: ${difficultyContext}` : ""}
+Context Guideline: ${difficultyContext}
 
 CRITICAL REQUIREMENTS:
+- You must STRICTLY adhere to the requested difficulty level. A beginner should not fail a beginner test, and a senior should struggle on an advanced test.
 - Each question must test a distinctly different concept, feature, or aspect of ${skillName}.
 - Do NOT repeat the same phrasing, question structure, or similar answer options.
 - Ensure high variety in topics (e.g., syntax, best practices, troubleshooting, architecture).

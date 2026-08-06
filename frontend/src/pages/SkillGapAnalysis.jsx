@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight, ChevronDown } from "lucide-react";
+import { useState, useContext } from "react";
+import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight, Lock, Check, Trophy } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
@@ -8,11 +8,12 @@ import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
+import { PracticeContext } from "../context/practiceContextValue.js";
 
 export default function SkillGapAnalysis() {
   const navigate = useNavigate();
   const { analysis, hasAnalysis, status } = useCVAnalysis();
-  const [selectedDifficulties, setSelectedDifficulties] = useState({});
+  const { skillDifficultyScores } = useContext(PracticeContext);
 
   const missingSkills = analysis?.missingSkills || [];
   
@@ -113,43 +114,56 @@ export default function SkillGapAnalysis() {
                       </div>
                     </div>
                     
-                    <div className="flex-grow">
-                      <p className="text-sm text-ink-500 leading-relaxed mb-4">
-                        {gap.recommendation || `Essential skill for your target role. Select your difficulty level and take a test to close this gap.`}
-                      </p>
-                      <div className="mb-6 relative">
-                        <label className="block text-xs font-semibold text-ink-500 mb-1">Select Difficulty</label>
-                        <div className="relative">
-                          <select 
-                            className="w-full appearance-none bg-ink-50 border border-ink-100 text-ink-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2.5 pr-8 transition-colors cursor-pointer"
-                            value={selectedDifficulties[skillName] || "Intermediate"}
-                            onChange={(e) => setSelectedDifficulties(prev => ({ ...prev, [skillName]: e.target.value }))}
+                    <div className="flex-grow flex flex-col justify-end">
+                      {(() => {
+                        const maxScores = skillDifficultyScores?.[skillName] || {};
+                        const passedBeginner = maxScores["Beginner"] >= 70;
+                        const passedIntermediate = maxScores["Intermediate"] >= 70;
+                        const passedAdvanced = maxScores["Advanced"] >= 70;
+                        const isMastered = passedBeginner && passedIntermediate && passedAdvanced;
+
+                        const renderLevelBtn = (level, isLocked, passed, score) => (
+                          <button
+                            key={level}
+                            disabled={isLocked}
+                            onClick={() => !isLocked && navigate("/skill-tests", { 
+                              state: { autoStartDirectly: true, skillName, difficulty: level } 
+                            })}
+                            className={`flex items-center justify-between w-full p-2.5 rounded-lg border text-sm font-medium transition-all ${
+                              isLocked 
+                                ? "bg-ink-50 border-ink-100 text-ink-300 cursor-not-allowed" 
+                                : passed
+                                  ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                  : "bg-white border-primary-200 text-primary-700 hover:border-primary-400 hover:bg-primary-50 hover:shadow-sm"
+                            }`}
                           >
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced (Pro)</option>
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-ink-500">
-                            <ChevronDown className="h-4 w-4" />
+                            <div className="flex items-center gap-2">
+                              {isLocked ? <Lock className="h-4 w-4" /> : passed ? <CheckCircle2 className="h-4 w-4" /> : <div className="w-4 h-4 rounded-full border-2 border-primary-400"></div>}
+                              <span>{level}</span>
+                            </div>
+                            {score !== undefined && score > 0 && (
+                              <span className={`text-xs ${passed ? "text-green-600" : "text-primary-600"}`}>
+                                {score}%
+                              </span>
+                            )}
+                          </button>
+                        );
+
+                        return (
+                          <div className="space-y-2 mt-4">
+                            {renderLevelBtn("Beginner", false, passedBeginner, maxScores["Beginner"])}
+                            {renderLevelBtn("Intermediate", !passedBeginner, passedIntermediate, maxScores["Intermediate"])}
+                            {renderLevelBtn("Advanced", !passedIntermediate, passedAdvanced, maxScores["Advanced"])}
+                            
+                            {isMastered && (
+                              <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-lg flex items-center justify-center gap-2 text-amber-800 font-bold text-sm animate-fade-in">
+                                <Trophy className="h-5 w-5 text-amber-500" />
+                                Skill Mastered!
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4 border-t border-ink-50 flex items-center justify-between text-sm mt-auto">
-                      <span className="font-medium text-ink-500">Target: {required}%</span>
-                      <button 
-                        onClick={() => navigate("/skill-tests", { 
-                          state: { 
-                            autoStartDirectly: true, 
-                            skillName, 
-                            difficulty: selectedDifficulties[skillName] || "Intermediate" 
-                          } 
-                        })}
-                        className="flex items-center gap-1 font-bold text-primary-600 hover:text-primary-700 transition-colors"
-                      >
-                        Take test <ArrowRight className="h-4 w-4" />
-                      </button>
+                        );
+                      })()}
                     </div>
                   </Card>
                 )
