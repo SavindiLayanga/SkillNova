@@ -8,8 +8,10 @@ from spacy.matcher import PhraseMatcher
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
+import sys
 from nltk.stem import WordNetLemmatizer
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from skillnova_ai import SkillNovaAI
 skillnova_ai_engine = SkillNovaAI()
 
