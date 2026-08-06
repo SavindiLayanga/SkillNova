@@ -1,4 +1,5 @@
-import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
@@ -11,6 +12,7 @@ import useCVAnalysis from "../hooks/useCVAnalysis.js";
 export default function SkillGapAnalysis() {
   const navigate = useNavigate();
   const { analysis, hasAnalysis, status } = useCVAnalysis();
+  const [selectedDifficulties, setSelectedDifficulties] = useState({});
 
   const missingSkills = analysis?.missingSkills || [];
   
@@ -66,8 +68,7 @@ export default function SkillGapAnalysis() {
                 return (
                   <Card 
                     key={idx}
-                    className="group cursor-pointer hover:border-primary-300 hover:shadow-md transition-all flex flex-col h-full"
-                    onClick={() => navigate(`/skill-library/${encodeURIComponent(skillName)}`)}
+                    className="group flex flex-col h-full"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex flex-col gap-1.5 pr-4">
@@ -112,15 +113,43 @@ export default function SkillGapAnalysis() {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-ink-500 leading-relaxed mb-6 flex-grow">
-                      {gap.recommendation || `Essential skill for your target role. Click to take a test and close this gap.`}
-                    </p>
+                    <div className="flex-grow">
+                      <p className="text-sm text-ink-500 leading-relaxed mb-4">
+                        {gap.recommendation || `Essential skill for your target role. Select your difficulty level and take a test to close this gap.`}
+                      </p>
+                      <div className="mb-6 relative">
+                        <label className="block text-xs font-semibold text-ink-500 mb-1">Select Difficulty</label>
+                        <div className="relative">
+                          <select 
+                            className="w-full appearance-none bg-ink-50 border border-ink-100 text-ink-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2.5 pr-8 transition-colors cursor-pointer"
+                            value={selectedDifficulties[skillName] || "Intermediate"}
+                            onChange={(e) => setSelectedDifficulties(prev => ({ ...prev, [skillName]: e.target.value }))}
+                          >
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced (Pro)</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-ink-500">
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     
                     <div className="pt-4 border-t border-ink-50 flex items-center justify-between text-sm mt-auto">
                       <span className="font-medium text-ink-500">Target: {required}%</span>
-                      <span className="flex items-center gap-1 font-bold text-primary-600 group-hover:text-primary-700">
+                      <button 
+                        onClick={() => navigate("/skill-tests", { 
+                          state: { 
+                            autoStartDirectly: true, 
+                            skillName, 
+                            difficulty: selectedDifficulties[skillName] || "Intermediate" 
+                          } 
+                        })}
+                        className="flex items-center gap-1 font-bold text-primary-600 hover:text-primary-700 transition-colors"
+                      >
                         Take test <ArrowRight className="h-4 w-4" />
-                      </span>
+                      </button>
                     </div>
                   </Card>
                 )

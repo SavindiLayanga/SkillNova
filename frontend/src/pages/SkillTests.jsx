@@ -373,13 +373,52 @@ export default function SkillTests() {
   useEffect(() => {
     if (location.state?.autoStartPath) {
       setActiveCategory("path");
-      
-      // Clear state so a simple refresh doesn't trigger it again unnecessarily 
-      // but react router automatically handles location state fairly well
     }
   }, [location.state]);
 
   const hasAutoStarted = useRef(false);
+
+  useEffect(() => {
+    if (location.state?.autoStartDirectly && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      const { skillName, difficulty } = location.state;
+      
+      const startDirectTest = async () => {
+        setIsGeneratingTest(true);
+        try {
+          const response = await generateSkillTest(skillName, "quiz", "General", difficulty);
+          const questions = response?.questions || response?.test?.questions || (Array.isArray(response) ? response : []);
+          
+          if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            showToast("AI returned an empty set of questions. Please try again.", "error");
+            setIsGeneratingTest(false);
+            return;
+          }
+
+          updateSession({
+            selectedTest: {
+              title: `${skillName} - ${difficulty} Assessment`,
+              isPath: true,
+              pathSkill: skillName,
+              pathType: "General",
+              level: difficulty
+            },
+            currentQuestionIndex: 0,
+            userAnswers: {},
+            isFinished: false,
+            timeLeft: 600
+          });
+        } catch (err) {
+          showToast("Failed to generate test: " + (err.message || "Unknown error"), "error");
+        }
+        setIsGeneratingTest(false);
+        // Clear state
+        navigate(".", { replace: true, state: {} });
+      };
+      
+      startDirectTest();
+    }
+  }, [location.state, navigate, updateSession]);
 
   const handleStartLibraryTest = async (testId) => {
     setIsGeneratingTest(true);
