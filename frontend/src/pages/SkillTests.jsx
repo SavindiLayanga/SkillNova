@@ -379,7 +379,7 @@ export default function SkillTests() {
   const hasAutoStarted = useRef(false);
 
   useEffect(() => {
-    if (location.state?.autoStartDirectly && !hasAutoStarted.current) {
+    if (!isPracticeLoading && location.state?.autoStartDirectly && !hasAutoStarted.current) {
       hasAutoStarted.current = true;
       const { skillName, difficulty } = location.state;
       
@@ -398,9 +398,10 @@ export default function SkillTests() {
           updateSession({
             selectedTest: {
               title: `${skillName} - ${difficulty} Assessment`,
-              isPath: true,
+              isDirectTest: true,
+              testId: response._id,
+              questions: questions,
               pathSkill: skillName,
-              pathType: "General",
               level: difficulty
             },
             currentQuestionIndex: 0,
@@ -418,7 +419,7 @@ export default function SkillTests() {
       
       startDirectTest();
     }
-  }, [location.state, navigate, updateSession]);
+  }, [location.state, navigate, updateSession, isPracticeLoading]);
 
   const handleStartLibraryTest = async (testId) => {
     setIsGeneratingTest(true);
@@ -554,15 +555,15 @@ export default function SkillTests() {
   };
 
   useEffect(() => {
-    if (location.state?.libraryTestId && !hasAutoStarted.current && !activeSession?.selectedTest) {
+    if (!isPracticeLoading && location.state?.libraryTestId && !hasAutoStarted.current && !activeSession?.selectedTest) {
       hasAutoStarted.current = true;
       handleStartLibraryTest(location.state.libraryTestId);
-    } else if (location.state?.startQuiz && location.state?.filterSkill && !hasAutoStarted.current && !activeSession?.selectedTest) {
+    } else if (!isPracticeLoading && location.state?.startQuiz && location.state?.filterSkill && !hasAutoStarted.current && !activeSession?.selectedTest) {
       hasAutoStarted.current = true;
       handleStartPathTest(location.state.filterSkill, "Conceptual Quiz");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state?.startQuiz, location.state?.filterSkill, location.state?.libraryTestId]);
+  }, [location.state?.startQuiz, location.state?.filterSkill, location.state?.libraryTestId, isPracticeLoading]);
 
   const handleSelectOption = (optionIndex) => {
     updateSession({
@@ -586,7 +587,7 @@ export default function SkillTests() {
     updateSession({ isFinished: true });
 
     let questions = [];
-    if (selectedTest.isLibraryTest) {
+    if (selectedTest.isLibraryTest || selectedTest.isDirectTest) {
       questions = selectedTest.questions || [];
     } else if (selectedTest.isPath) {
       questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType]?.questions || [];
@@ -619,6 +620,19 @@ export default function SkillTests() {
         return;
       } catch (e) {
         showToast("Failed to submit library test.", "error");
+      }
+    } else if (selectedTest.isDirectTest) {
+      if (selectedTest.testId) {
+        try {
+          const answersArray = questions.map((_, i) => userAnswers[i] ?? -1);
+          const result = await submitSkillTest(selectedTest.testId, answersArray);
+          setSubmissionData(result);
+          
+          await refreshTests(); // refresh from backend
+          updateProfileImprovements();
+        } catch (e) {
+          showToast("Failed to submit test to server.", "error");
+        }
       }
     } else if (selectedTest.isPath) {
       // Save Path test score via backend
@@ -788,7 +802,7 @@ export default function SkillTests() {
   // If a test is selected and active, render the Quiz UI
   if (selectedTest) {
     let questions = [];
-    if (selectedTest.isLibraryTest) {
+    if (selectedTest.isLibraryTest || selectedTest.isDirectTest) {
       questions = selectedTest.questions || [];
     } else if (selectedTest.isPath) {
       questions = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType]?.questions || [];
