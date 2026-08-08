@@ -18,6 +18,7 @@ body {
   min-height: 100vh;
   background-color: #e5e5e5; /* The image has a slightly darker gray background than white */
   color: #111827;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%238B5CF6' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 4 7.07 17 2.51-7.39L21 11.07z'/%3E%3C/svg%3E"), auto;
 }
 
 * {
@@ -45,6 +46,7 @@ canvas {
 a,
 button {
   -webkit-tap-highlight-color: transparent;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%2310B981' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.4 14.4 9.6 9.6M14.4 9.6l-4.8 4.8M12 3v3m0 12v3m9-9h-3M6 12H3m14.5-6.5-2.1 2.1M8.6 15.4l-2.1 2.1m14.1-3.5-2.1-2.1M6.5 8.6 4.4 6.5'/%3E%3C/svg%3E"), pointer;
 }
 
 button {
