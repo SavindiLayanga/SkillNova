@@ -49,11 +49,16 @@ export function PracticeProvider({ children }) {
             if (!newPathScores[test.skillName]) newPathScores[test.skillName] = {};
             newPathScores[test.skillName][topic] = test.score;
             
-            // Track max score per difficulty
+            // Track scores per difficulty for 10-test rolling average
             if (test.difficulty) {
               if (!newDifficultyScores[test.skillName]) newDifficultyScores[test.skillName] = {};
-              const currentMax = newDifficultyScores[test.skillName][test.difficulty] || 0;
-              newDifficultyScores[test.skillName][test.difficulty] = Math.max(currentMax, test.score);
+              if (!newDifficultyScores[test.skillName][test.difficulty]) newDifficultyScores[test.skillName][test.difficulty] = { scores: [] };
+              
+              // We process tests from newest to oldest (because of backend sort). 
+              // We only need the 10 most recent tests for the rolling average.
+              if (newDifficultyScores[test.skillName][test.difficulty].scores.length < 10) {
+                 newDifficultyScores[test.skillName][test.difficulty].scores.push(test.score);
+              }
             }
             
             // Also store in general completed just in case

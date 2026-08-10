@@ -59,8 +59,34 @@ export default function SkillGapAnalysis() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {missingSkills.map((gap, idx) => {
                 const skillName = typeof gap === "string" ? gap : (gap.name || gap.skill);
-                const current = gap.current || 0;
-                const required = gap.required || 100;
+                
+                const maxScores = skillDifficultyScores?.[skillName] || {};
+                
+                const getDifficultyStats = (level) => {
+                  const data = maxScores[level] || { scores: [] };
+                  // Backwards compatibility if old cache stored a number
+                  if (typeof data === "number") return { average: data, completed: 1, isPassed: false };
+                  
+                  const scores = Array.isArray(data.scores) ? data.scores : [];
+                  const completed = scores.length;
+                  const total = scores.reduce((sum, s) => sum + s, 0);
+                  const average = completed > 0 ? Math.round(total / completed) : 0;
+                  const isPassed = completed >= 10 && average >= 80;
+                  return { average, completed, isPassed };
+                };
+
+                const begStats = getDifficultyStats("Beginner");
+                const intStats = getDifficultyStats("Intermediate");
+                const advStats = getDifficultyStats("Advanced");
+
+                const passedBeginner = begStats.isPassed;
+                const passedIntermediate = intStats.isPassed;
+                const passedAdvanced = advStats.isPassed;
+                const isMastered = passedBeginner && passedIntermediate && passedAdvanced;
+
+                // Calculate total percentage only when Advanced has been attempted (has a score)
+                const hasAdvanced = advStats.completed > 0;
+                const current = hasAdvanced ? Math.round((begStats.average + intStats.average + advStats.average) / 3) : 0;
                 
                 const radius = 24;
                 const circumference = radius * 2 * Math.PI;
@@ -109,20 +135,14 @@ export default function SkillGapAnalysis() {
                           />
                         </svg>
                         <div className="absolute flex flex-col items-center justify-center text-ink-900">
-                          <span className="text-xs font-bold">{Math.round((current / 100) * 100)}%</span>
+                          <span className="text-xs font-bold">{current}%</span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="flex-grow flex flex-col justify-end">
                       {(() => {
-                        const maxScores = skillDifficultyScores?.[skillName] || {};
-                        const passedBeginner = maxScores["Beginner"] >= 70;
-                        const passedIntermediate = maxScores["Intermediate"] >= 70;
-                        const passedAdvanced = maxScores["Advanced"] >= 70;
-                        const isMastered = passedBeginner && passedIntermediate && passedAdvanced;
-
-                        const renderLevelBtn = (level, isLocked, passed, score) => (
+                        const renderLevelBtn = (level, isLocked, passed, stats) => (
                           <button
                             key={level}
                             disabled={isLocked}
@@ -139,11 +159,11 @@ export default function SkillGapAnalysis() {
                           >
                             <div className="flex items-center gap-2">
                               {isLocked ? <Lock className="h-4 w-4" /> : passed ? <CheckCircle2 className="h-4 w-4" /> : <div className="w-4 h-4 rounded-full border-2 border-primary-400"></div>}
-                              <span>{level}</span>
+                              <span>{level} <span className="text-xs font-normal opacity-70 ml-1">({stats.completed}/10)</span></span>
                             </div>
-                            {score !== undefined && score > 0 && (
+                            {stats.completed > 0 && (
                               <span className={`text-xs ${passed ? "text-green-600" : "text-primary-600"}`}>
-                                {score}%
+                                Avg: {stats.average}%
                               </span>
                             )}
                           </button>
@@ -151,9 +171,9 @@ export default function SkillGapAnalysis() {
 
                         return (
                           <div className="space-y-2 mt-4">
-                            {renderLevelBtn("Beginner", false, passedBeginner, maxScores["Beginner"])}
-                            {renderLevelBtn("Intermediate", !passedBeginner, passedIntermediate, maxScores["Intermediate"])}
-                            {renderLevelBtn("Advanced", !passedIntermediate, passedAdvanced, maxScores["Advanced"])}
+                            {renderLevelBtn("Beginner", false, passedBeginner, begStats)}
+                            {renderLevelBtn("Intermediate", !passedBeginner, passedIntermediate, intStats)}
+                            {renderLevelBtn("Advanced", !passedIntermediate, passedAdvanced, advStats)}
                             
                             {isMastered && (
                               <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-lg flex items-center justify-center gap-2 text-amber-800 font-bold text-sm animate-fade-in">
