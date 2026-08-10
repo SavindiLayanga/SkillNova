@@ -10,6 +10,8 @@ import { PreferencesProvider } from "./context/PreferencesContext.jsx";
 import "./i18n.js";
 import "./styles/index.css";
 
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -18,7 +20,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <AdminAuthProvider>
             <CVAnalysisProvider>
               <PracticeProvider>
-                <App />
+                <ErrorBoundary>
+                  <App />
+                </ErrorBoundary>
               </PracticeProvider>
             </CVAnalysisProvider>
           </AdminAuthProvider>

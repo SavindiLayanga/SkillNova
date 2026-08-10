@@ -360,6 +360,13 @@ const generalQuestionsData = {
 export default function SkillTests() {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Use PracticeContext instead of local persistence
+  const { 
+    completedTests, pathScores, dynamicTestsCache, activeSession,
+    updateSession, clearSession, refreshTests, loading: isPracticeLoading 
+  } = useContext(PracticeContext);
+
   const [activeCategory, setActiveCategory] = useState(location.state?.autoStartPath ? "path" : "standard"); // "standard" or "path"
   const { analysis, hasAnalysis } = useCVAnalysis();
   const missingSkills = hasAnalysis ? (analysis.missingSkills || []) : [];
@@ -395,7 +402,7 @@ export default function SkillTests() {
             return;
           }
 
-          updateSession({
+          await updateSession({
             selectedTest: {
               title: `${skillName} - ${difficulty} Assessment`,
               isDirectTest: true,
@@ -413,8 +420,8 @@ export default function SkillTests() {
           showToast("Failed to generate test: " + (err.message || "Unknown error"), "error");
         }
         setIsGeneratingTest(false);
-        // Clear state
-        navigate(".", { replace: true, state: {} });
+        // Clear state reliably
+        navigate(location.pathname, { replace: true, state: {} });
       };
       
       startDirectTest();
@@ -459,12 +466,6 @@ export default function SkillTests() {
   // Wait, handleStartPathTest is defined below. 
   // We can just define the effect AFTER handleStartPathTest.
 
-  // Use PracticeContext instead of local persistence
-  const { 
-    completedTests, pathScores, dynamicTestsCache, activeSession,
-    updateSession, clearSession, refreshTests, loading: isPracticeLoading 
-  } = useContext(PracticeContext);
-  
   // Use activeSession from context or fallback to local state if no session
   const selectedTest = activeSession?.selectedTest || null;
   const currentQuestionIndex = activeSession?.currentQuestionIndex || 0;
@@ -946,7 +947,7 @@ export default function SkillTests() {
                     </div>
 
                     <div className="grid gap-2">
-                      {q.options.map((opt, optIdx) => {
+                      {(q.options || []).map((opt, optIdx) => {
                         const isChosen = userAnswer === optIdx;
                         const isOptCorrect = q.correctAnswer === optIdx;
 
@@ -1033,7 +1034,7 @@ export default function SkillTests() {
           </div>
 
           <div className="grid gap-3 pt-2">
-            {currentQuestion.options.map((option, idx) => {
+            {(currentQuestion.options || []).map((option, idx) => {
               const isSelected = userAnswers[currentQuestionIndex] === idx;
               return (
                 <button

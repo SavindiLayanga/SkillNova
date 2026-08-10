@@ -23,7 +23,7 @@ export default function AppLayout() {
           onMenuClick={() => setIsSidebarOpen(true)} 
           onChatClick={() => setIsChatOpen(true)} 
         />
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-6 pb-20 sm:px-6 sm:py-8 lg:px-8">
+        <main className="mx-auto w-full max-w-[1440px] px-4 py-6 pb-20 sm:px-6 sm:py-8 lg:px-8">
           <Outlet />
         </main>
       </div>

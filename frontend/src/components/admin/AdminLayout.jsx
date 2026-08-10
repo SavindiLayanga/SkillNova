@@ -212,7 +212,7 @@ export default function AdminLayout() {
 
       <div className="min-w-0 lg:pl-[200px]">
         <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/90 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
-          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-4">
+          <div className="mx-auto flex w-full max-w-[1440px] items-center gap-4">
             <button
               aria-label="Open admin menu"
               className="rounded-lg p-2 text-ink-500 hover:bg-ink-50 lg:hidden"
@@ -347,7 +347,7 @@ export default function AdminLayout() {
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-7 pb-12 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1440px] px-4 py-7 pb-12 sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </div>
