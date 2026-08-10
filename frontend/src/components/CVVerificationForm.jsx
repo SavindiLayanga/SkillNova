@@ -55,12 +55,16 @@ const TagInput = ({ label, tags = [], onChange, placeholder = "Type and press en
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      const newTag = inputValue.trim();
-      if (newTag && !safeTags.includes(newTag)) {
-        onChange([...safeTags, newTag]);
-      }
-      setInputValue("");
+      addTag();
     }
+  };
+
+  const addTag = () => {
+    const newTag = inputValue.trim();
+    if (newTag && !safeTags.includes(newTag)) {
+      onChange([...safeTags, newTag]);
+    }
+    setInputValue("");
   };
 
   const removeTag = (indexToRemove) => {
@@ -87,6 +91,7 @@ const TagInput = ({ label, tags = [], onChange, placeholder = "Type and press en
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onBlur={addTag}
           placeholder={safeTags.length === 0 ? placeholder : ""}
           className="flex-1 min-w-[120px] text-sm bg-transparent outline-none py-0.5 px-1 text-slate-900 placeholder:text-slate-400"
         />
