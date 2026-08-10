@@ -26,11 +26,13 @@ const CursorEffect = () => {
       {ripples.map((ripple) => (
         <div
           key={ripple.id}
-          className="fixed pointer-events-none rounded-full border-2 border-indigo-500 bg-indigo-500/20 z-[9999]"
+          className="fixed pointer-events-none rounded-full z-[9999]"
           style={{
             left: ripple.x,
             top: ripple.y,
             transform: 'translate(-50%, -50%)',
+            border: '2px solid rgba(0, 0, 0, 1)',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
             animation: 'ripple-effect 0.5s ease-out forwards',
           }}
           onAnimationEnd={() => handleAnimationEnd(ripple.id)}

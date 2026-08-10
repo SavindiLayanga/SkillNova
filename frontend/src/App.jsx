@@ -31,10 +31,13 @@ import Settings from "./pages/Settings.jsx";
 import SkillTests from "./pages/SkillTests.jsx";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis.jsx";
 import SkillTestLibrary from "./pages/SkillTestLibrary.jsx";
+import CursorEffect from "./components/CursorEffect.jsx";
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <CursorEffect />
+      <Routes>
       <Route element={<AdminPublicRoute />}>
         <Route element={<AdminAuthLayout />}>
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -85,6 +88,7 @@ export default function App() {
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
