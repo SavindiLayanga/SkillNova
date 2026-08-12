@@ -524,7 +524,7 @@ export default function Dashboard() {
                            </div>
                            <h4 className="font-bold text-ink-900 text-lg leading-tight line-clamp-1">{test.skillName}</h4>
                         </div>
-                        <span className="flex items-center justify-center rounded-full bg-primary-100 px-2.5 py-1 text-sm font-bold text-primary-700">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink-900 text-sm font-bold text-white shadow-md border-2 border-white">
                           {test.score}%
                         </span>
                       </div>
