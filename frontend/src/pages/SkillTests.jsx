@@ -385,46 +385,48 @@ export default function SkillTests() {
 
   const hasAutoStarted = useRef(false);
 
+  const startDirectTest = async (skillName, difficulty) => {
+    setIsGeneratingTest(true);
+    setToast({ message: "", type: "" });
+    try {
+      const response = await generateSkillTest(skillName, "quiz", "General", difficulty);
+      const questions = response?.questions || response?.test?.questions || (Array.isArray(response) ? response : []);
+      
+      if (!questions || !Array.isArray(questions) || questions.length === 0) {
+        showToast("AI returned an empty set of questions. Please try again.", "error");
+        setIsGeneratingTest(false);
+        return;
+      }
+
+      await updateSession({
+        selectedTest: {
+          title: `${skillName} - ${difficulty} Assessment`,
+          isDirectTest: true,
+          testId: response._id,
+          questions: questions,
+          pathSkill: skillName,
+          level: difficulty
+        },
+        currentQuestionIndex: 0,
+        userAnswers: {},
+        isFinished: false,
+        timeLeft: 600
+      });
+    } catch (err) {
+      showToast("Failed to generate test: " + (err.message || "Unknown error"), "error");
+    }
+    setIsGeneratingTest(false);
+  };
+
   useEffect(() => {
     if (!isPracticeLoading && location.state?.autoStartDirectly && !hasAutoStarted.current) {
       hasAutoStarted.current = true;
       const { skillName, difficulty } = location.state;
       
-      const startDirectTest = async () => {
-        setIsGeneratingTest(true);
-        try {
-          const response = await generateSkillTest(skillName, "quiz", "General", difficulty);
-          const questions = response?.questions || response?.test?.questions || (Array.isArray(response) ? response : []);
-          
-          if (!questions || !Array.isArray(questions) || questions.length === 0) {
-            showToast("AI returned an empty set of questions. Please try again.", "error");
-            setIsGeneratingTest(false);
-            return;
-          }
-
-          await updateSession({
-            selectedTest: {
-              title: `${skillName} - ${difficulty} Assessment`,
-              isDirectTest: true,
-              testId: response._id,
-              questions: questions,
-              pathSkill: skillName,
-              level: difficulty
-            },
-            currentQuestionIndex: 0,
-            userAnswers: {},
-            isFinished: false,
-            timeLeft: 600
-          });
-        } catch (err) {
-          showToast("Failed to generate test: " + (err.message || "Unknown error"), "error");
-        }
-        setIsGeneratingTest(false);
+      startDirectTest(skillName, difficulty).then(() => {
         // Clear state reliably
         navigate(location.pathname, { replace: true, state: {} });
-      };
-      
-      startDirectTest();
+      });
     }
   }, [location.state, navigate, updateSession, isPracticeLoading]);
 
@@ -903,6 +905,10 @@ export default function SkillTests() {
                     onClick={() => {
                       if (selectedTest.isPath) {
                         handleStartPathTest(selectedTest.pathSkill, selectedTest.pathType, true);
+                      } else if (selectedTest.isDirectTest) {
+                        startDirectTest(selectedTest.pathSkill, selectedTest.level);
+                      } else if (selectedTest.isLibraryTest) {
+                        handleStartLibraryTest(selectedTest.libraryTestId);
                       } else {
                         handleStartGeneralTest({ title: selectedTest.title, level: selectedTest.level });
                       }
