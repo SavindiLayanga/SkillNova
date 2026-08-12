@@ -130,31 +130,49 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState(null);
 
   const targetScore = latestAnalysis?.cvScore || latestAnalysis?.skillMatchScore || 0;
+  const targetTotal = summary?.totalSkills || 0;
+  const targetTech = summary?.totalTechnicalSkills || 0;
+  const targetSoft = summary?.totalSoftSkills || 0;
+
   const [animatedScore, setAnimatedScore] = useState(0);
+  const [animatedTotal, setAnimatedTotal] = useState(0);
+  const [animatedTech, setAnimatedTech] = useState(0);
+  const [animatedSoft, setAnimatedSoft] = useState(0);
 
   useEffect(() => {
-    if (targetScore > 0) {
-      setAnimatedScore(0);
-      let start = 0;
-      const duration = 2500; // 2.5 seconds animation
-      const incrementTime = 20;
-      const steps = duration / incrementTime;
-      const incrementAmount = targetScore / steps;
+    const duration = 2500; // 2.5 seconds animation
+    const incrementTime = 20;
+    const steps = duration / incrementTime;
 
-      const timer = setInterval(() => {
-        start += incrementAmount;
-        if (start >= targetScore) {
-          setAnimatedScore(targetScore);
-          clearInterval(timer);
-        } else {
-          setAnimatedScore(Math.floor(start));
-        }
-      }, incrementTime);
-      return () => clearInterval(timer);
-    } else {
-      setAnimatedScore(0);
-    }
-  }, [targetScore]);
+    const animateValue = (target, setter, currentStep) => {
+      if (target <= 0) {
+        setter(0);
+        return;
+      }
+      const incrementAmount = target / steps;
+      let newValue = incrementAmount * currentStep;
+      if (newValue >= target) {
+        setter(target);
+      } else {
+        setter(Math.floor(newValue));
+      }
+    };
+
+    let step = 0;
+    const timer = setInterval(() => {
+      step++;
+      animateValue(targetScore, setAnimatedScore, step);
+      animateValue(targetTotal, setAnimatedTotal, step);
+      animateValue(targetTech, setAnimatedTech, step);
+      animateValue(targetSoft, setAnimatedSoft, step);
+      
+      if (step >= steps) {
+        clearInterval(timer);
+      }
+    }, incrementTime);
+
+    return () => clearInterval(timer);
+  }, [targetScore, targetTotal, targetTech, targetSoft]);
 
   useEffect(() => {
     let isMounted = true;
@@ -362,16 +380,16 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-5">
                   <div>
-                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Total Skills Extracted</span><span className="font-bold text-ink-900">{summary?.totalSkills || 0}</span></div>
-                    <ProgressBar value={summary?.totalSkills ? 100 : 0} className="h-2 opacity-90" />
+                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Total Skills Extracted</span><span className="font-bold text-ink-900">{animatedTotal}</span></div>
+                    <ProgressBar value={targetTotal > 0 ? (animatedTotal / targetTotal) * 100 : 0} className="h-2 opacity-90" />
                   </div>
                   <div>
-                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">{summary?.totalTechnicalSkills || 0}</span></div>
-                    <ProgressBar value={summary?.totalSkills ? ((summary.totalTechnicalSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
+                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Technical Skills</span><span className="font-bold text-ink-900">{animatedTech}</span></div>
+                    <ProgressBar value={targetTotal > 0 ? (animatedTech / targetTotal) * 100 : 0} className="h-2 opacity-90" />
                   </div>
                   <div>
-                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">{summary?.totalSoftSkills || 0}</span></div>
-                    <ProgressBar value={summary?.totalSkills ? ((summary.totalSoftSkills || 0) / summary.totalSkills) * 100 : 0} className="h-2 opacity-90" />
+                    <div className="flex justify-between text-sm mb-1.5"><span className="font-semibold text-ink-700">Soft Skills</span><span className="font-bold text-ink-900">{animatedSoft}</span></div>
+                    <ProgressBar value={targetTotal > 0 ? (animatedSoft / targetTotal) * 100 : 0} className="h-2 opacity-90" />
                   </div>
                 </div>
               </Card>
