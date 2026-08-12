@@ -129,6 +129,33 @@ export default function Dashboard() {
   const [settings, setSettings] = useState(null);
   const [recentActivity, setRecentActivity] = useState(null);
 
+  const targetScore = latestAnalysis?.cvScore || latestAnalysis?.skillMatchScore || 0;
+  const [animatedScore, setAnimatedScore] = useState(0);
+
+  useEffect(() => {
+    if (targetScore > 0) {
+      setAnimatedScore(0);
+      let start = 0;
+      const duration = 2500; // 2.5 seconds animation
+      const incrementTime = 20;
+      const steps = duration / incrementTime;
+      const incrementAmount = targetScore / steps;
+
+      const timer = setInterval(() => {
+        start += incrementAmount;
+        if (start >= targetScore) {
+          setAnimatedScore(targetScore);
+          clearInterval(timer);
+        } else {
+          setAnimatedScore(Math.floor(start));
+        }
+      }, incrementTime);
+      return () => clearInterval(timer);
+    } else {
+      setAnimatedScore(0);
+    }
+  }, [targetScore]);
+
   useEffect(() => {
     let isMounted = true;
     async function loadDashboard() {
@@ -324,9 +351,9 @@ export default function Dashboard() {
                    <div className="relative inline-flex items-center justify-center">
                       <svg className="w-32 h-32 transform -rotate-90 drop-shadow-sm">
                         <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-ink-100/50" />
-                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * (latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0)) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
+                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351.858" strokeDashoffset={351.858 - (351.858 * animatedScore) / 100} className="text-primary-500 transition-all duration-75 ease-linear" />
                       </svg>
-                      <span className="absolute text-3xl font-extrabold text-ink-900">{latestAnalysis.cvScore || latestAnalysis.skillMatchScore || 0}%</span>
+                      <span className="absolute text-3xl font-extrabold text-ink-900">{animatedScore}%</span>
                    </div>
                    <h3 className="mt-4 text-xl font-bold text-ink-900 tracking-tight">Overall Score</h3>
                    <p className="mt-2 text-sm leading-relaxed text-ink-600 max-w-sm text-center lg:text-left">
