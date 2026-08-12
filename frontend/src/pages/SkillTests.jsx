@@ -903,22 +903,36 @@ export default function SkillTests() {
                 <div className="flex flex-col gap-2 pt-2">
                   <Button
                     onClick={() => {
-                      if (selectedTest.isPath) {
-                        handleStartPathTest(selectedTest.pathSkill, selectedTest.pathType, true);
-                      } else if (selectedTest.isDirectTest) {
-                        startDirectTest(selectedTest.pathSkill, selectedTest.level);
-                      } else if (selectedTest.isLibraryTest) {
-                        handleStartLibraryTest(selectedTest.libraryTestId);
-                      } else {
-                        handleStartGeneralTest({ title: selectedTest.title, level: selectedTest.level });
-                      }
+                      updateSession({
+                        currentQuestionIndex: 0,
+                        userAnswers: {},
+                        isFinished: false,
+                        timeLeft: selectedTest.isLibraryTest ? 900 : (selectedTest.isDirectTest ? 600 : 300)
+                      });
+                      setSubmissionData(null);
                     }}
                     variant="primary"
                     icon={RotateCcw}
                     className="w-full justify-center"
                   >
-                    Retake Test
+                    Retake Same Test
                   </Button>
+                  
+                  {(selectedTest.isPath || selectedTest.isDirectTest) && (
+                    <Button
+                      onClick={() => {
+                        if (selectedTest.isPath) {
+                          handleStartPathTest(selectedTest.pathSkill, selectedTest.pathType, true);
+                        } else if (selectedTest.isDirectTest) {
+                          startDirectTest(selectedTest.pathSkill, selectedTest.level);
+                        }
+                      }}
+                      variant="secondary"
+                      className="w-full justify-center"
+                    >
+                      Generate New Test
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
