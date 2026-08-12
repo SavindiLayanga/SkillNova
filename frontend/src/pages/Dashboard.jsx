@@ -516,14 +516,35 @@ export default function Dashboard() {
             {recentTests && recentTests.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {recentTests.map((test) => (
-                    <Card key={test._id} className="p-5 border-l-4 border-l-blue-500">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-bold text-ink-900">{test.skillName}</h4>
+                    <Card key={test._id} className="relative overflow-hidden p-6 transition-all hover:shadow-md border border-ink-100/50 bg-gradient-to-br from-white to-ink-50/30 group">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 shadow-sm transition-transform group-hover:scale-105">
+                             <CheckCircle2 className="h-5 w-5" />
+                           </div>
+                           <h4 className="font-bold text-ink-900 text-lg leading-tight line-clamp-1">{test.skillName}</h4>
+                        </div>
+                        <span className="flex items-center justify-center rounded-full bg-primary-100 px-2.5 py-1 text-sm font-bold text-primary-700">
+                          {test.score}%
+                        </span>
                       </div>
-                      <p className="text-sm text-ink-600 mt-1">Score: <span className="font-bold text-ink-900">{test.score}%</span></p>
-                      <p className="text-sm text-ink-600 mt-1">Mastery: <span className="font-bold text-ink-900">{getMasteryBadge(test.masteryLevel)}</span></p>
-                      <p className="text-sm text-ink-600 mt-1">Attempts: <span className="font-bold text-ink-900">{test.attempts || 1}</span></p>
-                      <p className="text-sm text-ink-600 mt-1">Completed: <span className="font-bold text-ink-900">{test.isCompleted && test.completedAt ? new Date(test.completedAt).toISOString().split('T')[0] : "Not completed yet"}</span></p>
+                      
+                      <div className="space-y-2.5 mt-5">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-ink-500 font-medium">Mastery</span>
+                          <span className="font-semibold text-ink-800">{getMasteryBadge(test.masteryLevel)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-ink-500 font-medium">Attempts</span>
+                          <span className="font-semibold text-ink-800">{test.attempts || 1}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-ink-500 font-medium">Completed</span>
+                          <span className="font-semibold text-ink-800">
+                            {test.isCompleted && test.completedAt ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(test.completedAt)) : "Pending"}
+                          </span>
+                        </div>
+                      </div>
                     </Card>
                  ))}
               </div>
@@ -545,18 +566,20 @@ export default function Dashboard() {
               />
               <Card className="p-5 sm:p-6">
                 {recentActivity?.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     {recentActivity.map((activity, idx) => (
-                      <div key={idx} className="flex items-start gap-4 border-b border-ink-100 pb-4 last:border-0 last:pb-0">
-                        <div className="rounded-full bg-primary-100 p-2 text-primary-600 shrink-0">
-                          {activity.type === 'analysis' ? <FileUp className="h-4 w-4" /> : <Target className="h-4 w-4" />}
+                      <div key={idx} className="group flex items-start gap-4 rounded-xl p-4 transition-all hover:bg-ink-50/50 border border-transparent hover:border-ink-100">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-600 shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                          {activity.type === 'analysis' ? <FileUp className="h-5 w-5" /> : <Target className="h-5 w-5" />}
                         </div>
-                        <div>
-                          <h4 className="font-bold text-ink-900">{activity.title}</h4>
-                          <p className="text-sm text-ink-600 mt-1">{activity.description}</p>
-                          <p className="text-xs text-ink-400 mt-2">
-                            {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(activity.date))}
-                          </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-4">
+                            <h4 className="font-bold text-ink-900 truncate">{activity.title}</h4>
+                            <span className="text-xs font-semibold text-ink-400 whitespace-nowrap">
+                              {new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(activity.date))}
+                            </span>
+                          </div>
+                          <p className="text-sm text-ink-500 mt-1 line-clamp-2 leading-relaxed">{activity.description}</p>
                         </div>
                       </div>
                     ))}
