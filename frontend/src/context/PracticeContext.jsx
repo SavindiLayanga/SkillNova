@@ -42,7 +42,9 @@ export function PracticeProvider({ children }) {
           // Reconstruct dynamicTestsCache
           const topic = test.topic || "Conceptual Quiz";
           if (!newDynamicCache[test.skillName]) newDynamicCache[test.skillName] = {};
-          newDynamicCache[test.skillName][topic] = test;
+          if (!newDynamicCache[test.skillName][topic]) {
+            newDynamicCache[test.skillName][topic] = test;
+          }
           
           if (test.isCompleted) {
             // In SkillTests.jsx, pathScores uses [skillName][topic] = score

@@ -921,10 +921,17 @@ export default function SkillTests() {
                   {(selectedTest.isPath || selectedTest.isDirectTest) && (
                     <Button
                       onClick={() => {
+                        const skillName = selectedTest.pathSkill || selectedTest.title.split(" - ")[0];
+                        
                         if (selectedTest.isPath) {
-                          handleStartPathTest(selectedTest.pathSkill, selectedTest.pathType, true);
+                          const topic = selectedTest.pathType || selectedTest.title.split(" - ")[1];
+                          handleStartPathTest(skillName, topic, true);
                         } else if (selectedTest.isDirectTest) {
-                          startDirectTest(selectedTest.pathSkill, selectedTest.level);
+                          let level = selectedTest.level;
+                          if (!level && selectedTest.title.includes(" - ")) {
+                            level = selectedTest.title.split(" - ")[1].replace(" Assessment", "");
+                          }
+                          startDirectTest(skillName, level || "Intermediate");
                         }
                       }}
                       variant="secondary"
@@ -1010,7 +1017,20 @@ export default function SkillTests() {
       );
     }
 
-    if (!currentQuestion) return null; // Safety check for dynamic questions load
+    if (!currentQuestion) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 animate-fade-in-slide-up">
+          <AlertCircle className="h-12 w-12 text-rose-500" />
+          <h2 className="text-xl font-bold text-ink-900">Test Content Not Found</h2>
+          <p className="text-ink-500 max-w-md text-center">
+            We couldn't load the questions for this test. The session data might have been lost or the test was overwritten.
+          </p>
+          <Button onClick={handleQuitTest} variant="primary">
+            Return to Assessment Hub
+          </Button>
+        </div>
+      );
+    }
 
     const progressPercentage = Math.round(((currentQuestionIndex) / totalQuestions) * 100);
 
