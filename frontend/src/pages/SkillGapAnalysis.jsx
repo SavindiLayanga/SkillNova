@@ -173,7 +173,7 @@ export default function SkillGapAnalysis() {
                           <div className="space-y-2 mt-4">
                             {renderLevelBtn("Beginner", false, passedBeginner, begStats)}
                             {renderLevelBtn("Intermediate", !passedBeginner, passedIntermediate, intStats)}
-                            {renderLevelBtn("Advanced", !passedIntermediate, passedAdvanced, advStats)}
+                            {renderLevelBtn("Advanced", !passedBeginner || !passedIntermediate, passedAdvanced, advStats)}
                             
                             {isMastered && (
                               <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-lg flex items-center justify-center gap-2 text-amber-800 font-bold text-sm animate-fade-in">
