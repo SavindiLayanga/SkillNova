@@ -42,6 +42,7 @@ import adminNotificationRoutes from './routes/adminNotificationRoutes.js';
 import adminCoursesRoutes from './routes/adminCoursesRoutes.js';
 import adminCvReviewsRoutes from './routes/adminCvReviewsRoutes.js';
 import preferencesRoutes from './routes/preferencesRoutes.js';
+import youtubeRoutes from './routes/youtubeRoutes.js';
 
 import cookieParser from 'cookie-parser';
 
@@ -75,6 +76,7 @@ app.use('/api/admin/courses', adminCoursesRoutes);
 app.use('/api/admin/cv-reviews', adminCvReviewsRoutes);
 
 app.use('/api/preferences', preferencesRoutes);
+app.use('/api/youtube', youtubeRoutes);
 
 // Mount Skill Test Routes
 app.use('/api', skillTestRoutes);

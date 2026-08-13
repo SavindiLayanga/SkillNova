@@ -19,19 +19,52 @@ export default function LearningPath() {
   const [error, setError] = useState(null);
   
   const [realCourses, setRealCourses] = useState([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
   
   useEffect(() => {
     let isMounted = true;
     if (hasAnalysis && status === "analyzed") {
+      setLoadingVideos(true);
       getToken().then(token => {
         if (!token) return;
         return userMatchesService.getCourseMatches(token);
       })
-      .then(courses => {
-        if (isMounted && courses) setRealCourses(courses);
+      .then(async (courses) => {
+        if (!courses || courses.length === 0) {
+          if (isMounted) {
+            setRealCourses([]);
+            setLoadingVideos(false);
+          }
+          return;
+        }
+
+        const coursesWithVideos = await Promise.all(
+          courses.slice(0, 4).map(async (course) => {
+            try {
+              const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(course.title + ' tutorial')}`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.length > 0) {
+                  return { ...course, video: data[0] };
+                }
+              }
+            } catch (e) {
+              console.error("Youtube fetch error", e);
+            }
+            return course;
+          })
+        );
+        
+        if (isMounted) {
+          setRealCourses(coursesWithVideos);
+          setLoadingVideos(false);
+        }
       })
       .catch(err => {
-        if (isMounted) console.error("Failed to load course matches", err);
+        if (isMounted) {
+          console.error("Failed to load course matches", err);
+          setLoadingVideos(false);
+        }
       });
     }
     return () => { isMounted = false; };
@@ -95,39 +128,71 @@ export default function LearningPath() {
       />
 
       {/* Recommended Real Courses */}
-      {realCourses.length > 0 && (
+      {(realCourses.length > 0 || loadingVideos) && (
         <div className="mb-8 border-b border-ink-100 pb-8">
-          <h2 className="text-xl font-bold text-ink-900 mb-6">Recommended Courses</h2>
+          <h2 className="text-xl font-bold text-ink-900 mb-6">Recommended Tutorials</h2>
+          {loadingVideos ? (
+             <Card className="text-center py-10 flex flex-col items-center justify-center space-y-4 h-full border-dashed">
+                <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                <p className="text-sm font-semibold text-ink-500">Finding the best tutorials on YouTube...</p>
+             </Card>
+          ) : (
           <div className="grid gap-5 lg:grid-cols-2">
             {realCourses.map((course, idx) => (
-              <Card key={course.id || idx} className="flex gap-4">
-                <div className="w-24 h-24 bg-ink-100 rounded-lg shrink-0 overflow-hidden">
-                  {course.thumbnail ? (
-                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-ink-300">
-                      <BookOpen className="w-8 h-8" />
+              <Card key={course.id || idx} className="flex flex-col gap-4 p-0 overflow-hidden hover:border-primary-200 transition-all shadow-sm group border-ink-200">
+                {course.video && course.video.thumbnail ? (
+                  <div className="relative w-full aspect-video bg-ink-100 overflow-hidden">
+                     <img 
+                       src={course.video.thumbnail.thumbnails?.[0]?.url || ''} 
+                       alt={course.title}
+                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                     />
+                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <a 
+                          href={`https://www.youtube.com/watch?v=${course.video.id}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="w-12 h-12 bg-white/95 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 shadow-lg hover:scale-110 hover:bg-white"
+                        >
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-red-600 ml-0.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                        </a>
+                     </div>
+                     <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                       YouTube
+                     </span>
+                  </div>
+                ) : null}
+                <div className="p-5 pt-2 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-ink-900 text-base" title={course.video ? course.video.title : course.title}>{course.video ? course.video.title : course.title}</h3>
+                    <p className="text-sm text-ink-500 mt-1">{course.video && course.video.channelTitle ? course.video.channelTitle : course.provider} • {course.difficulty}</p>
+                    
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {course.skills?.slice(0,3).map(skill => (
+                        <span key={skill} className="px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 text-[10px] font-bold">
+                          {skill}
+                        </span>
+                      ))}
                     </div>
+                  </div>
+                  {course.video && (
+                     <div className="mt-4">
+                       <a 
+                         href={`https://www.youtube.com/watch?v=${course.video.id}`}
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                       >
+                         <Button variant="primary" size="sm" className="w-full text-xs font-bold rounded shadow-sm hover:shadow">
+                           Watch Video
+                         </Button>
+                       </a>
+                     </div>
                   )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-ink-900 text-base">{course.title}</h3>
-                  <p className="text-sm text-ink-500 mt-1">{course.provider} • {course.difficulty}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-bold text-ink-700">{course.rating?.toFixed(1) || "New"}</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {course.skills?.slice(0,3).map(skill => (
-                      <span key={skill} className="px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 text-[10px] font-bold">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
                 </div>
               </Card>
             ))}
           </div>
+          )}
         </div>
       )}
 
