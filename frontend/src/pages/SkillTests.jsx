@@ -901,44 +901,101 @@ export default function SkillTests() {
                 )}
 
                 <div className="flex flex-col gap-2 pt-2">
-                  <Button
-                    onClick={() => {
-                      updateSession({
-                        currentQuestionIndex: 0,
-                        userAnswers: {},
-                        isFinished: false,
-                        timeLeft: selectedTest.isLibraryTest ? 900 : (selectedTest.isDirectTest ? 600 : 300)
-                      });
-                      setSubmissionData(null);
-                    }}
-                    variant="primary"
-                    icon={RotateCcw}
-                    className="w-full justify-center"
-                  >
-                    Retake Same Test
-                  </Button>
-                  
-                  {(selectedTest.isPath || selectedTest.isDirectTest) && (
-                    <Button
-                      onClick={() => {
-                        const skillName = selectedTest.pathSkill || selectedTest.title.split(" - ")[0];
+                  {!isPassed ? (
+                    <>
+                      <Button
+                        onClick={() => {
+                          updateSession({
+                            currentQuestionIndex: 0,
+                            userAnswers: {},
+                            isFinished: false,
+                            timeLeft: selectedTest.isLibraryTest ? 900 : (selectedTest.isDirectTest ? 600 : 300)
+                          });
+                          setSubmissionData(null);
+                        }}
+                        variant="primary"
+                        icon={RotateCcw}
+                        className="w-full justify-center"
+                      >
+                        Retake Same Test
+                      </Button>
+                      
+                      {(selectedTest.isPath || selectedTest.isDirectTest) && (
+                        <Button
+                          onClick={() => {
+                            const skillName = selectedTest.pathSkill || selectedTest.title.split(" - ")[0];
+                            
+                            if (selectedTest.isPath) {
+                              const topic = selectedTest.pathType || selectedTest.title.split(" - ")[1];
+                              handleStartPathTest(skillName, topic, true);
+                            } else if (selectedTest.isDirectTest) {
+                              let level = selectedTest.level;
+                              if (!level && selectedTest.title.includes(" - ")) {
+                                level = selectedTest.title.split(" - ")[1].replace(" Assessment", "");
+                              }
+                              startDirectTest(skillName, level || "Intermediate");
+                            }
+                          }}
+                          variant="secondary"
+                          className="w-full justify-center"
+                        >
+                          Generate New Test
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {selectedTest.isPath ? (() => {
+                        const DEFAULT_TEST_TOPICS = [
+                          "Conceptual Quiz",
+                          "Error Handling & Debugging",
+                          "Best Practices & Optimization",
+                          "Architecture & System Design",
+                          "Real-world Scenarios",
+                          "Security & Configuration"
+                        ];
+                        const customTopics = Object.keys(dynamicTestsCache[selectedTest.pathSkill] || {});
+                        const allTopics = [...new Set([...DEFAULT_TEST_TOPICS, ...customTopics])];
                         
-                        if (selectedTest.isPath) {
-                          const topic = selectedTest.pathType || selectedTest.title.split(" - ")[1];
-                          handleStartPathTest(skillName, topic, true);
-                        } else if (selectedTest.isDirectTest) {
-                          let level = selectedTest.level;
-                          if (!level && selectedTest.title.includes(" - ")) {
-                            level = selectedTest.title.split(" - ")[1].replace(" Assessment", "");
-                          }
-                          startDirectTest(skillName, level || "Intermediate");
+                        const currentTopicIndex = allTopics.indexOf(selectedTest.pathType);
+                        if (currentTopicIndex !== -1 && currentTopicIndex < allTopics.length - 1) {
+                          const nextTopic = allTopics[currentTopicIndex + 1];
+                          return (
+                            <Button
+                              onClick={() => handleStartPathTest(selectedTest.pathSkill, nextTopic)}
+                              variant="primary"
+                              className="w-full justify-center"
+                            >
+                              Start Next Test
+                            </Button>
+                          );
+                        } else {
+                          return (
+                            <Button
+                              onClick={() => clearSession()}
+                              variant="primary"
+                              className="w-full justify-center"
+                            >
+                              Return to Assessment Hub
+                            </Button>
+                          );
                         }
-                      }}
-                      variant="secondary"
-                      className="w-full justify-center"
-                    >
-                      Generate New Test
-                    </Button>
+                      })() : (
+                        <Button
+                          onClick={() => {
+                            if (selectedTest.isLibraryTest) {
+                              clearSession().then(() => navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`));
+                            } else {
+                              clearSession();
+                            }
+                          }}
+                          variant="primary"
+                          className="w-full justify-center"
+                        >
+                          Return to Test Center
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
