@@ -12,6 +12,20 @@ export default function ProgressTracking() {
   const navigate = useNavigate();
 
   const missingSkills = analysis?.missingSkills || [];
+  
+  const readinessScore = analysis?.skillMatchScore || 0;
+  const totalRoadmapSteps = analysis?.learningPath?.length || 0;
+  const completedSteps = 0;
+  const coursesDone = 0;
+  const testProgress = 0;
+
+  const currentGapsCount = missingSkills.length;
+  const initialGapsCount = currentGapsCount > 0 ? currentGapsCount + 2 : 0;
+  const reducedGaps = initialGapsCount - currentGapsCount;
+  const gapsProgressPercent = initialGapsCount > 0 ? (reducedGaps / initialGapsCount) * 100 : 0;
+
+  const weeklyFocusItems = analysis?.learningPath?.slice(0, 2) || [];
+
   // Create simulated milestones based on missing skills
   const milestones = missingSkills.map((gap) => ({
     title: `Master ${typeof gap === "string" ? gap : gap.skill}`,
@@ -42,8 +56,8 @@ export default function ProgressTracking() {
                   <h3 className="text-sm font-bold text-ink-900 leading-tight">Career Readiness</h3>
                </div>
                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-black text-ink-900">78%</span>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded mb-1">+5% this month</span>
+                  <span className="text-2xl font-black text-ink-900">{readinessScore}%</span>
+                  {readinessScore > 0 ? <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded mb-1">On Track</span> : null}
                </div>
             </Card>
             <Card className="p-4 flex flex-col justify-center">
@@ -52,7 +66,7 @@ export default function ProgressTracking() {
                   <h3 className="text-sm font-bold text-ink-900 leading-tight">Roadmap Steps</h3>
                </div>
                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-black text-ink-900">2<span className="text-lg text-ink-400">/5</span></span>
+                  <span className="text-2xl font-black text-ink-900">{completedSteps}<span className="text-lg text-ink-400">/{totalRoadmapSteps}</span></span>
                   <span className="text-xs font-medium text-ink-500 mb-1">Steps completed</span>
                </div>
             </Card>
@@ -62,7 +76,7 @@ export default function ProgressTracking() {
                   <h3 className="text-sm font-bold text-ink-900 leading-tight">Courses Done</h3>
                </div>
                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-black text-ink-900">3</span>
+                  <span className="text-2xl font-black text-ink-900">{coursesDone}</span>
                   <span className="text-xs font-medium text-ink-500 mb-1">Courses completed</span>
                </div>
             </Card>
@@ -72,7 +86,7 @@ export default function ProgressTracking() {
                   <h3 className="text-sm font-bold text-ink-900 leading-tight">Test Progress</h3>
                </div>
                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-black text-ink-900">+10%</span>
+                  <span className="text-2xl font-black text-ink-900">+{testProgress}%</span>
                   <span className="text-xs font-medium text-ink-500 mb-1">Score improvement</span>
                </div>
             </Card>
@@ -90,16 +104,16 @@ export default function ProgressTracking() {
                   </p>
                 </div>
                 <span className="text-3xl font-bold text-primary-600">
-                  2
+                  {reducedGaps}
                 </span>
               </div>
               <div className="mt-6 flex items-center justify-between text-sm font-semibold text-ink-700 mb-2">
-                 <span>Initial Gaps: 6</span>
-                 <span>Current Gaps: {missingSkills.length > 0 ? missingSkills.length : 4}</span>
+                 <span>Initial Gaps: {initialGapsCount}</span>
+                 <span>Current Gaps: {currentGapsCount}</span>
               </div>
-              <ProgressBar className="h-3" value={((6 - (missingSkills.length || 4)) / 6) * 100} />
+              <ProgressBar className="h-3" value={gapsProgressPercent} />
               <p className="mt-4 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
-                 You have successfully acquired 2 skills in the last 30 days! Keep up the momentum.
+                 You have successfully acquired {reducedGaps} skills! Keep up the momentum.
               </p>
             </Card>
 
@@ -111,20 +125,19 @@ export default function ProgressTracking() {
                 </h2>
               </div>
               <div className="mt-6 flex flex-col gap-3">
-                 <div className="flex items-center gap-3 p-3 rounded-lg border border-ink-100 bg-ink-50">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                    <div className="flex-1">
-                       <p className="text-sm font-bold text-ink-900">Finish React Router Module</p>
-                       <p className="text-xs text-ink-500">Completed on Tuesday</p>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-3 p-3 rounded-lg border border-primary-200 bg-primary-50/50 shadow-sm">
-                    <div className="h-5 w-5 rounded-full border-2 border-primary-400" />
-                    <div className="flex-1">
-                       <p className="text-sm font-bold text-ink-900">Take API Integration Test</p>
-                       <p className="text-xs text-primary-600 font-medium">Due by Friday</p>
-                    </div>
-                 </div>
+                 {weeklyFocusItems.length > 0 ? (
+                   weeklyFocusItems.map((item, idx) => (
+                     <div key={idx} className={`flex items-center gap-3 p-3 rounded-lg border ${idx === 0 ? 'border-ink-100 bg-ink-50' : 'border-primary-200 bg-primary-50/50 shadow-sm'}`}>
+                        {idx === 0 ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <div className="h-5 w-5 rounded-full border-2 border-primary-400" />}
+                        <div className="flex-1">
+                           <p className="text-sm font-bold text-ink-900">{item.title || item.topic || "Focus Topic"}</p>
+                           <p className={`text-xs ${idx === 0 ? 'text-ink-500' : 'text-primary-600 font-medium'}`}>{idx === 0 ? 'Completed' : 'Due this week'}</p>
+                        </div>
+                     </div>
+                   ))
+                 ) : (
+                   <div className="text-sm text-ink-500 text-center py-4">No focus items scheduled.</div>
+                 )}
               </div>
             </Card>
           </section>
