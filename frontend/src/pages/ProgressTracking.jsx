@@ -15,13 +15,13 @@ export default function ProgressTracking() {
   
   const readinessScore = analysis?.skillMatchScore || 0;
   const totalRoadmapSteps = analysis?.learningPath?.length || 0;
-  const completedSteps = 0;
-  const coursesDone = 0;
-  const testProgress = 0;
+  const completedSteps = analysis?.completedSteps || 0;
+  const coursesDone = analysis?.coursesDone || 0;
+  const testProgress = analysis?.testProgress || 0;
 
   const currentGapsCount = missingSkills.length;
-  const initialGapsCount = currentGapsCount > 0 ? currentGapsCount + 2 : 0;
-  const reducedGaps = initialGapsCount - currentGapsCount;
+  const initialGapsCount = analysis?.initialGapsCount || currentGapsCount;
+  const reducedGaps = Math.max(0, initialGapsCount - currentGapsCount);
   const gapsProgressPercent = initialGapsCount > 0 ? (reducedGaps / initialGapsCount) * 100 : 0;
 
   const weeklyFocusItems = analysis?.learningPath?.slice(0, 2) || [];
