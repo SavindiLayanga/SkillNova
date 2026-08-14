@@ -12,7 +12,7 @@ export const getCvReviews = async (req, res) => {
     // Map to frontend structure
     const reviews = await Promise.all(combined.map(async (review) => {
       let studentName = review.name;
-      if (!studentName || studentName === "User" || studentName === "Candidate's full name") {
+      if (!studentName || studentName === "User" || studentName === "Candidate's full name" || studentName.length > 50) {
         const user = await User.findOne({ uid: review.userId }).lean();
         studentName = user?.name || "SkillNova User";
       }

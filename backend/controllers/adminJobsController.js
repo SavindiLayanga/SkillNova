@@ -45,8 +45,21 @@ export async function getJobs(req, res) {
       .skip((page - 1) * limit)
       .limit(limit);
 
+    // Compute stats across all non-deleted jobs
+    const [totalActive, totalPending, totalClosed] = await Promise.all([
+      Job.countDocuments({ status: 'Active' }),
+      Job.countDocuments({ status: 'Pending Approval' }),
+      Job.countDocuments({ status: 'Closed' })
+    ]);
+
     res.status(200).json({
       jobs,
+      stats: {
+        total: await Job.countDocuments({ status: { $ne: 'deleted' } }),
+        active: totalActive,
+        pending: totalPending,
+        closed: totalClosed
+      },
       pagination: {
         total,
         page,
