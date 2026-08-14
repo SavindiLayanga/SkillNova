@@ -421,10 +421,10 @@ Target Role: ${targetRole}
       }
     }
     
-    // We reject non-IT CVs directly with a 400 error now.
-    if (data.isITRelated === false) {
-      return res.status(400).json({ error: "This is not a software engineering field CV, please upload the correct field CV." });
-    }
+    // We used to reject non-IT CVs directly, but AI can have false negatives. Let it pass through.
+    // if (data.isITRelated === false) {
+    //   return res.status(400).json({ error: "This is not a software engineering field CV, please upload the correct field CV." });
+    // }
     
     // Map new NLP AI schema to existing frontend field names backward compatibility
     data.aiInsights = data.summary || data.aiInsights || "";

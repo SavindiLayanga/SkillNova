@@ -25,6 +25,9 @@ export const getCvReviews = async (req, res) => {
         score: review.score || review.skillMatchScore || 0,
         status: review.score ? "Reviewed" : "Pending",
         summary: review.aiInsights || "No summary available.",
+        targetRole: review.targetRole || "Not specified",
+        skills: review.skills || [],
+        missingSkills: review.missingSkills || []
       };
     }));
 

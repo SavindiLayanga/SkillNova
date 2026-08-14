@@ -129,6 +129,27 @@ export default function AdminCvReviews() {
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   {review.summary}
                 </p>
+                
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 border-t border-slate-100 pt-4">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 mb-1">Target Role</p>
+                    <p className="text-sm font-medium text-slate-900">{review.targetRole}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 mb-1">Extracted Skills</p>
+                    <div className="flex flex-wrap gap-1">
+                      {review.skills && review.skills.length > 0 ? (
+                        review.skills.map((skill, i) => (
+                          <span key={i} className="rounded bg-primary-50 text-primary-700 px-2 py-0.5 text-[11px] font-semibold">
+                            {typeof skill === 'string' ? skill : skill.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">No skills extracted</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="flex flex-col items-center gap-3 rounded-lg bg-slate-50 p-4 lg:w-32">
                 <div className="text-center">
