@@ -200,80 +200,71 @@ export default function LearningPath() {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-ink-900 mb-6">AI Career Roadmap</h2>
         <div className="relative border-l-2 border-ink-100 ml-4 space-y-8 pb-4">
-          {[
-            {
-              title: "Review Current Skills",
-              description: "You already have a strong foundation based on your CV. Let's build on this.",
-              resource: "Your CV Analysis",
-              time: "Completed",
-              status: "completed"
-            },
-            {
-              title: "Learn Missing Skills",
-              description: `Focus on mastering ${missingSkills.length > 0 ? missingSkills.slice(0, 3).join(", ") : "the essential technical skills"}.`,
-              resource: "SkillNova Recommended Modules",
-              time: "2 Weeks",
-              status: "current"
-            },
-            {
-              title: "Complete Recommended Courses",
-              description: "Take specialized courses to solidify your understanding of advanced concepts.",
-              resource: "Advanced Patterns Course",
-              time: "3 Weeks",
-              status: "upcoming"
-            },
-            {
-              title: "Build Portfolio Project",
-              description: "Apply your knowledge by building a real-world application to showcase your skills.",
-              resource: "Project: Interactive Dashboard",
-              time: "4 Weeks",
-              status: "upcoming"
-            },
-            {
-              title: "Apply for Roles",
-              description: `Start applying for ${targetRole} positions with your updated profile.`,
-              resource: "SkillNova Job Matches",
-              time: "Ongoing",
-              status: "upcoming"
+          {(() => {
+            if (analysis?.learningPath && analysis.learningPath.length > 0) {
+              return analysis.learningPath.map((stepStr, idx) => ({
+                title: stepStr.split(':')[0] || `Learning Milestone ${idx + 1}`,
+                description: stepStr,
+                resource: "SkillNova Personalized Module",
+                time: `Week ${idx + 1}`,
+                status: idx === 0 ? "current" : "upcoming"
+              }));
             }
-          ].map((step, idx) => (
-            <div key={idx} className="relative pl-8 animate-fade-in-slide-up" style={{ animationDelay: `${idx * 100}ms` }}>
-              {step.status === "completed" ? (
-                <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-emerald-500 ring-4 ring-white flex items-center justify-center">
-                  <CheckCircle2 className="h-3 w-3 text-white" />
-                </div>
-              ) : step.status === "current" ? (
-                <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-primary-500 ring-4 ring-white flex items-center justify-center animate-pulse">
-                  <div className="h-2 w-2 rounded-full bg-white" />
-                </div>
-              ) : (
-                <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-ink-200 ring-4 ring-white" />
-              )}
-              
-              <Card className={`p-5 ${step.status === 'current' ? 'border-primary-200 ring-1 ring-primary-100 bg-primary-50/10' : ''}`}>
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">Step {idx + 1}</span>
-                      {step.status === "completed" && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Done</span>}
-                      {step.status === "current" && <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-bold text-primary-700">In Progress</span>}
-                    </div>
-                    <h3 className="text-lg font-bold text-ink-900">{step.title}</h3>
-                    <p className="mt-2 text-sm text-ink-600 leading-relaxed max-w-2xl">{step.description}</p>
+            
+            return [];
+          })().length > 0 ? (
+            (() => {
+              if (analysis?.learningPath && analysis.learningPath.length > 0) {
+                return analysis.learningPath.map((stepStr, idx) => ({
+                  title: stepStr.split(':')[0] || `Learning Milestone ${idx + 1}`,
+                  description: stepStr,
+                  resource: "SkillNova Personalized Module",
+                  time: `Week ${idx + 1}`,
+                  status: idx === 0 ? "current" : "upcoming"
+                }));
+              }
+              return [];
+            })().map((step, idx) => (
+              <div key={idx} className="relative pl-8 animate-fade-in-slide-up" style={{ animationDelay: `${idx * 100}ms` }}>
+                {step.status === "completed" ? (
+                  <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-emerald-500 ring-4 ring-white flex items-center justify-center">
+                    <CheckCircle2 className="h-3 w-3 text-white" />
                   </div>
-                  <div className="shrink-0 flex flex-col gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-ink-500 bg-ink-50 px-2.5 py-1.5 rounded-md border border-ink-100">
-                       <BookOpen className="h-3.5 w-3.5" /> {step.resource}
+                ) : step.status === "current" ? (
+                  <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-primary-500 ring-4 ring-white flex items-center justify-center animate-pulse">
+                    <div className="h-2 w-2 rounded-full bg-white" />
+                  </div>
+                ) : (
+                  <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-ink-200 ring-4 ring-white" />
+                )}
+                
+                <Card className={`p-5 ${step.status === 'current' ? 'border-primary-200 ring-1 ring-primary-100 bg-primary-50/10' : ''}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">Step {idx + 1}</span>
+                        {step.status === "completed" && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Done</span>}
+                        {step.status === "current" && <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-bold text-primary-700">In Progress</span>}
+                      </div>
+                      <h3 className="text-lg font-bold text-ink-900">{step.title}</h3>
+                      <p className="mt-2 text-sm text-ink-600 leading-relaxed max-w-2xl">{step.description}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-ink-500 bg-ink-50 px-2.5 py-1.5 rounded-md border border-ink-100">
-                       <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                       {step.time}
+                    <div className="shrink-0 flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-ink-500 bg-ink-50 px-2.5 py-1.5 rounded-md border border-ink-100">
+                         <BookOpen className="h-3.5 w-3.5" /> {step.resource}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-ink-500 bg-ink-50 px-2.5 py-1.5 rounded-md border border-ink-100">
+                         <svg className="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                         {step.time}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            </div>
-          ))}
+                </Card>
+              </div>
+            ))
+          ) : (
+            <div className="text-ink-500 text-sm py-4">No AI career roadmap data found. Click the button below to generate a customized plan.</div>
+          )}
         </div>
       </div>
 
