@@ -68,10 +68,7 @@ export default function AdminJobs() {
       const fetchedJobs = data.jobs || [];
       setJobs(fetchedJobs);
       setTotalPages(data.pagination?.totalPages || 1);
-      
-      // Compute some basic stats for dashboard cards based on current page or we can just show stats for currently loaded items
-      // A real app would get stats from backend. We'll simulate for now based on fetched.
-      // Or we can just calculate based on the current page for demonstration.
+      if (data.stats) setStats(data.stats);
     } catch (error) {
       console.error("Failed to fetch jobs:", error);
       alert("Failed to load jobs. Check connection.");
@@ -224,33 +221,33 @@ export default function AdminJobs() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-         {/* Placeholder stats */}
+         {/* Real stats from backend */}
          <AdminCard className="flex items-center gap-4">
            <div className="p-3 bg-primary-50 rounded-lg text-primary-600"><Briefcase size={24} /></div>
            <div>
              <p className="text-sm text-slate-500 font-medium">Total Vacancies</p>
-             <p className="text-2xl font-bold text-slate-900">{jobs.length}</p>
+             <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
            </div>
          </AdminCard>
          <AdminCard className="flex items-center gap-4">
            <div className="p-3 bg-emerald-50 rounded-lg text-emerald-600"><CheckCircle size={24} /></div>
            <div>
              <p className="text-sm text-slate-500 font-medium">Active Jobs</p>
-             <p className="text-2xl font-bold text-slate-900">{jobs.filter(j => j.status?.toLowerCase() === 'active').length}</p>
+             <p className="text-2xl font-bold text-slate-900">{stats.active}</p>
            </div>
          </AdminCard>
          <AdminCard className="flex items-center gap-4">
            <div className="p-3 bg-amber-50 rounded-lg text-amber-600"><Clock size={24} /></div>
            <div>
              <p className="text-sm text-slate-500 font-medium">Pending Approval</p>
-             <p className="text-2xl font-bold text-slate-900">{jobs.filter(j => j.status?.toLowerCase() === 'pending approval').length}</p>
+             <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
            </div>
          </AdminCard>
          <AdminCard className="flex items-center gap-4">
            <div className="p-3 bg-rose-50 rounded-lg text-rose-600"><X size={24} /></div>
            <div>
              <p className="text-sm text-slate-500 font-medium">Closed Jobs</p>
-             <p className="text-2xl font-bold text-slate-900">{jobs.filter(j => j.status?.toLowerCase() === 'closed').length}</p>
+             <p className="text-2xl font-bold text-slate-900">{stats.closed}</p>
            </div>
          </AdminCard>
       </div>
