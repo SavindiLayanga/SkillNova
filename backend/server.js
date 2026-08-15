@@ -25,6 +25,7 @@ import { PracticeSession } from "./models/PracticeSession.js";
 import { LibraryTest } from "./models/LibraryTest.js";
 import { generateDynamicTitle, generateDynamicDescription } from "./utils/testFallbackHelper.js";
 import { sendCVAnalysisEmail } from "./services/emailService.js";
+import { getAI } from "./utils/aiHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

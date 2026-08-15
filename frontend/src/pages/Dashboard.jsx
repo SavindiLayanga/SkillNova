@@ -219,12 +219,21 @@ export default function Dashboard() {
 
   const hasAnalysis = latestAnalysis && Object.keys(latestAnalysis).length > 0;
   
-  const displayName = latestAnalysis?.name && 
+  let rawName = latestAnalysis?.name && 
     !latestAnalysis.name.includes("Mock") && 
     latestAnalysis.name !== "User" && 
     latestAnalysis.name !== "Candidate's full name" 
     ? latestAnalysis.name 
     : user?.name || "SkillNova User";
+
+  if (rawName.length > 25) {
+    const words = rawName.split(" ");
+    rawName = words.length > 2 ? words.slice(0, 2).join(" ") : rawName;
+    if (rawName.length > 25) {
+      rawName = rawName.substring(0, 25) + "...";
+    }
+  }
+  const displayName = rawName;
   const firstName = displayName.split(" ")[0];
   const targetRole = latestAnalysis?.targetRole && latestAnalysis.targetRole !== "Unknown Role" 
     ? latestAnalysis.targetRole 

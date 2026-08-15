@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+// Using global fetch
 import { AI_API_KEY } from "../aiConfig.js";
 import { generateDynamicTitle, generateDynamicDescription } from "./testFallbackHelper.js";
 
@@ -6,10 +6,56 @@ export const getAI = () => {
   const apiKey = AI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("AI API key is missing in .env file");
+    throw new Error("AI API key is missing");
   }
 
-  return new GoogleGenAI({ apiKey });
+  return {
+    models: {
+      generateContent: async ({ model, contents, config }) => {
+        let promptText = "";
+        
+        if (typeof contents === 'string') {
+          promptText = contents;
+        } else if (Array.isArray(contents)) {
+          promptText = contents.map(item => {
+            if (typeof item === 'string') return item;
+            if (item.text) return item.text;
+            if (item.parts) return item.parts.map(p => p.text).join(" ");
+            if (item.role) return item.parts.map(p => p.text).join(" ");
+            return "";
+          }).join("\n");
+        }
+
+        if (config?.responseMimeType === "application/json" && !promptText.toLowerCase().includes("json")) {
+          promptText += "\n\nPlease output in JSON format.";
+        }
+
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: model || "llama-3.1-8b-instant",
+            messages: [{ role: "user", content: promptText }],
+            response_format: config?.responseMimeType === "application/json" ? { type: "json_object" } : undefined,
+            temperature: 0.1
+          })
+        });
+
+        if (!response.ok) {
+           const err = await response.text();
+           throw new Error("Groq API Error: " + err);
+        }
+
+        const data = await response.json();
+        return {
+          text: data.choices[0].message.content
+        };
+      }
+    }
+  };
 };
 
 export function getDeduplicationKey(test) {

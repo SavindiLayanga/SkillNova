@@ -27,9 +27,18 @@ export default function Navbar({ onMenuClick, onChatClick }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { analysis } = useCVAnalysis();
-  const displayName = analysis?.name && !analysis.name.includes("Mock") && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
+  let rawName = analysis?.name && !analysis.name.includes("Mock") && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
     ? analysis.name 
     : user?.name || "SkillNova User";
+    
+  if (rawName.length > 25) {
+    const words = rawName.split(" ");
+    rawName = words.length > 2 ? words.slice(0, 2).join(" ") : rawName;
+    if (rawName.length > 25) {
+      rawName = rawName.substring(0, 25) + "...";
+    }
+  }
+  const displayName = rawName;
   const track = analysis?.targetRole && analysis.targetRole !== "Unknown Role" 
     ? analysis.targetRole 
     : user?.targetRole || "Software Developer";

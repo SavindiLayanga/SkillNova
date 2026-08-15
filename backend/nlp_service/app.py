@@ -320,12 +320,14 @@ def analyze_cv():
     # Basic Contact Info (Extract these first so we can use email as fallback for name)
     email_match = re.search(r'([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)', text)
     extracted_email = email_match.group(1) if email_match else ""
-    phone_match = re.search(r'(?:(?:\+|00)\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}', text)
-    broad_phone = re.search(r'(?:(?:\+|00)\d{1,3})?[\s.-]*\(?\d{2,4}\)?(?:[\s.-]*\d){6,9}', text)
-    if broad_phone:
+    phone_match = re.search(r'(?<!\d)(?:(?:\+|00)\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}(?!\d)', text)
+    broad_phone = re.search(r'(?<!\d)(?:(?:\+|00)\d{1,3})?[\s.-]*\(?\d{2,4}\)?(?:[\s.-]*\d){6,9}(?!\d)', text)
+    if broad_phone and len(re.sub(r'\D', '', broad_phone.group(0))) >= 9:
         extracted_phone = broad_phone.group(0).strip()
+    elif phone_match and len(re.sub(r'\D', '', phone_match.group(0))) >= 9:
+        extracted_phone = phone_match.group(0).strip()
     else:
-        extracted_phone = phone_match.group(0).strip() if phone_match else ""
+        extracted_phone = ""
         
     # Address Extraction
     extracted_address = ""
@@ -380,7 +382,7 @@ def analyze_cv():
                     break
                     
     # SAFEGUARD: Never allow a massive block of text to be the name
-    if extracted_name and len(extracted_name) > 50:
+    if extracted_name and len(extracted_name) > 30:
         extracted_name = ""
         
     # Deep Search: If name is STILL not found (because PDF parser messed up the order), search the whole text
