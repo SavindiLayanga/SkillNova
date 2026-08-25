@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, SlidersHorizontal } from "lucide-react";
+import { MapPin, SlidersHorizontal, Search, X } from "lucide-react";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -14,9 +14,11 @@ export default function JobMatches() {
   const { hasAnalysis, status } = useCVAnalysis();
   const { getToken } = useAuth();
 
-  
   const [realJobs, setRealJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterJobType, setFilterJobType] = useState("All");
   
   useEffect(() => {
     let isMounted = true;
@@ -44,16 +46,37 @@ export default function JobMatches() {
   // Filter out completely empty objects that might have been returned by AI's default structure
   jobMatches = jobMatches.filter(job => {
     if (typeof job === 'string') return job.trim().length > 0;
-    return job && (job.role || job.company);
+    return job && (job.role || job.company || job.title);
   });
+
+  if (searchQuery) {
+    jobMatches = jobMatches.filter(job => {
+      if (typeof job === 'string') return job.toLowerCase().includes(searchQuery.toLowerCase());
+      return (job.title || job.role || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+             (job.company || "").toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  }
+
+  if (filterJobType !== "All") {
+    jobMatches = jobMatches.filter(job => {
+      if (typeof job === 'string') return false;
+      return job.jobType === filterJobType;
+    });
+  }
+
+  const jobTypes = ["All", ...new Set(realJobs.map(j => j.jobType).filter(Boolean))];
 
   return (
     <div className="space-y-6">
       <PageHeader
         action={
           hasAnalysis ? (
-            <Button icon={SlidersHorizontal} variant="secondary">
-              Filters
+            <Button 
+              icon={showFilters ? X : SlidersHorizontal} 
+              variant="secondary"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? "Close Filters" : "Filters"}
             </Button>
           ) : null
         }
@@ -61,6 +84,33 @@ export default function JobMatches() {
         eyebrow="Job Matches"
         title="Find opportunities that match your next step"
       />
+
+      {showFilters && (
+        <Card className="p-4 flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-200">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search by title or company..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-semibold text-slate-700">Type:</label>
+            <select
+              value={filterJobType}
+              onChange={(e) => setFilterJobType(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary-400"
+            >
+              {jobTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+        </Card>
+      )}
 
       {status === "noCV" ? <AnalysisEmptyState /> : null}
       {status === "uploading" || status === "analyzing" ? (
