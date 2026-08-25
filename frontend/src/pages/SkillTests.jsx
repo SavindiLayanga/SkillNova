@@ -1440,7 +1440,7 @@ export default function SkillTests() {
                 </div>
 
                 <p className="text-sm text-ink-600 leading-relaxed">
-                  Only students with all weakness subtests completed and maintaining an overall average score of **90% or above** qualify for target job recommendation endorsement.
+                  Only students with all weakness subtests completed and maintaining an overall average score of <span className="text-emerald-600 font-bold">90% or above</span> qualify for target job recommendation endorsement.
                 </p>
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-xs font-bold">
