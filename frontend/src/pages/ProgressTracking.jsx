@@ -27,11 +27,15 @@ export default function ProgressTracking() {
   const weeklyFocusItems = analysis?.learningPath?.slice(0, 2) || [];
 
   // Create simulated milestones based on missing skills
-  const milestones = missingSkills.map((gap) => ({
-    title: `Master ${typeof gap === "string" ? gap : gap.skill}`,
-    status: (typeof gap !== "string" && gap.current > 0) ? "In Progress" : "Not Started",
-    progress: typeof gap === "string" ? 0 : gap.current || 0
-  }));
+  const milestones = missingSkills.map((gap) => {
+    const skillName = typeof gap === "string" ? gap : gap.skill || gap.name;
+    return {
+      title: `Master ${skillName}`,
+      skill: skillName,
+      status: (typeof gap !== "string" && gap.current > 0) ? "In Progress" : "Not Started",
+      progress: typeof gap === "string" ? 0 : gap.current || 0
+    };
+  });
 
   return (
     <div className="space-y-6">

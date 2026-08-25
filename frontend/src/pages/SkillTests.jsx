@@ -381,7 +381,18 @@ export default function SkillTests() {
     if (location.state?.autoStartPath) {
       setActiveCategory("path");
     }
-  }, [location.state]);
+    if (location.state?.targetSkill && (activeCategory === "path" || location.state?.autoStartPath) && hasAnalysis) {
+      setTimeout(() => {
+        const safeId = location.state.targetSkill.replace(/\s+/g, '-');
+        const el = document.getElementById(`skill-module-${safeId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-primary-500', 'ring-offset-2', 'transition-all', 'duration-500');
+          setTimeout(() => el.classList.remove('ring-4', 'ring-primary-500', 'ring-offset-2'), 2500);
+        }
+      }, 300);
+    }
+  }, [location.state, activeCategory, hasAnalysis]);
 
   const hasAutoStarted = useRef(false);
 
@@ -729,10 +740,6 @@ export default function SkillTests() {
     ? missingSkills.map(s => typeof s === 'string' ? s : s.skill || s.name)
     : ["TypeScript", "API Integration", "Testing"];
   
-  const filterSkill = location.state?.filterSkill;
-  if (filterSkill) {
-    pathSkills = [filterSkill];
-  }
 
   let completedSubtestsCount = 0;
   let totalSubtests = 0;
@@ -1490,7 +1497,7 @@ export default function SkillTests() {
                 const activeTopics = getSkillTopics(skill);
 
                 return (
-                  <Card key={skill} className="flex flex-col p-6 space-y-6 bg-ink-50/20 border-ink-100">
+                  <Card key={skill} id={`skill-module-${skill.replace(/\s+/g, '-')}`} className="flex flex-col p-6 space-y-6 bg-ink-50/20 border-ink-100">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div>
