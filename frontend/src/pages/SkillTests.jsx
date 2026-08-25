@@ -1509,17 +1509,17 @@ export default function SkillTests() {
                         <div className="text-right shrink-0">
                           <span className="block text-xs font-bold text-ink-400 uppercase tracking-wide">Average Score</span>
                           <span className={`text-2xl font-black ${
-                            skillAvg >= 90 ? "text-emerald-600" : skillAvg > 0 ? "text-orange-500" : "text-ink-400"
+                            skillAvg >= 90 ? "text-emerald-600" : skillAvg > 0 ? "text-rose-600" : "text-ink-400"
                           }`}>
                             {skillAvg > 0 ? `${skillAvg}%` : "N/A"}
                           </span>
                         </div>
                       </div>
                       <div className="max-w-md pt-2">
-                         <div className="flex justify-between text-xs font-bold mb-2">
-                            <span className="text-ink-600">Total Completion Score</span>
-                            <span className="text-ink-900">{current}% / {required}%</span>
-                         </div>
+                          <div className="flex justify-between text-xs font-bold mb-2">
+                             <span className="text-ink-600">Total Completion Score</span>
+                             <span className={current >= 90 ? "text-emerald-600" : "text-rose-600"}>{current}%</span>
+                          </div>
                          <ProgressBar value={current} />
                       </div>
                     </div>
@@ -1538,7 +1538,7 @@ export default function SkillTests() {
                                {isTaken ? (
                                   <div className="flex items-center gap-2">
                                      <span className={`font-bold px-2.5 py-1 rounded-md text-xs ${
-                                       score >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-orange-50 text-orange-700"
+                                       score >= 90 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
                                      }`}>
                                        {score}%
                                      </span>
