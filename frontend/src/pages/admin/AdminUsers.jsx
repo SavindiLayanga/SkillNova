@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Eye, Edit2, Ban, Trash2, CheckCircle2, ChevronLeft, ChevronRight, BarChart3, List, Mail, Send } from "lucide-react";
+import { Search, Eye, Edit2, Ban, Trash2, CheckCircle2, ChevronLeft, ChevronRight, BarChart3, List, Mail, Send, MessageSquareText } from "lucide-react";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import Button from "../../components/ui/Button.jsx";
-import { fetchAllUsers, updateUserStatus, deleteUser, updateUser, broadcastMessageToUsers } from "../../services/adminUsersService.js";
+import { fetchAllUsers, updateUserStatus, deleteUser, updateUser, broadcastMessageToUsers, sendDirectMessageToUser } from "../../services/adminUsersService.js";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { usePreferences } from "../../context/PreferencesContext.jsx";
 import { formatDate } from "../../utils/dateUtils.js";
@@ -47,10 +47,13 @@ export default function AdminUsers() {
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [isDirectMessageModalOpen, setIsDirectMessageModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserForMessage, setSelectedUserForMessage] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: "", careerGoal: "", targetRole: "" });
   const [broadcastData, setBroadcastData] = useState({ subject: "", message: "" });
+  const [directMessageData, setDirectMessageData] = useState({ subject: "", message: "" });
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("Changes Saved Successfully!");
 
@@ -62,6 +65,29 @@ export default function AdminUsers() {
       setIsBroadcastModalOpen(false);
       setBroadcastData({ subject: "", message: "" });
       setToastMessage("Message Broadcasted Successfully!");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const openDirectMessageModal = (user) => {
+    setSelectedUserForMessage(user);
+    setDirectMessageData({ subject: "", message: "" });
+    setIsDirectMessageModalOpen(true);
+  };
+
+  const handleDirectMessageSubmit = async (e) => {
+    e.preventDefault();
+    setIsActionLoading(true);
+    try {
+      await sendDirectMessageToUser(selectedUserForMessage._id, directMessageData.subject, directMessageData.message);
+      setIsDirectMessageModalOpen(false);
+      setDirectMessageData({ subject: "", message: "" });
+      setToastMessage(`Message Sent to ${selectedUserForMessage.name} Successfully!`);
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
     } catch (error) {
@@ -272,6 +298,13 @@ export default function AdminUsers() {
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => openDirectMessageModal(user)}
+                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-blue-600"
+                            title="Send Message"
+                          >
+                            <MessageSquareText className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => navigate(`/admin/users/${user._id}`)}
                             className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                             title="View Profile"
@@ -449,6 +482,56 @@ export default function AdminUsers() {
               </label>
               <div className="mt-6 flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => setIsBroadcastModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isActionLoading} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Send className="h-4 w-4" />
+                  {isActionLoading ? "Sending..." : "Send Message"}
+                </Button>
+              </div>
+            </form>
+          </AdminCard>
+        </div>
+      )}
+
+      {/* Direct Message Modal */}
+      {isDirectMessageModalOpen && selectedUserForMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <AdminCard className="w-full max-w-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-full bg-blue-100 p-2 text-blue-600">
+                <MessageSquareText className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Message {selectedUserForMessage.name}</h2>
+                <p className="text-sm text-slate-500">Send an email and notification directly to this user</p>
+              </div>
+            </div>
+            <form onSubmit={handleDirectMessageSubmit} className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Subject</span>
+                <input
+                  type="text"
+                  value={directMessageData.subject}
+                  onChange={(e) => setDirectMessageData({ ...directMessageData, subject: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  required
+                  placeholder="e.g. Missing Information in your Profile"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Message</span>
+                <textarea
+                  value={directMessageData.message}
+                  onChange={(e) => setDirectMessageData({ ...directMessageData, message: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  rows={6}
+                  required
+                  placeholder={`Write your message to ${selectedUserForMessage.name}...`}
+                />
+              </label>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsDirectMessageModalOpen(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isActionLoading} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">

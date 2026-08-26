@@ -67,3 +67,15 @@ export async function broadcastMessageToUsers(subject, message) {
   if (!response.ok) throw new Error(data.message || data.error || 'Failed to broadcast message');
   return data;
 }
+
+export async function sendDirectMessageToUser(userId, subject, message) {
+  const response = await fetch(`${API_URL}/admin/notifications/send/${userId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ subject, message })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || data.error || 'Failed to send direct message');
+  return data;
+}

@@ -6,7 +6,8 @@ import {
   markAllAsRead,
   deleteNotification,
   testCriticalEmail,
-  broadcastMessage
+  broadcastMessage,
+  sendDirectMessage
 } from '../controllers/adminNotificationController.js';
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 router.use(authenticateAdmin);
 
 router.post('/broadcast', broadcastMessage);
+router.post('/send/:userId', sendDirectMessage);
 router.post('/test-email', testCriticalEmail);
 router.get('/', getNotifications);
 router.put('/read-all', markAllAsRead);

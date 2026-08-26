@@ -122,3 +122,45 @@ export const broadcastMessage = async (req, res) => {
     res.status(500).json({ message: "Server error during broadcast" });
   }
 };
+
+// @desc    Send a message to a specific user via email and in-app notification
+// @route   POST /api/admin/notifications/send/:userId
+// @access  Private (Admin)
+export const sendDirectMessage = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { subject, message } = req.body;
+
+    if (!subject || !message) {
+      return res.status(400).json({ message: "Subject and message are required" });
+    }
+
+    const { User } = await import("../models/User.js");
+    const { UserNotification } = await import("../models/UserNotification.js");
+    const { sendBroadcastEmail } = await import("../services/emailService.js");
+
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Save notification to DB for the user
+    await UserNotification.create({
+      userId: user.uid,
+      title: subject,
+      message: message,
+      type: 'info',
+      isRead: false
+    });
+
+    if (user.email) {
+      // Reusing sendBroadcastEmail since it takes an array of emails
+      await sendBroadcastEmail([user.email], subject, message);
+    }
+
+    res.json({ message: `Message sent successfully to ${user.name}` });
+  } catch (error) {
+    console.error("Error sending direct message:", error);
+    res.status(500).json({ message: "Server error during message send" });
+  }
+};
