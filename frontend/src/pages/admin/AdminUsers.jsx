@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Eye, Edit2, Ban, Trash2, CheckCircle2, ChevronLeft, ChevronRight, BarChart3, List } from "lucide-react";
+import { Search, Eye, Edit2, Ban, Trash2, CheckCircle2, ChevronLeft, ChevronRight, BarChart3, List, Mail, Send } from "lucide-react";
 import AdminPageHeader from "../../components/admin/AdminPageHeader.jsx";
 import AdminCard from "../../components/admin/AdminCard.jsx";
 import Button from "../../components/ui/Button.jsx";
-import { fetchAllUsers, updateUserStatus, deleteUser, updateUser } from "../../services/adminUsersService.js";
+import { fetchAllUsers, updateUserStatus, deleteUser, updateUser, broadcastMessageToUsers } from "../../services/adminUsersService.js";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { usePreferences } from "../../context/PreferencesContext.jsx";
 import { formatDate } from "../../utils/dateUtils.js";
@@ -46,10 +46,30 @@ export default function AdminUsers() {
 
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: "", careerGoal: "", targetRole: "" });
+  const [broadcastData, setBroadcastData] = useState({ subject: "", message: "" });
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("Changes Saved Successfully!");
+
+  const handleBroadcastSubmit = async (e) => {
+    e.preventDefault();
+    setIsActionLoading(true);
+    try {
+      await broadcastMessageToUsers(broadcastData.subject, broadcastData.message);
+      setIsBroadcastModalOpen(false);
+      setBroadcastData({ subject: "", message: "" });
+      setToastMessage("Message Broadcasted Successfully!");
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -121,6 +141,7 @@ export default function AdminUsers() {
     try {
       await updateUser(selectedUser._id, editFormData);
       setIsEditModalOpen(false);
+      setToastMessage("Changes Saved Successfully!");
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
       loadUsers();
@@ -182,6 +203,13 @@ export default function AdminUsers() {
             >
               <BarChart3 className="h-4 w-4" />
               Chart
+            </button>
+            <button
+              onClick={() => setIsBroadcastModalOpen(true)}
+              className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors ml-2"
+            >
+              <Mail className="h-4 w-4" />
+              Broadcast Message
             </button>
           </div>
         </div>
@@ -383,12 +411,62 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {/* Broadcast Modal */}
+      {isBroadcastModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <AdminCard className="w-full max-w-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-full bg-blue-100 p-2 text-blue-600">
+                <Mail className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Broadcast Message</h2>
+                <p className="text-sm text-slate-500">Send an email to all active users</p>
+              </div>
+            </div>
+            <form onSubmit={handleBroadcastSubmit} className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Subject</span>
+                <input
+                  type="text"
+                  value={broadcastData.subject}
+                  onChange={(e) => setBroadcastData({ ...broadcastData, subject: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  required
+                  placeholder="e.g. Platform Update: New Courses Available!"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Message</span>
+                <textarea
+                  value={broadcastData.message}
+                  onChange={(e) => setBroadcastData({ ...broadcastData, message: e.target.value })}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary-400"
+                  rows={6}
+                  required
+                  placeholder="Write your message here..."
+                />
+              </label>
+              <div className="mt-6 flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsBroadcastModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isActionLoading} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Send className="h-4 w-4" />
+                  {isActionLoading ? "Sending..." : "Send Message"}
+                </Button>
+              </div>
+            </form>
+          </AdminCard>
+        </div>
+      )}
+
       {/* Success Message Toast */}
       {showSuccessToast && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
           <div className="bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all">
             <CheckCircle2 className="h-6 w-6" />
-            <span className="text-lg font-medium">Changes Saved Successfully!</span>
+            <span className="text-lg font-medium">{toastMessage}</span>
           </div>
         </div>
       )}

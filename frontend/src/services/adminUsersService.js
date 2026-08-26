@@ -55,3 +55,15 @@ export async function deleteUser(id) {
   if (!response.ok) throw new Error(data.error || 'Failed to delete user');
   return data;
 }
+
+export async function broadcastMessageToUsers(subject, message) {
+  const response = await fetch(`${API_URL}/admin/notifications/broadcast`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ subject, message })
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || data.error || 'Failed to broadcast message');
+  return data;
+}

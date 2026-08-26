@@ -471,3 +471,69 @@ export const sendCVAnalysisEmail = async (toEmail, analysisData) => {
     console.error("Failed to send CV analysis email:", error);
   }
 };
+
+/**
+ * Send a broadcast email to multiple users
+ * @param {Array<string>} bccEmails - Array of user emails
+ * @param {string} subject - Email subject
+ * @param {string} message - Email body message
+ */
+export const sendBroadcastEmail = async (bccEmails, subject, message) => {
+  try {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #2563eb; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">SkillNova Update</h1>
+        </div>
+        <div style="padding: 30px; background-color: #ffffff;">
+          <h2 style="color: #0f172a; margin-top: 0;">${subject}</h2>
+          <div style="color: #334155; line-height: 1.6; margin-top: 20px; white-space: pre-wrap;">
+            ${message}
+          </div>
+          
+          <div style="margin-top: 35px; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" 
+               style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              Visit Dashboard
+            </a>
+          </div>
+        </div>
+        <div style="background-color: #f8fafc; padding: 15px; text-align: center; color: #64748b; font-size: 12px; border-top: 1px solid #e2e8f0;">
+          This is an official communication from SkillNova Admin.<br>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/" style="color: #64748b;">SkillNova Platform</a>
+        </div>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || '"SkillNova" <noreply@skillnova.com>',
+      bcc: bccEmails,
+      subject: `[SkillNova] ${subject}`,
+      html: html,
+    };
+
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      await transporter.sendMail(mailOptions);
+    } else {
+      if (!etherealTransporter) {
+        const testAccount = await nodemailer.createTestAccount();
+        etherealTransporter = nodemailer.createTransport({
+          host: "smtp.ethereal.email",
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+      }
+      const info = await etherealTransporter.sendMail(mailOptions);
+      console.log(`[Ethereal Preview URL] -> ${nodemailer.getTestMessageUrl(info)}`);
+    }
+
+    console.log(`Broadcast email sent to ${bccEmails.length} users.`);
+  } catch (error) {
+    console.error("Failed to send broadcast email:", error);
+    throw error;
+  }
+};

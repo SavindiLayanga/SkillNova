@@ -74,3 +74,40 @@ export const deleteNotification = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// @desc    Broadcast a message to all users via email
+// @route   POST /api/admin/notifications/broadcast
+// @access  Private (Admin)
+export const broadcastMessage = async (req, res) => {
+  try {
+    const { subject, message } = req.body;
+
+    if (!subject || !message) {
+      return res.status(400).json({ message: "Subject and message are required" });
+    }
+
+    // Import User model and sendBroadcastEmail here to avoid circular deps or missing imports
+    const { User } = await import("../models/User.js");
+    const { sendBroadcastEmail } = await import("../services/emailService.js");
+
+    const users = await User.find({ role: 'user', isActive: true, isDeleted: false }).select('email').lean();
+    
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No active users found to broadcast" });
+    }
+
+    const emails = users.map(u => u.email).filter(e => e);
+    
+    // Batch emails in chunks of 50 to avoid SMTP limits
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < emails.length; i += CHUNK_SIZE) {
+      const chunk = emails.slice(i, i + CHUNK_SIZE);
+      await sendBroadcastEmail(chunk, subject, message);
+    }
+
+    res.json({ message: `Message broadcasted successfully to ${emails.length} users` });
+  } catch (error) {
+    console.error("Error broadcasting message:", error);
+    res.status(500).json({ message: "Server error during broadcast" });
+  }
+};
