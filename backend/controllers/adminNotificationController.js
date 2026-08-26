@@ -88,13 +88,24 @@ export const broadcastMessage = async (req, res) => {
 
     // Import User model and sendBroadcastEmail here to avoid circular deps or missing imports
     const { User } = await import("../models/User.js");
+    const { UserNotification } = await import("../models/UserNotification.js");
     const { sendBroadcastEmail } = await import("../services/emailService.js");
 
-    const users = await User.find({ role: 'user', isActive: true, isDeleted: false }).select('email').lean();
+    const users = await User.find({ role: 'user', isActive: true, isDeleted: false }).select('email uid').lean();
     
     if (users.length === 0) {
       return res.status(404).json({ message: "No active users found to broadcast" });
     }
+
+    // Save notifications to DB for users to see in UI
+    const notificationDocs = users.map(u => ({
+      userId: u.uid,
+      title: subject,
+      message: message,
+      type: 'info',
+      isRead: false
+    }));
+    await UserNotification.insertMany(notificationDocs);
 
     const emails = users.map(u => u.email).filter(e => e);
     

@@ -24,7 +24,7 @@ const SEARCH_INDEX = [
 ];
 
 export default function Navbar({ onMenuClick, onChatClick }) {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const navigate = useNavigate();
   const { analysis } = useCVAnalysis();
   let rawName = analysis?.name && !analysis.name.includes("Mock") && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
@@ -63,6 +63,56 @@ export default function Navbar({ onMenuClick, onChatClick }) {
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        
+        const res = await fetch((import.meta.env.VITE_API_URL || "http://localhost:5000/api") + "/user/notifications", {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+          setUnreadCount(data.filter(n => !n.isRead).length);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, getToken]);
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      await fetch((import.meta.env.VITE_API_URL || "http://localhost:5000/api") + "/user/notifications/read-all", {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+      });
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleSelectResult = (item) => {
     setIsSearchOpen(false);
@@ -159,7 +209,9 @@ export default function Navbar({ onMenuClick, onChatClick }) {
               type="button"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-primary-500 ring-2 ring-white"></span>
+              {unreadCount > 0 && (
+                <span className="absolute right-2 top-2 flex h-2 w-2 rounded-full bg-primary-500 ring-2 ring-white"></span>
+              )}
             </button>
             
             {isNotificationsOpen && (
@@ -171,36 +223,28 @@ export default function Navbar({ onMenuClick, onChatClick }) {
                 <div className="absolute right-0 top-full mt-2 w-80 z-50 rounded-xl border border-ink-100 bg-white shadow-2xl overflow-hidden animate-fade-in-slide-up origin-top-right">
                   <div className="flex items-center justify-between border-b border-ink-100 bg-ink-50/50 px-4 py-3">
                     <h3 className="font-bold text-ink-900">Notifications</h3>
-                    <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">2 New</span>
+                    {unreadCount > 0 && (
+                      <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">{unreadCount} New</span>
+                    )}
                   </div>
                   <div className="max-h-[300px] overflow-y-auto">
-                    <button className="w-full text-left p-4 border-b border-ink-100 hover:bg-ink-50 transition-colors flex gap-3">
-                      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
-                      <div>
-                        <p className="text-sm font-semibold text-ink-900">New job match found!</p>
-                        <p className="text-xs text-ink-500 mt-0.5 line-clamp-2">Sysco LABS is hiring for your target role. Your skill match is 89%.</p>
-                        <p className="text-[10px] text-ink-400 mt-2 font-medium">Just now</p>
-                      </div>
-                    </button>
-                    <button className="w-full text-left p-4 border-b border-ink-100 hover:bg-ink-50 transition-colors flex gap-3">
-                      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary-500" />
-                      <div>
-                        <p className="text-sm font-semibold text-ink-900">Skill Test Recommended</p>
-                        <p className="text-xs text-ink-500 mt-0.5 line-clamp-2">Complete the React Fundamentals assessment to unlock the 'React Expert' badge.</p>
-                        <p className="text-[10px] text-ink-400 mt-2 font-medium">2 hours ago</p>
-                      </div>
-                    </button>
-                    <button className="w-full text-left p-4 hover:bg-ink-50 transition-colors flex gap-3 opacity-60">
-                      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-transparent" />
-                      <div>
-                        <p className="text-sm font-semibold text-ink-900">Profile Analyzed</p>
-                        <p className="text-xs text-ink-500 mt-0.5 line-clamp-2">Your CV has been successfully parsed and your learning path is ready.</p>
-                        <p className="text-[10px] text-ink-400 mt-2 font-medium">Yesterday</p>
-                      </div>
-                    </button>
+                    {notifications.length > 0 ? (
+                      notifications.map(notification => (
+                        <button key={notification._id} className={`w-full text-left p-4 border-b border-ink-100 hover:bg-ink-50 transition-colors flex gap-3 ${notification.isRead ? 'opacity-60' : ''}`}>
+                          <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.isRead ? 'bg-transparent' : 'bg-primary-500'}`} />
+                          <div>
+                            <p className="text-sm font-semibold text-ink-900">{notification.title}</p>
+                            <p className="text-xs text-ink-500 mt-0.5 whitespace-pre-wrap">{notification.message}</p>
+                            <p className="text-[10px] text-ink-400 mt-2 font-medium">{new Date(notification.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-ink-500">No notifications yet.</div>
+                    )}
                   </div>
                   <div className="border-t border-ink-100 p-2 text-center bg-ink-50/50">
-                    <button className="text-xs font-bold text-ink-500 hover:text-ink-900 transition-colors">Mark all as read</button>
+                    <button onClick={handleMarkAllAsRead} className="text-xs font-bold text-ink-500 hover:text-ink-900 transition-colors">Mark all as read</button>
                   </div>
                 </div>
               </>

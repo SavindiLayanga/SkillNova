@@ -108,6 +108,29 @@ app.get("/api/user/profile", verifyAuth, require2FA, async (req, res) => {
   }
 });
 
+// User Notifications
+app.get("/api/user/notifications", verifyAuth, async (req, res) => {
+  try {
+    const { UserNotification } = await import("./models/UserNotification.js");
+    const notifications = await UserNotification.find({ userId: req.user.uid }).sort({ createdAt: -1 }).limit(20);
+    res.json(notifications);
+  } catch (error) {
+    console.error("Notifications fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.put("/api/user/notifications/read-all", verifyAuth, async (req, res) => {
+  try {
+    const { UserNotification } = await import("./models/UserNotification.js");
+    await UserNotification.updateMany({ userId: req.user.uid, isRead: false }, { isRead: true });
+    res.json({ message: "Marked all as read" });
+  } catch (error) {
+    console.error("Notifications read error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/user/profile", verifyAuth, require2FA, async (req, res) => {
   try {
     const { name, targetRole, location, experience } = req.body;
