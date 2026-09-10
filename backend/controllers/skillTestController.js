@@ -1,6 +1,6 @@
 import { SkillTest } from "../models/SkillTest.js";
 import { LibraryTest } from "../models/LibraryTest.js";
-import { AI_MODEL } from "../aiConfig.js";
+import { AI_MODEL } from "../modelConfig.js";
 import { getAI, getDeduplicationKey, generateFallbackTests } from "../utils/aiHelper.js";
 
 // Fetch User Skill Tests

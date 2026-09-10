@@ -7,7 +7,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
-import { generateCustomLearningPath } from "../services/aiService.js";
+import { generateCustomLearningPath } from "../services/analysisService.js";
 import { userMatchesService } from "../services/userMatchesService.js";
 import useAuth from "../hooks/useAuth.js";
 

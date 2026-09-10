@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { PracticeContext } from "./practiceContextValue.js";
-import { fetchSkillTests, fetchCurrentPractice, updateCurrentPractice, clearCurrentPractice } from "../services/aiService.js";
+import { fetchSkillTests, fetchCurrentPractice, updateCurrentPractice, clearCurrentPractice } from "../services/analysisService.js";
 import useAuth from "../hooks/useAuth.js";
 
 export function PracticeProvider({ children }) {

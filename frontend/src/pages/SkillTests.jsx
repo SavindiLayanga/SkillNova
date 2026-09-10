@@ -25,7 +25,7 @@ import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import { PracticeContext } from "../context/practiceContextValue.js";
-import { generateSkillTest, submitSkillTest } from "../services/aiService.js";
+import { generateSkillTest, submitSkillTest } from "../services/analysisService.js";
 
 const getMasteryBadge = (level) => {
   if (level === "Excellent") return "⭐ Excellent Mastery";

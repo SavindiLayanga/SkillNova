@@ -12,7 +12,7 @@ import sys
 from nltk.stem import WordNetLemmatizer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from skillnova_ai import SkillNovaAI
+from resume_parser import SkillNovaAI
 skillnova_ai_engine = SkillNovaAI()
 
 # --- Initialization ---

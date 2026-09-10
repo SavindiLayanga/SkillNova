@@ -1,7 +1,7 @@
 import { Bot, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import useCVAnalysis from "../../hooks/useCVAnalysis.js";
-import { chatWithAI } from "../../services/aiService.js";
+import { chatWithAI } from "../../services/analysisService.js";
 import clsx from "../../utils/clsx.js";
 import Loader from "./Loader.jsx";
 

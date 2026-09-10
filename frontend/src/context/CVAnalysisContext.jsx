@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CVAnalysisContext } from "./cvAnalysisContextValue.js";
 import { extractTextFromPDF } from "../utils/pdfParser.js";
 import { extractTextFromDOCX } from "../utils/docxParser.js";
-import { analyzeCV, analyzeManualSkills } from "../services/aiService.js";
+import { analyzeCV, analyzeManualSkills } from "../services/analysisService.js";
 import useAuth from "../hooks/useAuth.js";
 import { fetchLatestAnalysis } from "../services/dashboardService.js";
 

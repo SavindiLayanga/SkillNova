@@ -1,5 +1,5 @@
 // Using global fetch
-import { AI_API_KEY } from "../aiConfig.js";
+import { AI_API_KEY } from "../modelConfig.js";
 import { generateDynamicTitle, generateDynamicDescription } from "./testFallbackHelper.js";
 
 export const getAI = () => {

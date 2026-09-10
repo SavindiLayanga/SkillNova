@@ -12,7 +12,7 @@ import { verifyAuth } from "./middleware/auth.js";
 import { require2FA } from "./middleware/require2FA.js";
 import twoFactorRoutes from "./routes/twoFactorRoutes.js";
 import skillTestRoutes from "./routes/skillTestRoutes.js";
-import { AI_API_KEY, AI_MODEL } from "./aiConfig.js";
+import { AI_API_KEY, AI_MODEL } from "./modelConfig.js";
 import { initializeCronJobs } from "./services/cronService.js";
 
 import { User } from "./models/User.js";
