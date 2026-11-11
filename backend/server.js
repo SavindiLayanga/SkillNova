@@ -492,6 +492,53 @@ Target Role: ${targetRole}
 
     console.log("Python NLP payload created.");
 
+    // Retain previous CV memory & retain all passed skill test achievements
+    const previousAnalyses = await CVAnalysis.find({ userId: req.user.uid }).sort({ createdAt: -1 });
+    const latestPrevious = previousAnalyses[0];
+    const isSameCV = Boolean(
+      latestPrevious && (
+        (fileName && latestPrevious.fileName === fileName) ||
+        (text && latestPrevious.originalText && (
+          latestPrevious.originalText.trim() === text.trim() ||
+          Math.abs(latestPrevious.originalText.length - text.length) < 50
+        ))
+      )
+    );
+
+    // Fetch all completed tests passed by this user
+    const passedTests = await SkillTest.find({ userId: req.user.uid, isCompleted: true });
+    const verifiedSkillNames = [...new Set(passedTests.map(t => t.skillName).filter(Boolean))];
+
+    // Filter missing skills: Any skill the candidate has passed is no longer missing
+    if (Array.isArray(data.missingSkills) && verifiedSkillNames.length > 0) {
+      data.missingSkills = data.missingSkills.filter(missing => {
+        const mLower = (typeof missing === 'string' ? missing : (missing.skill || missing.name || '')).toLowerCase().trim();
+        const hasPassed = verifiedSkillNames.some(passed => {
+          const pLower = passed.toLowerCase().trim();
+          return pLower === mLower || pLower.includes(mLower) || mLower.includes(pLower);
+        });
+        return !hasPassed;
+      });
+    }
+
+    // Merge verified skills into candidate skills & strong skills
+    const existingTechnical = data.technicalSkills || [];
+    data.technicalSkills = [...new Set([...existingTechnical, ...verifiedSkillNames])];
+    data.skills = [...new Set([...(data.skills || []), ...verifiedSkillNames])];
+    data.strongSkills = [...new Set([...(data.strongSkills || []), ...verifiedSkillNames])];
+    data.verifiedSkills = verifiedSkillNames;
+    data.isCVReupload = isSameCV;
+    data.previousCVFileName = latestPrevious?.fileName || "";
+
+    // Boost score based on verified passed tests
+    if (passedTests.length > 0) {
+      const verifiedBonus = Math.min(passedTests.length * 4, 25);
+      data.matchPercentage = Math.min(98, Math.max(data.matchPercentage || 70, (data.matchPercentage || 70) + verifiedBonus));
+      data.careerReadinessScore = Math.min(98, Math.max(data.careerReadinessScore || 70, (data.careerReadinessScore || 70) + verifiedBonus));
+      data.skillMatchScore = data.matchPercentage;
+      data.cvScore = data.careerReadinessScore;
+    }
+
     try {
       const settings = await UserSettings.findOne({ userId: req.user.uid });
       const shouldStore = settings ? (settings.cvAnalysisStorage !== false) : true;
@@ -643,6 +690,26 @@ Return ONLY valid JSON:
 
     if (Object.keys(data).length === 0) {
       throw new Error("Failed to extract data or invalid format.");
+    }
+
+    // Retain verified test skills in manual analysis
+    const passedTestsManual = await SkillTest.find({ userId: req.user.uid, isCompleted: true });
+    const verifiedSkillNamesManual = [...new Set(passedTestsManual.map(t => t.skillName).filter(Boolean))];
+
+    if (Array.isArray(data.missingSkills) && verifiedSkillNamesManual.length > 0) {
+      data.missingSkills = data.missingSkills.filter(missing => {
+        const mLower = (typeof missing === 'string' ? missing : (missing.skill || missing.name || '')).toLowerCase().trim();
+        return !verifiedSkillNamesManual.some(p => {
+          const pLower = p.toLowerCase().trim();
+          return pLower === mLower || pLower.includes(mLower) || mLower.includes(pLower);
+        });
+      });
+    }
+
+    if (passedTestsManual.length > 0) {
+      const verifiedBonus = Math.min(passedTestsManual.length * 4, 25);
+      data.skillMatchScore = Math.min(98, Math.max(data.skillMatchScore || 70, (data.skillMatchScore || 70) + verifiedBonus));
+      data.cvScore = Math.min(98, Math.max(data.cvScore || 70, (data.cvScore || 70) + verifiedBonus));
     }
 
     const settings = await UserSettings.findOne({ userId: req.user.uid });
