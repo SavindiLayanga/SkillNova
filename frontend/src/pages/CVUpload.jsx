@@ -177,6 +177,17 @@ export default function CVUpload() {
                       Skill analysis completed
                     </h2>
                   )}
+                  {!isProcessing && analysis?.verifiedSkills && analysis.verifiedSkills.length > 0 && (
+                    <div className="mt-3 flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-4 py-1.5 text-xs font-bold text-emerald-800 backdrop-blur-md shadow-sm">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <span>{analysis.verifiedSkills.length} passed tests & verified skills preserved</span>
+                    </div>
+                  )}
+                  {!isProcessing && analysis?.isCVReupload && (
+                    <div className="mt-2 text-xs font-semibold text-primary-700 bg-white/90 px-3 py-1 rounded-full border border-primary-200 shadow-sm">
+                      Updated version of previously analyzed CV
+                    </div>
+                  )}
                   {error && <p className="mt-2 text-sm text-rose-600 font-medium bg-white/80 px-2 py-1 rounded">{error}</p>}
                   
                   {!isProcessing && !fileUrl && fileName && (
