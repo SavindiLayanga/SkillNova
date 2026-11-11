@@ -219,12 +219,27 @@ export default function Dashboard() {
 
   const hasAnalysis = latestAnalysis && Object.keys(latestAnalysis).length > 0;
   
-  let rawName = latestAnalysis?.name && 
+  const getGreeting = () => {
+    const currentHour = new Date().getHours();
+    if (currentHour < 12) return "Good morning";
+    if (currentHour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const accountName = user?.name && 
+    user.name !== "User" && 
+    user.name !== "SkillNova User" 
+    ? user.name 
+    : null;
+
+  const cvName = latestAnalysis?.name && 
     !latestAnalysis.name.includes("Mock") && 
     latestAnalysis.name !== "User" && 
     latestAnalysis.name !== "Candidate's full name" 
     ? latestAnalysis.name 
-    : user?.name || "SkillNova User";
+    : null;
+
+  let rawName = accountName || cvName || "SkillNova User";
 
   if (rawName.length > 25) {
     const words = rawName.split(" ");
@@ -307,7 +322,7 @@ export default function Dashboard() {
                 Dashboard
               </p>
               <h1 className="mt-2 text-2xl font-bold text-ink-900 sm:text-3xl">
-                Good afternoon, {firstName}
+                {getGreeting()}, {firstName}
               </h1>
               <p className="mt-2 text-sm leading-6 text-ink-500">
                 Track your SkillNova career readiness for {targetRole}.
