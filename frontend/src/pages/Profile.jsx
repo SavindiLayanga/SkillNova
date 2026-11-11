@@ -113,9 +113,11 @@ export default function Profile() {
     );
   }
 
-  const name = analysis?.name && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
+  const accountName = user?.name && user.name !== "User" && user.name !== "SkillNova User" ? user.name : null;
+  const cvName = analysis?.name && analysis.name !== "User" && analysis.name !== "Candidate's full name" 
     ? analysis.name 
-    : user?.name || "SkillNova User";
+    : null;
+  const name = accountName || cvName || "SkillNova User";
     
   const initials = getInitials(name) || "SN";
   
