@@ -14,12 +14,29 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        let profileName = firebaseUser.displayName || "";
+        let targetRole = "";
+        try {
+          const token = await firebaseUser.getIdToken();
+          const res = await fetch("/api/user/profile", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const profile = await res.json();
+            if (profile?.name) profileName = profile.name;
+            if (profile?.targetRole) targetRole = profile.targetRole;
+          }
+        } catch (e) {
+          console.warn("Could not fetch user profile:", e);
+        }
+
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+          name: profileName || firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+          targetRole: targetRole || "Software Developer",
           // Keep a ref to the original object to get token
           _firebaseUser: firebaseUser,
         });
