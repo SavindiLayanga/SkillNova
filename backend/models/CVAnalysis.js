@@ -85,7 +85,10 @@ const cvAnalysisSchema = new mongoose.Schema({
   matchPercentage: { type: Number, default: 0 },
   careerReadinessScore: { type: Number, default: 0 },
   learningPath: [String],
-  aiInsights: { type: String, default: '' }
+  aiInsights: { type: String, default: '' },
+  verifiedSkills: { type: [String], default: [] },
+  isCVReupload: { type: Boolean, default: false },
+  previousCVFileName: { type: String, default: '' }
 }, { timestamps: true });
 
 export const CVAnalysis = mongoose.model('CVAnalysis', cvAnalysisSchema, 'cv_analyses');
