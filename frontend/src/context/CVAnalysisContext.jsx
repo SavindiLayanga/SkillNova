@@ -165,8 +165,8 @@ export function CVAnalysisProvider({ children }) {
         },
         careerRecommendations: extractedData.careerRecommendations || [],
         missingSkills: extractedData.missingSkills || [],
-        skillMatchScore: extractedData.skillMatchScore || 0,
-        cvScore: extractedData.cvScore || 0,
+        skillMatchScore: Number(extractedData.skillMatchScore || extractedData.matchPercentage || extractedData.cvScore || extractedData.careerReadinessScore) || 0,
+        cvScore: Number(extractedData.cvScore || extractedData.careerReadinessScore || extractedData.skillMatchScore || extractedData.matchPercentage) || 0,
         learningPath: extractedData.learningPath || [],
         aiInsights: extractedData.aiInsights || "No specific insights generated.",
         
@@ -225,8 +225,8 @@ export function CVAnalysisProvider({ children }) {
         },
         careerRecommendations: extractedData.careerRecommendations || [],
         missingSkills: extractedData.missingSkills || [],
-        skillMatchScore: extractedData.skillMatchScore || 0,
-        cvScore: extractedData.cvScore || 0,
+        skillMatchScore: Number(extractedData.skillMatchScore || extractedData.matchPercentage || extractedData.cvScore || extractedData.careerReadinessScore) || 0,
+        cvScore: Number(extractedData.cvScore || extractedData.careerReadinessScore || extractedData.skillMatchScore || extractedData.matchPercentage) || 0,
         learningPath: extractedData.learningPath || [],
         aiInsights: extractedData.aiInsights || "No specific insights generated.",
         

@@ -28,6 +28,8 @@ import Profile from "./pages/Profile.jsx";
 import ProgressTracking from "./pages/ProgressTracking.jsx";
 import Register from "./pages/Register.jsx";
 import Settings from "./pages/Settings.jsx";
+import JobReadiness from "./pages/JobReadiness.jsx";
+import VerifyCertificate from "./pages/VerifyCertificate.jsx";
 import SkillTests from "./pages/SkillTests.jsx";
 import SkillGapAnalysis from "./pages/SkillGapAnalysis.jsx";
 import SkillTestLibrary from "./pages/SkillTestLibrary.jsx";
@@ -80,6 +82,7 @@ export default function App() {
             <Route path="/job-matches" element={<JobMatches />} />
             <Route path="/learning-path" element={<LearningPath />} />
             <Route path="/skill-tests" element={<SkillTests />} />
+            <Route path="/job-readiness" element={<JobReadiness />} />
             <Route path="/progress" element={<ProgressTracking />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
@@ -87,6 +90,7 @@ export default function App() {
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/verify/:id" element={<VerifyCertificate />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </>

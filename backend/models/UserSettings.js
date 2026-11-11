@@ -18,6 +18,9 @@ const UserSettingsSchema = new mongoose.Schema({
   showRemoteJobsFirst: { type: Boolean, default: true },
   useCVDataForMatchScoring: { type: Boolean, default: true },
   prioritizeBeginnerFriendlyPaths: { type: Boolean, default: false },
+  allowEmployerIntroductions: { type: Boolean, default: true },
+  autoApplyMatchingJobs: { type: Boolean, default: false },
+  minMatchScoreForAutoApply: { type: Number, default: 80 },
   
   // Notification Preferences
   newJobMatchAlerts: { type: Boolean, default: true },

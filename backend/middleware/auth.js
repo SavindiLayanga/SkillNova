@@ -1,5 +1,6 @@
 import { getFirebaseAuth } from '../firebase.js';
 import { User } from '../models/User.js';
+import jwt from 'jsonwebtoken';
 
 export const verifyAuth = async (req, res, next) => {
   try {
@@ -13,13 +14,22 @@ export const verifyAuth = async (req, res, next) => {
       return res.status(401).json({ error: 'Unauthorized: Missing token' });
     }
 
-    // Verify token with Firebase Admin
-    // Note: If Firebase Admin is not properly initialized with credentials (e.g. in dev), 
-    // this will fail. For local dev without proper service accounts, one might mock this.
+    // 1. Verify token with Firebase Admin
+    let decodedToken;
     try {
-      const decodedToken = await getFirebaseAuth().verifyIdToken(token);
-      
-      // Check MongoDB status
+      decodedToken = await getFirebaseAuth().verifyIdToken(token);
+    } catch (err) {
+      console.error('Error verifying Firebase ID token:', err.message || err);
+      const isExpired = err.code === 'auth/id-token-expired';
+      return res.status(401).json({ 
+        error: isExpired 
+          ? 'Your session has expired. Please log out and log in again.' 
+          : `Unauthorized: Invalid token (${err.message || 'Verification failed'})`
+      });
+    }
+
+    // 2. Check MongoDB status safely
+    try {
       const dbUser = await User.findOne({ uid: decodedToken.uid });
       if (dbUser) {
         if (dbUser.isDeleted) {
@@ -29,24 +39,21 @@ export const verifyAuth = async (req, res, next) => {
           return res.status(403).json({ error: 'Your account has been disabled by an administrator.' });
         }
       }
-
-      req.user = {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        name: decodedToken.name || decodedToken.email?.split('@')[0] || 'User',
-      };
-      next();
-    } catch (err) {
-      console.error('Error verifying Firebase ID token:', err);
-      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    } catch (dbErr) {
+      console.warn('Warning: Could not fetch user from DB in auth middleware:', dbErr.message);
     }
+
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name || decodedToken.email?.split('@')[0] || 'User',
+    };
+    next();
   } catch (error) {
     console.error('Auth middleware error:', error);
     res.status(500).json({ error: 'Internal server error during authentication' });
   }
 };
-
-import jwt from 'jsonwebtoken';
 
 export const authenticateAdmin = async (req, res, next) => {
   try {

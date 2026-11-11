@@ -123,28 +123,8 @@ export async function importJobsFromLinkedIn(keyword, location) {
   let jobs = [];
 
   if (!API_KEY) {
-    console.log('No LINKEDIN_API_KEY provided. Returning mock data.');
-    // Mock response for development
-    jobs = [
-      {
-        id: `mock-ln-${Date.now()}-1`,
-        title: `${keyword || 'Software Engineer'} (Mock)`,
-        company: 'Tech Corp Mock',
-        location: location || 'Sri Lanka',
-        jobUrl: 'https://linkedin.com/jobs/view/mock1',
-        description: 'This is a mock job description for testing purposes.',
-        skills: ['React', 'Node.js']
-      },
-      {
-        id: `mock-ln-${Date.now()}-2`,
-        title: `Senior ${keyword || 'Developer'} (Mock)`,
-        company: 'Global Innovations Mock',
-        location: location || 'Sri Lanka',
-        jobUrl: 'https://linkedin.com/jobs/view/mock2',
-        description: 'Another mock job for testing duplicate handling.',
-        skills: ['MongoDB', 'Express']
-      }
-    ];
+    console.log('No LINKEDIN_API_KEY provided. Skipping LinkedIn import.');
+    jobs = [];
   } else {
     try {
       const response = await axios.post(API_URL, {

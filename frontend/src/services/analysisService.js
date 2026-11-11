@@ -1,7 +1,14 @@
 import { auth } from '../config/firebase.js';
 
 async function fetchWithAuth(url, options = {}) {
-  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  let token = null;
+  if (auth.currentUser) {
+    try {
+      token = await auth.currentUser.getIdToken(true);
+    } catch {
+      token = await auth.currentUser.getIdToken();
+    }
+  }
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})

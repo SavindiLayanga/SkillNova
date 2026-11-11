@@ -4,6 +4,7 @@ import { Course } from '../models/Course.js';
 import { UserSettings } from '../models/UserSettings.js';
 import { User } from '../models/User.js';
 import { LearningPath } from '../models/LearningPath.js';
+import { SkillTest } from '../models/SkillTest.js';
 
 export const getJobMatches = async (req, res) => {
   try {
@@ -27,6 +28,11 @@ export const getJobMatches = async (req, res) => {
         targetRole = user.targetRole.toLowerCase();
       }
     }
+
+    // Include newly learned & verified skills from passed tests
+    const passedTests = await SkillTest.find({ userId: req.user.uid, isCompleted: true });
+    const verifiedTestSkills = passedTests.map(t => (t.skillName || '').toLowerCase()).filter(Boolean);
+    userSkills = [...new Set([...userSkills, ...verifiedTestSkills])];
 
     if (!targetRole) {
       const user = await User.findOne({ uid: req.user.uid });
@@ -136,6 +142,11 @@ export const getCourseMatches = async (req, res) => {
         targetRole = user.targetRole.toLowerCase();
       }
     }
+
+    // Filter out skills candidate has already passed
+    const passedTestsForCourses = await SkillTest.find({ userId: req.user.uid, isCompleted: true });
+    const passedSkillNames = passedTestsForCourses.map(t => (t.skillName || '').toLowerCase());
+    missingSkills = missingSkills.filter(s => !passedSkillNames.includes(s));
 
     if (!targetRole) {
       const user = await User.findOne({ uid: req.user.uid });

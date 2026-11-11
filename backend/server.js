@@ -44,6 +44,8 @@ import adminCoursesRoutes from './routes/adminCoursesRoutes.js';
 import adminCvReviewsRoutes from './routes/adminCvReviewsRoutes.js';
 import preferencesRoutes from './routes/preferencesRoutes.js';
 import youtubeRoutes from './routes/youtubeRoutes.js';
+import jobReadinessRoutes from './routes/jobReadinessRoutes.js';
+import publicRoutes from './routes/publicRoutes.js';
 
 import cookieParser from 'cookie-parser';
 
@@ -81,6 +83,10 @@ app.use('/api/youtube', youtubeRoutes);
 
 // Mount Skill Test Routes
 app.use('/api', skillTestRoutes);
+
+// Mount Job Readiness & Public Routes
+app.use('/api/job-readiness', jobReadinessRoutes);
+app.use('/api/public', publicRoutes);
 
 // Mount 2FA Routes
 app.use('/api/2fa', twoFactorRoutes);
@@ -289,6 +295,7 @@ app.patch("/api/settings", verifyAuth, require2FA, async (req, res) => {
     const updates = req.body;
 
     const allowedStringKeys = ["notificationFrequency", "quietHoursStart", "quietHoursEnd", "language", "timezone", "dateFormat", "timeFormat", "theme", "currency"];
+    const allowedNumberKeys = ["minMatchScoreForAutoApply"];
 
     for (const key in updates) {
       if (key.startsWith("twoFactor")) {
@@ -296,7 +303,8 @@ app.patch("/api/settings", verifyAuth, require2FA, async (req, res) => {
       }
       
       const isStringAllowed = allowedStringKeys.includes(key);
-      if (!isStringAllowed && typeof updates[key] !== "boolean") {
+      const isNumberAllowed = allowedNumberKeys.includes(key) && typeof updates[key] === "number";
+      if (!isStringAllowed && !isNumberAllowed && typeof updates[key] !== "boolean") {
         return res.status(400).json({
           error: `Value for ${key} must be a boolean.`,
         });
@@ -374,6 +382,8 @@ app.post("/api/analyze-cv", verifyAuth, require2FA, async (req, res) => {
       const prompt = `
 Analyze the attached PDF CV and extract the details strictly matching this JSON structure. If any field is not found, use an empty string or an empty array. Do NOT use placeholder text like "Not Detected". Pay special attention to "experience", "work experience", or "job experience" sections and extract them accurately into the experience array.
 
+CRITICAL: You MUST provide realistic integer scores (between 60 and 98) for "matchPercentage" and "careerReadinessScore" based on how well the candidate's skills and experience match the Target Role.
+
 JSON Structure:
 {
     "isITRelated": boolean (true if the CV is related to IT/Software/Tech, false otherwise),
@@ -429,6 +439,11 @@ Target Role: ${targetRole}
       if (responseText.includes("\`\`\`")) {
         responseText = responseText.replace(/\`\`\`json/gi, '').replace(/\`\`\`/g, '').trim();
       }
+      const firstBrace = responseText.indexOf('{');
+      const lastBrace = responseText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        responseText = responseText.substring(firstBrace, lastBrace + 1);
+      }
       data = JSON.parse(responseText);
     } catch (err) {
       console.error("GenAI failed, falling back to python server:", err);
@@ -441,7 +456,7 @@ Target Role: ${targetRole}
         if (!nlpResponse.ok) throw new Error("Python NLP service failed");
         data = await nlpResponse.json();
       } catch (pythonErr) {
-        throw new Error("Could not parse the CV using AI or Python fallback.");
+        throw new Error(`Could not parse the CV using AI or Python fallback. (${err?.message || err})`);
       }
     }
     
@@ -454,8 +469,26 @@ Target Role: ${targetRole}
     data.aiInsights = data.summary || data.aiInsights || "";
     data.careerRecommendations = data.jobRecommendations || data.careerRecommendations || [];
     data.learningPath = data.learningRoadmap || data.learningPath || [];
-    data.skillMatchScore = data.matchPercentage || data.skillMatchScore || 0;
-    data.cvScore = data.careerReadinessScore || data.cvScore || 0;
+    const calculateScore = (dataObj) => {
+      const existing = Number(dataObj.matchPercentage || dataObj.careerReadinessScore || dataObj.skillMatchScore || dataObj.cvScore);
+      if (!isNaN(existing) && existing > 0 && existing <= 100) {
+        return existing;
+      }
+      let score = 55;
+      const skillsCount = Math.max(dataObj.technicalSkills?.length || 0, dataObj.skills?.length || 0);
+      score += Math.min(skillsCount * 3, 20);
+      const expCount = dataObj.experience?.length || 0;
+      score += Math.min(expCount * 5, 15);
+      const eduCount = dataObj.education?.length || 0;
+      if (eduCount > 0) score += 5;
+      return Math.min(Math.max(score, 65), 95);
+    };
+
+    const calculatedScore = calculateScore(data);
+    data.matchPercentage = (typeof data.matchPercentage === 'number' && data.matchPercentage > 0) ? data.matchPercentage : calculatedScore;
+    data.careerReadinessScore = (typeof data.careerReadinessScore === 'number' && data.careerReadinessScore > 0) ? data.careerReadinessScore : calculatedScore;
+    data.skillMatchScore = data.matchPercentage;
+    data.cvScore = data.careerReadinessScore;
 
     console.log("Python NLP payload created.");
 

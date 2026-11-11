@@ -37,7 +37,7 @@ export const getAI = () => {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: model || "llama-3.1-8b-instant",
+            model: model || AI_MODEL || "openai/gpt-oss-20b",
             messages: [{ role: "user", content: promptText }],
             response_format: config?.responseMimeType === "application/json" ? { type: "json_object" } : undefined,
             temperature: 0.1

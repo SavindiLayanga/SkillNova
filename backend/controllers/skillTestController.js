@@ -2,6 +2,8 @@ import { SkillTest } from "../models/SkillTest.js";
 import { LibraryTest } from "../models/LibraryTest.js";
 import { AI_MODEL } from "../modelConfig.js";
 import { getAI, getDeduplicationKey, generateFallbackTests } from "../utils/aiHelper.js";
+import { evaluateJobReadiness } from "../services/jobReadinessService.js";
+import { findAndIntroduceCandidate } from "../services/employerIntroService.js";
 
 // Fetch User Skill Tests
 export const getUserSkillTests = async (req, res) => {
@@ -218,6 +220,20 @@ export const completeLibraryTest = async (req, res) => {
     test.lastPlayed = new Date();
     
     await test.save();
+
+    // If test is passed, asynchronously update job readiness and auto-apply if configured
+    if (isCompleted) {
+      (async () => {
+        try {
+          const readiness = await evaluateJobReadiness(req.user.uid);
+          if (readiness?.isJobReady) {
+            await findAndIntroduceCandidate(req.user.uid);
+          }
+        } catch (evalErr) {
+          console.warn("Async readiness evaluation error after test:", evalErr.message);
+        }
+      })();
+    }
     res.json(test);
   } catch (error) {
     console.error("Skill test complete error:", error);
@@ -267,6 +283,20 @@ export const submitSkillTest = async (req, res) => {
     test.completedAt = new Date();
     
     await test.save();
+
+    // If test is passed, asynchronously update job readiness and auto-apply if configured
+    if (isCompleted) {
+      (async () => {
+        try {
+          const readiness = await evaluateJobReadiness(req.user.uid);
+          if (readiness?.isJobReady) {
+            await findAndIntroduceCandidate(req.user.uid);
+          }
+        } catch (evalErr) {
+          console.warn("Async readiness evaluation error after test:", evalErr.message);
+        }
+      })();
+    }
 
     res.json({
       score: test.score,

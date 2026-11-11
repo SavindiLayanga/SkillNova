@@ -42,6 +42,16 @@ const privacyItems = [
     description: "Display recent activity to help track your career workflow.",
     key: "accountActivity"
   },
+  {
+    title: "Employer introductions",
+    description: "Allow SkillNova to introduce you to suitable employers when job-ready.",
+    key: "allowEmployerIntroductions"
+  },
+  {
+    title: "Auto-apply to high-matching jobs (>= 80%)",
+    description: "Automatically dispatch a tailored application with your CV when a job matches your verified skills by 80% or more.",
+    key: "autoApplyMatchingJobs"
+  },
 ];
 
 export default function Settings() {
@@ -140,6 +150,8 @@ export default function Settings() {
           case "progressVisibility": successMessage = "Progress visibility is enabled."; break;
           case "accountActivity": successMessage = "Account activity tracking is enabled."; break;
           case "twoFactorAuth": successMessage = "Two-factor authentication is enabled."; break;
+          case "allowEmployerIntroductions": successMessage = "Employer introductions are enabled."; break;
+          case "autoApplyMatchingJobs": successMessage = "Automatic CV dispatch for high-matching jobs is enabled."; break;
         }
       } else {
         switch(key) {
@@ -147,6 +159,7 @@ export default function Settings() {
           case "showRemoteJobsFirst": successMessage = "Remote job prioritization disabled."; break;
           case "useCVDataForMatchScoring": successMessage = "CV data match scoring disabled."; break;
           case "prioritizeBeginnerFriendlyPaths": successMessage = "Beginner-friendly prioritization disabled."; break;
+          case "autoApplyMatchingJobs": successMessage = "Automatic CV dispatch disabled. You can still apply manually with 1-click preview."; break;
           default: successMessage = "Setting disabled successfully."; break;
         }
       }
