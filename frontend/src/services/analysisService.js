@@ -79,6 +79,18 @@ export async function submitSkillTest(id, userAnswers) {
   }
 }
 
+export async function recordSkillTest(testData) {
+  try {
+    return await fetchWithAuth('/api/user/skill-tests/record', {
+      method: 'POST',
+      body: JSON.stringify(testData),
+    });
+  } catch (error) {
+    console.error('API Error (Record Skill Test):', error);
+    throw error;
+  }
+}
+
 export async function chatWithAI(messages, apiKey_unused, cvContext) {
   try {
     const data = await fetchWithAuth('/api/chat', {

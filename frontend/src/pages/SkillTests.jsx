@@ -25,7 +25,7 @@ import ProgressBar from "../components/ui/ProgressBar.jsx";
 import Loader from "../components/ui/Loader.jsx";
 import useCVAnalysis from "../hooks/useCVAnalysis.js";
 import { PracticeContext } from "../context/practiceContextValue.js";
-import { generateSkillTest, submitSkillTest } from "../services/analysisService.js";
+import { generateSkillTest, submitSkillTest, recordSkillTest } from "../services/analysisService.js";
 
 const getMasteryBadge = (level) => {
   if (level === "Excellent") return "⭐ Excellent Mastery";
@@ -364,7 +364,7 @@ export default function SkillTests() {
   // Use PracticeContext instead of local persistence
   const { 
     completedTests, pathScores, dynamicTestsCache, activeSession,
-    updateSession, clearSession, refreshTests, loading: isPracticeLoading 
+    updateSession, clearSession, refreshTests, recordCompletedTestLocally, loading: isPracticeLoading 
   } = useContext(PracticeContext);
 
   const [activeCategory, setActiveCategory] = useState(location.state?.autoStartPath ? "path" : "standard"); // "standard" or "path"
@@ -630,7 +630,7 @@ export default function SkillTests() {
           },
           body: JSON.stringify({ score: scorePercentage })
         });
-        
+        await refreshTests();
         return;
       } catch (e) {
         showToast("Failed to submit library test.", "error");
@@ -651,9 +651,9 @@ export default function SkillTests() {
     } else if (selectedTest.isPath) {
       // Save Path test score via backend
       const testData = dynamicTestsCache[selectedTest.pathSkill]?.[selectedTest.pathType];
+      const answersArray = questions.map((_, i) => userAnswers[i] ?? -1);
       if (testData && testData._id) {
         try {
-          const answersArray = questions.map((_, i) => userAnswers[i] ?? -1);
           const result = await submitSkillTest(testData._id, answersArray);
           setSubmissionData(result);
           
@@ -662,9 +662,43 @@ export default function SkillTests() {
         } catch (e) {
           showToast("Failed to submit test to server.", "error");
         }
+      } else {
+        try {
+          const result = await recordSkillTest({
+            skillName: selectedTest.pathSkill,
+            topic: selectedTest.pathType || "Conceptual Quiz",
+            questions,
+            userAnswers: answersArray,
+            score: scorePercentage,
+            difficulty: "Intermediate"
+          });
+          setSubmissionData(result);
+          await refreshTests();
+          updateProfileImprovements();
+        } catch (e) {
+          showToast("Failed to save test score.", "error");
+        }
       }
     } else {
-      // General test score (Not tracked in mongo currently)
+      // Standard Assessment - Record to MongoDB and update practice state
+      recordCompletedTestLocally(selectedTest.title, "Standard Assessment", scorePercentage);
+      try {
+        const answersArray = questions.map((_, i) => userAnswers[i] ?? -1);
+        const result = await recordSkillTest({
+          skillName: selectedTest.title,
+          topic: "Standard Assessment",
+          questions,
+          userAnswers: answersArray,
+          score: scorePercentage,
+          difficulty: selectedTest.level || "Intermediate"
+        });
+        setSubmissionData(result);
+        await refreshTests();
+        updateProfileImprovements();
+      } catch (e) {
+        console.error("Failed to record standard assessment:", e);
+        showToast("Failed to save test score to server.", "error");
+      }
     }
   };
 
@@ -841,9 +875,14 @@ export default function SkillTests() {
             <Button
               onClick={() => {
                 if (selectedTest.isLibraryTest) {
-                  clearSession().then(() => navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`));
+                  clearSession().then(() => {
+                    refreshTests();
+                    navigate(`/skill-library/${encodeURIComponent(selectedTest.skill)}`);
+                  });
                 } else {
-                  clearSession();
+                  clearSession().then(() => {
+                    refreshTests();
+                  });
                 }
               }}
               variant="secondary"

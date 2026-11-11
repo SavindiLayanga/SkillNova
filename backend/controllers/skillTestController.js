@@ -312,6 +312,93 @@ export const submitSkillTest = async (req, res) => {
   }
 };
 
+// Record / Save Completed Skill Test (Standard Assessments or dynamic)
+export const recordSkillTest = async (req, res) => {
+  try {
+    const { skillName, topic, questions, userAnswers, score, difficulty } = req.body;
+
+    if (!skillName) {
+      return res.status(400).json({ error: "skillName is required" });
+    }
+
+    const testScore = typeof score === 'number' ? score : 0;
+    const isCompleted = testScore >= 80;
+
+    let masteryLevel = "Needs Improvement";
+    if (testScore >= 95) {
+      masteryLevel = "Excellent";
+    } else if (testScore >= 90) {
+      masteryLevel = "Good";
+    } else if (testScore >= 80) {
+      masteryLevel = "Basic";
+    }
+
+    const actualTopic = topic || "Conceptual Quiz";
+
+    let test = await SkillTest.findOne({
+      userId: req.user.uid,
+      skillName,
+      topic: actualTopic
+    });
+
+    if (test) {
+      test.score = Math.max(test.score, testScore);
+      test.userAnswers = userAnswers || test.userAnswers;
+      test.isCompleted = test.isCompleted || isCompleted;
+      test.masteryLevel = masteryLevel;
+      test.attempts = (test.attempts || 1) + 1;
+      test.completedAt = new Date();
+      if (questions && Array.isArray(questions) && questions.length > 0) {
+        test.questions = questions;
+      }
+      await test.save();
+    } else {
+      test = new SkillTest({
+        userId: req.user.uid,
+        skillName,
+        topic: actualTopic,
+        questions: questions || [],
+        userAnswers: userAnswers || [],
+        score: testScore,
+        isCompleted,
+        masteryLevel,
+        difficulty: difficulty || "Intermediate",
+        attempts: 1,
+        completedAt: new Date()
+      });
+      await test.save();
+    }
+
+    // If test is passed, asynchronously update job readiness and auto-apply if configured
+    if (isCompleted) {
+      (async () => {
+        try {
+          const readiness = await evaluateJobReadiness(req.user.uid);
+          if (readiness?.isJobReady) {
+            await findAndIntroduceCandidate(req.user.uid);
+          }
+        } catch (evalErr) {
+          console.warn("Async readiness evaluation error after test:", evalErr.message);
+        }
+      })();
+    }
+
+    res.json({
+      success: true,
+      test,
+      score: test.score,
+      masteryLevel: test.masteryLevel,
+      isCompleted: test.isCompleted,
+      attempts: test.attempts,
+      completedAt: test.completedAt,
+      message: isCompleted ? `${masteryLevel} mastery achieved!` : "Keep practicing and try again!"
+    });
+  } catch (error) {
+    console.error("Skill test record error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 // Generate General Skill Test
 export const generateSkillTest = async (req, res) => {
   const { skillName, type, topic, targetDifficulty: reqDifficulty } = req.body;

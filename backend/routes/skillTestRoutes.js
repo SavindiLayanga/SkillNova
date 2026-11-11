@@ -8,13 +8,15 @@ import {
   getLibraryTestById,
   completeLibraryTest,
   submitSkillTest,
-  generateSkillTest
+  generateSkillTest,
+  recordSkillTest
 } from "../controllers/skillTestController.js";
 
 const router = express.Router();
 
 // General User Skill Tests
 router.get("/user/skill-tests", verifyAuth, require2FA, getUserSkillTests);
+router.post("/user/skill-tests/record", verifyAuth, require2FA, recordSkillTest);
 router.post("/user/skill-tests/:id/submit", verifyAuth, require2FA, submitSkillTest);
 
 // Skill Test Library

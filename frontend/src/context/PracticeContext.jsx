@@ -46,7 +46,7 @@ export function PracticeProvider({ children }) {
             newDynamicCache[test.skillName][topic] = test;
           }
           
-          if (test.isCompleted) {
+          if (test.score !== undefined && test.score !== null) {
             // In SkillTests.jsx, pathScores uses [skillName][topic] = score
             if (!newPathScores[test.skillName]) newPathScores[test.skillName] = {};
             newPathScores[test.skillName][topic] = test.score;
@@ -63,7 +63,7 @@ export function PracticeProvider({ children }) {
               }
             }
             
-            // Also store in general completed just in case
+            // Also store in general completed
             newCompleted[test.skillName] = test.score;
           }
         });
@@ -113,6 +113,16 @@ export function PracticeProvider({ children }) {
     await loadData();
   }, [loadData]);
 
+  const recordCompletedTestLocally = useCallback((skillName, topic, score) => {
+    setCompletedTests(prev => ({ ...prev, [skillName]: score }));
+    if (topic) {
+      setPathScores(prev => ({
+        ...prev,
+        [skillName]: { ...(prev[skillName] || {}), [topic]: score }
+      }));
+    }
+  }, []);
+
   const value = useMemo(() => ({
     loading,
     completedTests,
@@ -122,8 +132,9 @@ export function PracticeProvider({ children }) {
     activeSession,
     updateSession,
     clearSession,
-    refreshTests
-  }), [loading, completedTests, pathScores, dynamicTestsCache, skillDifficultyScores, activeSession, updateSession, clearSession, refreshTests]);
+    refreshTests,
+    recordCompletedTestLocally
+  }), [loading, completedTests, pathScores, dynamicTestsCache, skillDifficultyScores, activeSession, updateSession, clearSession, refreshTests, recordCompletedTestLocally]);
 
   return (
     <PracticeContext.Provider value={value}>
