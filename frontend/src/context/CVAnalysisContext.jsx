@@ -168,6 +168,9 @@ export function CVAnalysisProvider({ children }) {
         skillMatchScore: Number(extractedData.skillMatchScore || extractedData.matchPercentage || extractedData.cvScore || extractedData.careerReadinessScore) || 0,
         cvScore: Number(extractedData.cvScore || extractedData.careerReadinessScore || extractedData.skillMatchScore || extractedData.matchPercentage) || 0,
         learningPath: extractedData.learningPath || [],
+        verifiedSkills: extractedData.verifiedSkills || [],
+        isCVReupload: extractedData.isCVReupload || false,
+        previousCVFileName: extractedData.previousCVFileName || "",
         aiInsights: extractedData.aiInsights || "No specific insights generated.",
         
         // We no longer inject dummy data, all UI should handle missing/empty state
@@ -228,6 +231,9 @@ export function CVAnalysisProvider({ children }) {
         skillMatchScore: Number(extractedData.skillMatchScore || extractedData.matchPercentage || extractedData.cvScore || extractedData.careerReadinessScore) || 0,
         cvScore: Number(extractedData.cvScore || extractedData.careerReadinessScore || extractedData.skillMatchScore || extractedData.matchPercentage) || 0,
         learningPath: extractedData.learningPath || [],
+        verifiedSkills: extractedData.verifiedSkills || [],
+        isCVReupload: extractedData.isCVReupload || false,
+        previousCVFileName: extractedData.previousCVFileName || "",
         aiInsights: extractedData.aiInsights || "No specific insights generated.",
         
         // We no longer inject dummy data, all UI should handle missing/empty state
