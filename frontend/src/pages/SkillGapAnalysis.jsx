@@ -1,6 +1,25 @@
 import { useState, useContext, useEffect } from "react";
 import { getAuth } from "firebase/auth";
-import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight, Lock, Check, Trophy, PlayCircle } from "lucide-react";
+import {
+  BookOpen,
+  Target,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  Lock,
+  Check,
+  Trophy,
+  PlayCircle,
+  Award,
+  ShieldCheck,
+  Copy,
+  Download,
+  ExternalLink,
+  Briefcase,
+  Sparkles,
+  Share2
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
 import AnalysisProcessingState from "../components/ui/AnalysisProcessingState.jsx";
@@ -26,6 +45,17 @@ export default function SkillGapAnalysis() {
   const [youtubeVideos, setYoutubeVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [certificates, setCertificates] = useState([]);
+  const [copied, setCopied] = useState(false);
+
+  const copyCertId = (text) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const activeTargetRole = certificates[0]?.targetRole || analysis?.targetRole || "Software Developer";
 
   useEffect(() => {
     async function loadCertificates() {
@@ -88,12 +118,18 @@ export default function SkillGapAnalysis() {
       <PageHeader
         action={
           hasAnalysis ? (
-            <Link to="/learning-path">
-              <Button icon={BookOpen}>Generate learning path</Button>
-            </Link>
+            certificates.length > 0 ? (
+              <Link to="/jobs">
+                <Button icon={Briefcase}>Browse Industry Jobs</Button>
+              </Link>
+            ) : (
+              <Link to="/learning-path">
+                <Button icon={BookOpen}>Generate learning path</Button>
+              </Link>
+            )
           ) : null
         }
-        description={`Skill gap analysis for the target role: ${analysis?.targetRole || "your target role"}.`}
+        description={`Skill gap analysis for the target role: ${activeTargetRole}.`}
         eyebrow="Skill Gap Analysis"
         title="Prioritize the skills that move your profile forward"
       />
@@ -337,57 +373,155 @@ export default function SkillGapAnalysis() {
         </>
       ) : hasAnalysis && missingSkills.length === 0 ? (
         certificates.length > 0 ? (
-          <Card className="overflow-hidden border border-amber-200 bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 p-8 text-center animate-fade-in-slide-up shadow-sm">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-inner">
-              <Trophy className="h-8 w-8" />
-            </div>
-            <div className="mt-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 text-xs font-extrabold text-emerald-800 border border-emerald-200 shadow-sm">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Official Certificate Issued by Admin
-              </span>
-              <h3 className="mt-3 text-2xl font-black text-ink-900">
+          <div className="relative overflow-hidden rounded-3xl border-2 border-amber-300/80 bg-gradient-to-b from-[#FFFDF9] via-white to-[#FDFBF7] p-6 sm:p-10 shadow-2xl shadow-amber-500/10 transition-all animate-fade-in-slide-up">
+            {/* Diploma Decorative Corner Brackets */}
+            <div className="absolute top-3.5 left-3.5 w-7 h-7 border-t-2 border-l-2 border-amber-400/90 rounded-tl-md pointer-events-none" />
+            <div className="absolute top-3.5 right-3.5 w-7 h-7 border-t-2 border-r-2 border-amber-400/90 rounded-tr-md pointer-events-none" />
+            <div className="absolute bottom-3.5 left-3.5 w-7 h-7 border-b-2 border-l-2 border-amber-400/90 rounded-bl-md pointer-events-none" />
+            <div className="absolute bottom-3.5 right-3.5 w-7 h-7 border-b-2 border-r-2 border-amber-400/90 rounded-br-md pointer-events-none" />
+
+            {/* Subtle Watermark & Radial Glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.035] pointer-events-none" />
+            <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 text-center max-w-3xl mx-auto">
+              {/* Royal Gold 3D Crest Emblem */}
+              <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 text-white shadow-xl shadow-amber-500/30 ring-8 ring-amber-100/90">
+                <Award className="h-10 w-10 text-white drop-shadow" />
+                <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white ring-2 ring-white shadow-sm">
+                  <Check className="h-3.5 w-3.5 stroke-[3]" />
+                </div>
+              </div>
+
+              {/* Verified Pill */}
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-300 px-4 py-1 text-xs font-black uppercase tracking-wider text-emerald-800 shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Official Industry Credential • Issued by Admin</span>
+              </div>
+
+              {/* Title & Recipient */}
+              <h2 className="mt-3 text-3xl sm:text-4xl font-black text-slate-900 tracking-tight font-serif">
                 Certificate of Job Readiness
-              </h3>
-              <p className="mt-2 text-sm text-ink-600 max-w-lg mx-auto">
-                Congratulations! Your profile and verified skill achievements have been approved. You have officially qualified for the role of <strong className="text-ink-900">{certificates[0].targetRole}</strong>.
+              </h2>
+              <p className="mt-2 text-xs uppercase tracking-widest text-slate-400 font-bold">
+                This officially certifies that
               </p>
-            </div>
+              <h3 className="mt-1 text-2xl sm:text-3xl font-black text-primary-700 capitalize tracking-tight">
+                {certificates[0].name || analysis?.name || "Kavishka Prabashra"}
+              </h3>
+              <p className="mt-2 text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
+                has successfully cleared all identified technical skill gaps, passed rigorous assessments, and demonstrated verified mastery for the role of:
+              </p>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-6 py-4 border-y border-amber-100 bg-white/80 rounded-xl max-w-xl mx-auto text-xs">
-              <div>
-                <p className="font-semibold text-ink-400 uppercase tracking-wider">Certificate ID</p>
-                <p className="font-mono font-bold text-ink-900 text-sm mt-0.5">{certificates[0].certificateId}</p>
+              {/* Qualified Target Role Banner */}
+              <div className="mt-4 inline-block rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-amber-500/10 border border-amber-500/30 px-6 sm:px-8 py-3 shadow-2xs">
+                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-wide">
+                  {certificates[0].targetRole}
+                </span>
               </div>
-              <div>
-                <p className="font-semibold text-ink-400 uppercase tracking-wider">Readiness Score</p>
-                <p className="font-bold text-emerald-600 text-sm mt-0.5">{certificates[0].jobReadinessScore}%</p>
-              </div>
-              <div>
-                <p className="font-semibold text-ink-400 uppercase tracking-wider">Issue Date</p>
-                <p className="font-bold text-ink-800 text-sm mt-0.5">{new Date(certificates[0].issueDate).toLocaleDateString()}</p>
-              </div>
-            </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              {certificates[0].pdfUrl && (
-                <a 
-                  href={`http://localhost:5000${certificates[0].pdfUrl}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-700 transition"
-                >
-                  Download Certificate PDF
-                </a>
+              {/* 4-Metric Accreditation Grid */}
+              <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-left">
+                {/* Certificate ID */}
+                <div className="rounded-2xl bg-white/95 border border-amber-200/70 p-4 shadow-2xs flex flex-col justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Credential ID</p>
+                  <p className="font-mono text-xs sm:text-sm font-black text-slate-900 my-1 truncate">
+                    {certificates[0].certificateId}
+                  </p>
+                  <button
+                    onClick={() => copyCertId(certificates[0].certificateId)}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 hover:text-primary-700 transition"
+                  >
+                    {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                    <span>{copied ? "Copied!" : "Copy ID"}</span>
+                  </button>
+                </div>
+
+                {/* Readiness Score */}
+                <div className="rounded-2xl bg-white/95 border border-amber-200/70 p-4 shadow-2xs flex flex-col justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Readiness Score</p>
+                  <p className="text-2xl font-black text-emerald-600 my-0.5">
+                    {certificates[0].jobReadinessScore}%
+                  </p>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
+                    Top Tier Qualified
+                  </span>
+                </div>
+
+                {/* Issue Date */}
+                <div className="rounded-2xl bg-white/95 border border-amber-200/70 p-4 shadow-2xs flex flex-col justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Issue Date</p>
+                  <p className="text-xs sm:text-sm font-bold text-slate-800 my-1">
+                    {new Date(certificates[0].issueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                  <span className="text-[10px] text-slate-400">Permanent Record</span>
+                </div>
+
+                {/* Verification Status */}
+                <div className="rounded-2xl bg-white/95 border border-amber-200/70 p-4 shadow-2xs flex flex-col justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</p>
+                  <p className="text-xs sm:text-sm font-bold text-emerald-600 my-1 flex items-center gap-1">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Active & Verified</span>
+                  </p>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
+                    Publicly Verifiable
+                  </span>
+                </div>
+              </div>
+
+              {/* Verified Competencies / Skills Endorsement Badges */}
+              {certificates[0].skillsCompleted && certificates[0].skillsCompleted.length > 0 && (
+                <div className="mt-7 rounded-2xl bg-amber-50/60 border border-amber-200/80 p-4 text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-amber-900 mb-2.5">
+                    Verified Competencies & Endorsed Skills
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {certificates[0].skillsCompleted.map((skill, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-amber-200 px-3 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>{skill}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
-              <Link 
-                to={`/verify/${certificates[0].certificateId}`}
-                target="_blank"
-                className="inline-flex items-center gap-2 rounded-xl bg-white border border-ink-200 px-5 py-2.5 text-xs font-bold text-ink-800 shadow-sm hover:bg-ink-50 transition"
-              >
-                Verify Credential Online
-              </Link>
+
+              {/* Action Buttons */}
+              <div className="mt-8 pt-6 border-t border-amber-200/80 flex flex-wrap items-center justify-center gap-3.5">
+                {certificates[0].pdfUrl && (
+                  <a 
+                    href={`http://localhost:5000${certificates[0].pdfUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-950 hover:bg-slate-800 px-5 py-3 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
+                  >
+                    <Download className="h-4 w-4 text-amber-400" />
+                    <span>Download Official PDF</span>
+                  </a>
+                )}
+                <Link 
+                  to={`/verify/${certificates[0].certificateId}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-300 hover:border-slate-400 px-5 py-3 text-xs font-bold text-slate-800 shadow-xs hover:bg-slate-50 transition-all active:scale-95"
+                >
+                  <ExternalLink className="h-4 w-4 text-slate-500" />
+                  <span>Verify Credential Online</span>
+                </Link>
+                <Link
+                  to="/jobs"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary-600 hover:bg-primary-700 px-5 py-3 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-95"
+                >
+                  <Briefcase className="h-4 w-4 text-white" />
+                  <span>Explore Matching Jobs</span>
+                </Link>
+              </div>
             </div>
-          </Card>
+          </div>
         ) : (
           <Card className="text-center p-8 border border-primary-100 bg-gradient-to-br from-primary-50/30 to-white">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-3">
