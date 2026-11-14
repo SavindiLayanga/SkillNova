@@ -1,4 +1,22 @@
-import { Bell, Menu, Search, MessageSquare, LayoutDashboard, FileText, CheckSquare, GraduationCap, Briefcase, ChevronRight } from "lucide-react";
+import {
+  Bell,
+  Menu,
+  Search,
+  MessageSquare,
+  LayoutDashboard,
+  FileText,
+  CheckSquare,
+  GraduationCap,
+  Briefcase,
+  ChevronRight,
+  UserPlus,
+  LogOut,
+  ChevronDown,
+  Check,
+  Trash2,
+  X,
+  Users
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth.js";
@@ -24,7 +42,7 @@ const SEARCH_INDEX = [
 ];
 
 export default function Navbar({ onMenuClick, onChatClick }) {
-  const { user, getToken } = useAuth();
+  const { user, getToken, savedAccounts, addAccount, switchAccount, removeAccount, logout, logoutAll } = useAuth();
   const navigate = useNavigate();
   const { analysis } = useCVAnalysis();
   const accountName = user?.name && user.name !== "User" && user.name !== "SkillNova User" ? user.name : null;
@@ -51,10 +69,22 @@ export default function Navbar({ onMenuClick, onChatClick }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef(null);
 
+  // Multi-account switcher states
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addPassword, setAddPassword] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
+  const profileRef = useRef(null);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setIsSearchOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -261,19 +291,253 @@ export default function Navbar({ onMenuClick, onChatClick }) {
               </>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-               <p className="text-sm font-semibold text-ink-900">
-                {displayName}
-              </p>
-              <p className="text-xs text-ink-500">{track}</p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-700">
-              {initials}
-            </div>
+          {/* Multi-Account Profile & Switcher Menu */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center gap-2.5 rounded-full p-1 pl-2 hover:bg-ink-50 transition-colors focus:outline-none"
+              title="Account & Multi-User Switcher"
+              type="button"
+            >
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold text-ink-900 leading-tight">
+                  {displayName}
+                </p>
+                <p className="text-xs text-ink-500">{track}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-700 ring-2 ring-primary-500/20">
+                {initials}
+              </div>
+              <ChevronDown className="h-4 w-4 text-ink-400 hidden sm:block" />
+            </button>
+
+            {/* Profile Dropdown */}
+            {isProfileOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 z-50 rounded-2xl border border-ink-100 bg-white shadow-2xl overflow-hidden animate-fade-in-slide-up origin-top-right">
+                {/* Active Account Header */}
+                <div className="p-4 bg-gradient-to-br from-primary-50/50 via-white to-ink-50/30 border-b border-ink-100">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-white font-extrabold text-lg shadow-sm">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-ink-900 truncate">{displayName}</p>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-700">
+                          <Check className="h-3 w-3" /> Active
+                        </span>
+                      </div>
+                      <p className="text-xs text-ink-500 truncate">{user?.email}</p>
+                      <p className="text-[11px] text-primary-600 font-medium truncate mt-0.5">{track}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Other Saved Accounts */}
+                {savedAccounts && savedAccounts.filter(a => a.email.toLowerCase() !== user?.email?.toLowerCase()).length > 0 && (
+                  <div className="p-2 border-b border-ink-100">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400 px-3 py-1">
+                      Other Accounts ({savedAccounts.filter(a => a.email.toLowerCase() !== user?.email?.toLowerCase()).length})
+                    </p>
+                    <div className="space-y-1">
+                      {savedAccounts
+                        .filter(a => a.email.toLowerCase() !== user?.email?.toLowerCase())
+                        .map(acc => {
+                          const accInitials = getInitials(acc.name || acc.email) || "U";
+                          return (
+                            <div
+                              key={acc.email}
+                              className="flex items-center justify-between p-2 rounded-xl hover:bg-ink-50 transition-colors group"
+                            >
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    setIsProfileOpen(false);
+                                    await switchAccount(acc.email);
+                                  } catch (err) {
+                                    if (err.message === "PASSWORD_REQUIRED") {
+                                      setAddEmail(acc.email);
+                                      setIsAddModalOpen(true);
+                                    } else {
+                                      alert(err.message || "Failed to switch account");
+                                    }
+                                  }
+                                }}
+                                className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+                                type="button"
+                              >
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">
+                                  {accInitials}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-ink-900 truncate">{acc.name || acc.email.split('@')[0]}</p>
+                                  <p className="text-[11px] text-ink-500 truncate">{acc.email}</p>
+                                </div>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeAccount(acc.email);
+                                }}
+                                className="p-1.5 text-ink-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Remove from switcher"
+                                type="button"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Account Actions */}
+                <div className="p-2 space-y-1">
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      setAddEmail("");
+                      setAddPassword("");
+                      setAddError("");
+                      setIsAddModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-semibold text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
+                    type="button"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>+ Add Another Account</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      logout();
+                      navigate("/login", { replace: true });
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-semibold text-ink-600 hover:bg-ink-50 rounded-xl transition-colors"
+                    type="button"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out of this account</span>
+                  </button>
+
+                  {savedAccounts && savedAccounts.length > 1 && (
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        logoutAll();
+                        navigate("/login", { replace: true });
+                      }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                      type="button"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Sign out of all accounts</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Add Another Account Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-ink-100 bg-ink-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 text-primary-600">
+                  <UserPlus className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-ink-900">Add Another Account</h3>
+                  <p className="text-xs text-ink-500">Sign in to keep multiple users active simultaneously</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="rounded-lg p-1.5 text-ink-400 hover:text-ink-700 hover:bg-ink-100"
+                type="button"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setAddError("");
+                setAddLoading(true);
+                try {
+                  await addAccount(addEmail, addPassword);
+                  setIsAddModalOpen(false);
+                  setAddEmail("");
+                  setAddPassword("");
+                } catch (err) {
+                  setAddError(err.message || "Failed to sign in to account");
+                } finally {
+                  setAddLoading(false);
+                }
+              }}
+              className="p-5 space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold text-ink-700 uppercase tracking-wider mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  placeholder="student@example.com"
+                  required
+                  className="w-full rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm text-ink-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-700 uppercase tracking-wider mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={addPassword}
+                  onChange={(e) => setAddPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm text-ink-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all"
+                />
+              </div>
+
+              {addError && (
+                <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs font-semibold text-rose-700">
+                  {addError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="rounded-xl border border-ink-200 px-4 py-2.5 text-xs font-bold text-ink-600 hover:bg-ink-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary-700 transition disabled:opacity-50"
+                >
+                  {addLoading ? "Signing in..." : "Sign in & Add"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
