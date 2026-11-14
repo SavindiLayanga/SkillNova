@@ -79,3 +79,15 @@ export async function sendDirectMessageToUser(userId, subject, message) {
   if (!response.ok) throw new Error(data.message || data.error || 'Failed to send direct message');
   return data;
 }
+
+export async function issueUserCertificate(userId, certificateData = {}) {
+  const response = await fetch(`${API_URL}/admin/users/${userId}/issue-certificate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(certificateData)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || data.message || 'Failed to issue certificate');
+  return data;
+}

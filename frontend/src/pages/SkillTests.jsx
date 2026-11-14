@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import {
@@ -367,7 +367,9 @@ export default function SkillTests() {
     updateSession, clearSession, refreshTests, recordCompletedTestLocally, loading: isPracticeLoading 
   } = useContext(PracticeContext);
 
-  const [activeCategory, setActiveCategory] = useState(location.state?.autoStartPath ? "path" : "standard"); // "standard" or "path"
+  const [activeCategory, setActiveCategory] = useState(
+    location.state?.autoStartPath || Boolean(localStorage.getItem("skillnova_cv_analysis")) ? "path" : "standard"
+  );
   const { analysis, hasAnalysis } = useCVAnalysis();
   const missingSkills = hasAnalysis ? (analysis.missingSkills || []) : [];
 
@@ -769,11 +771,20 @@ export default function SkillTests() {
     return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
   };
 
-  // Overall path metrics
-  let pathSkills = missingSkills.length > 0 
-    ? missingSkills.map(s => typeof s === 'string' ? s : s.skill || s.name)
-    : ["TypeScript", "API Integration", "Testing"];
-  
+  // Overall path metrics: include remaining missing skills AND any verified skills
+  const verifiedList = useMemo(() => {
+    return Array.isArray(analysis?.verifiedSkills) ? analysis.verifiedSkills : [];
+  }, [analysis?.verifiedSkills]);
+
+  const missingList = useMemo(() => {
+    return (missingSkills || []).map(s => typeof s === 'string' ? s : s.skill || s.name);
+  }, [missingSkills]);
+
+  const pathSkills = useMemo(() => {
+    const combined = [...new Set([...missingList, ...verifiedList])];
+    if (combined.length > 0) return combined;
+    return ["TypeScript", "API Integration", "Testing"];
+  }, [missingList, verifiedList]);
 
   let completedSubtestsCount = 0;
   let totalSubtests = 0;
@@ -795,8 +806,29 @@ export default function SkillTests() {
     ? Math.round(totalScoresSum / completedSubtestsCount) 
     : 0;
 
-  // Rule: Must complete ALL tests AND average must be >= 90%
-  const isEndorsedForTargetRole = completedSubtestsCount === totalSubtests && overallAverage >= 90 && totalSubtests > 0;
+  // Rule: Must complete ALL tests AND average must be >= 90%, OR all missing skills have been completed and verified
+  const isEndorsedForTargetRole = (
+    (completedSubtestsCount === totalSubtests && overallAverage >= 90 && totalSubtests > 0) ||
+    (missingList.length === 0 && verifiedList.length > 0)
+  );
+
+  const dynamicReadinessScore = useMemo(() => {
+    const rawScore = Number(analysis?.careerReadinessScore || analysis?.matchPercentage || analysis?.skillMatchScore || analysis?.cvScore);
+    if (!isNaN(rawScore) && rawScore > 0) {
+      return Math.min(99, Math.max(50, Math.round(rawScore)));
+    }
+    if (completedSubtestsCount > 0 && overallAverage > 0) {
+      return Math.min(99, Math.max(65, Math.round((overallAverage * 0.5) + 45)));
+    }
+    return 75;
+  }, [analysis?.careerReadinessScore, analysis?.matchPercentage, analysis?.skillMatchScore, analysis?.cvScore, completedSubtestsCount, overallAverage]);
+
+  const strongAreasList = useMemo(() => {
+    const verified = Array.isArray(analysis?.verifiedSkills) ? analysis.verifiedSkills : [];
+    const technical = (analysis?.technicalSkills || []).map(s => typeof s === 'string' ? s : s.name);
+    const strong = (analysis?.strongSkills || []).map(s => typeof s === 'string' ? s : s.name);
+    return [...new Set([...verified, ...strong, ...technical])].filter(Boolean);
+  }, [analysis]);
 
   const handleGenerateMoreTests = async (skillName) => {
     setIsGeneratingTest(true);
@@ -1261,9 +1293,9 @@ export default function SkillTests() {
                <div className="mt-4 relative inline-flex items-center justify-center">
                   <svg className="w-24 h-24 transform -rotate-90">
                     <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-ink-100/50" />
-                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * 65) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
+                    <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * dynamicReadinessScore) / 100} className="text-primary-500 transition-all duration-1000 ease-out" />
                   </svg>
-                  <span className="absolute text-2xl font-extrabold text-ink-900">65%</span>
+                  <span className="absolute text-2xl font-extrabold text-ink-900">{dynamicReadinessScore}%</span>
                </div>
                <p className="mt-3 text-xs text-ink-500 font-medium">Predicted from test scores & CV</p>
             </div>
@@ -1273,10 +1305,19 @@ export default function SkillTests() {
                   <div>
                      <h3 className="text-sm font-bold text-ink-900 mb-1">Strong Areas</h3>
                      <div className="flex flex-wrap gap-1.5">
-                        {hasAnalysis && analysis?.technicalSkills?.length > 0 ? (
-                          analysis.technicalSkills.slice(0, 2).map((skill, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">{skill.name || skill}</span>
-                          ))
+                        {strongAreasList.length > 0 ? (
+                          strongAreasList.slice(0, 4).map((skill, idx) => {
+                            const isVerified = verifiedList.some(v => v.toLowerCase().trim() === skill.toLowerCase().trim());
+                            return (
+                              <span key={idx} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
+                                isVerified 
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300 font-extrabold"
+                                  : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              }`}>
+                                {skill} {isVerified && "✓"}
+                              </span>
+                            );
+                          })
                         ) : (
                           <>
                             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-xs font-bold">React Fundamentals</span>
@@ -1288,16 +1329,14 @@ export default function SkillTests() {
                   <div>
                      <h3 className="text-sm font-bold text-ink-900 mb-1">Weak Areas</h3>
                      <div className="flex flex-wrap gap-1.5">
-                        {missingSkills.length > 0 ? (
-                          missingSkills.slice(0, 2).map((skill, idx) => {
-                            const skillName = typeof skill === 'string' ? skill : skill.skill || skill.name;
-                            return <span key={idx} className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">{skillName}</span>
+                        {missingList.length > 0 ? (
+                          missingList.slice(0, 3).map((skill, idx) => {
+                            return <span key={idx} className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">{skill}</span>;
                           })
                         ) : (
-                          <>
-                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">System Design</span>
-                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-xs font-bold">Advanced State</span>
-                          </>
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                            ✨ All Identified Skill Gaps Completed!
+                          </span>
                         )}
                      </div>
                   </div>
@@ -1309,9 +1348,9 @@ export default function SkillTests() {
                         <BookOpen className="h-4 w-4 text-primary-600 mt-0.5 shrink-0" />
                         <div>
                            <p className="text-xs font-bold text-ink-900">
-                             {missingSkills.length > 0 ? (typeof missingSkills[0] === 'string' ? missingSkills[0] : missingSkills[0].skill || missingSkills[0].name) : "System Design Patterns"}
+                             {missingList.length > 0 ? missingList[0] : (verifiedList.length > 0 ? `${verifiedList[0]} (Verified / Retake Available)` : "System Design Patterns")}
                            </p>
-                           <p className="text-[10px] text-ink-500">Take the related conceptual quiz.</p>
+                           <p className="text-[10px] text-ink-500">{missingList.length > 0 ? "Take the related conceptual quiz to endorse this gap." : (verifiedList.length > 0 ? "All gaps verified! You can retake any module or practice in the library." : "Take standard assessment to benchmark.")}</p>
                         </div>
                      </div>
                      <Button 
@@ -1356,8 +1395,8 @@ export default function SkillTests() {
           type="button"
         >
           Weakness Endorsement Path
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-bold text-primary-600">
-            {pathSkills.length} Gaps
+          <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${missingList.length === 0 && verifiedList.length > 0 ? "bg-emerald-100 text-emerald-800" : "bg-primary-50 text-primary-600"}`}>
+            {missingList.length > 0 ? `${missingList.length} Gaps` : (verifiedList.length > 0 ? `${verifiedList.length} Verified ✓` : "All Cleared ✓")}
           </span>
         </button>
       </div>
@@ -1540,7 +1579,14 @@ export default function SkillTests() {
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-extrabold text-ink-900 text-2xl">{skill} Master Class</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-extrabold text-ink-900 text-2xl">{skill} Master Class</h4>
+                            {verifiedList.some(v => v.toLowerCase().trim() === skill.toLowerCase().trim()) && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                                Verified ✓
+                              </span>
+                            )}
+                          </div>
                           <span className="text-sm font-semibold text-ink-500 mt-1 block">
                             Complete all sub-topics to demonstrate complete mastery of this weakness.
                           </span>

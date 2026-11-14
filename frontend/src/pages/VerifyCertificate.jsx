@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { CheckCircle, XCircle, ShieldCheck } from "lucide-react";
+import { useParams, Link } from "react-router-dom";
+import { CheckCircle, XCircle, ShieldCheck, Download, Award, ArrowLeft } from "lucide-react";
 
 export default function VerifyCertificate() {
   const { id } = useParams();
@@ -8,7 +8,8 @@ export default function VerifyCertificate() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/public/verify-certificate/${id}`)
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    fetch(`${apiUrl}/public/verify-certificate/${id}`)
       .then(res => res.json())
       .then(data => setVerification(data))
       .catch(() => setVerification({ valid: false, message: "Network Error" }))
@@ -70,12 +71,29 @@ export default function VerifyCertificate() {
                 ))}
               </div>
             </div>
+            {verification.pdfUrl && (
+              <div className="pt-2">
+                <a 
+                  href={`http://localhost:5000${verification.pdfUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-primary-700 transition"
+                >
+                  <Download className="h-4 w-4" /> Download Official PDF Certificate
+                </a>
+              </div>
+            )}
           </div>
         )}
         
-        <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-          <ShieldCheck size={16} />
-          Verified by SkillNova
+        <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-between text-slate-400 text-xs font-bold">
+          <div className="flex items-center gap-1.5 uppercase tracking-wider">
+            <ShieldCheck size={16} />
+            Verified by SkillNova
+          </div>
+          <Link to="/" className="text-primary-600 hover:underline">
+            SkillNova Home &rarr;
+          </Link>
         </div>
       </div>
     </div>

@@ -232,7 +232,16 @@ export default function Navbar({ onMenuClick, onChatClick }) {
                   <div className="max-h-[300px] overflow-y-auto">
                     {notifications.length > 0 ? (
                       notifications.map(notification => (
-                        <button key={notification._id} className={`w-full text-left p-4 border-b border-ink-100 hover:bg-ink-50 transition-colors flex gap-3 ${notification.isRead ? 'opacity-60' : ''}`}>
+                        <button 
+                          key={notification._id} 
+                          onClick={() => {
+                            if (notification.link) {
+                              setIsNotificationsOpen(false);
+                              navigate(notification.link);
+                            }
+                          }}
+                          className={`w-full text-left p-4 border-b border-ink-100 hover:bg-ink-50 transition-colors flex gap-3 ${notification.isRead ? 'opacity-60' : ''}`}
+                        >
                           <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${notification.isRead ? 'bg-transparent' : 'bg-primary-500'}`} />
                           <div>
                             <p className="text-sm font-semibold text-ink-900">{notification.title}</p>

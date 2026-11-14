@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from "react";
+import { getAuth } from "firebase/auth";
 import { BookOpen, Target, TrendingUp, CheckCircle2, XCircle, ArrowRight, Lock, Check, Trophy, PlayCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AnalysisEmptyState from "../components/ui/AnalysisEmptyState.jsx";
@@ -24,6 +25,28 @@ export default function SkillGapAnalysis() {
 
   const [youtubeVideos, setYoutubeVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
+  const [certificates, setCertificates] = useState([]);
+
+  useEffect(() => {
+    async function loadCertificates() {
+      try {
+        const auth = getAuth();
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) return;
+
+        const res = await fetch("/api/job-readiness/certificates", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCertificates(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to load certificates:", err);
+      }
+    }
+    loadCertificates();
+  }, []);
 
   useEffect(() => {
     async function fetchVideos() {
@@ -313,10 +336,72 @@ export default function SkillGapAnalysis() {
           </section>
         </>
       ) : hasAnalysis && missingSkills.length === 0 ? (
-        <Card className="text-center p-8">
-          <h3 className="font-bold text-ink-900 text-lg">No skill gaps found!</h3>
-          <p className="text-ink-500 mt-2">Your profile perfectly matches your target role based on your CV.</p>
-        </Card>
+        certificates.length > 0 ? (
+          <Card className="overflow-hidden border border-amber-200 bg-gradient-to-br from-amber-50/60 via-white to-amber-50/20 p-8 text-center animate-fade-in-slide-up shadow-sm">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-inner">
+              <Trophy className="h-8 w-8" />
+            </div>
+            <div className="mt-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1 text-xs font-extrabold text-emerald-800 border border-emerald-200 shadow-sm">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Official Certificate Issued by Admin
+              </span>
+              <h3 className="mt-3 text-2xl font-black text-ink-900">
+                Certificate of Job Readiness
+              </h3>
+              <p className="mt-2 text-sm text-ink-600 max-w-lg mx-auto">
+                Congratulations! Your profile and verified skill achievements have been approved. You have officially qualified for the role of <strong className="text-ink-900">{certificates[0].targetRole}</strong>.
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-6 py-4 border-y border-amber-100 bg-white/80 rounded-xl max-w-xl mx-auto text-xs">
+              <div>
+                <p className="font-semibold text-ink-400 uppercase tracking-wider">Certificate ID</p>
+                <p className="font-mono font-bold text-ink-900 text-sm mt-0.5">{certificates[0].certificateId}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-ink-400 uppercase tracking-wider">Readiness Score</p>
+                <p className="font-bold text-emerald-600 text-sm mt-0.5">{certificates[0].jobReadinessScore}%</p>
+              </div>
+              <div>
+                <p className="font-semibold text-ink-400 uppercase tracking-wider">Issue Date</p>
+                <p className="font-bold text-ink-800 text-sm mt-0.5">{new Date(certificates[0].issueDate).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {certificates[0].pdfUrl && (
+                <a 
+                  href={`http://localhost:5000${certificates[0].pdfUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary-700 transition"
+                >
+                  Download Certificate PDF
+                </a>
+              )}
+              <Link 
+                to={`/verify/${certificates[0].certificateId}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-xl bg-white border border-ink-200 px-5 py-2.5 text-xs font-bold text-ink-800 shadow-sm hover:bg-ink-50 transition"
+              >
+                Verify Credential Online
+              </Link>
+            </div>
+          </Card>
+        ) : (
+          <Card className="text-center p-8 border border-primary-100 bg-gradient-to-br from-primary-50/30 to-white">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-3">
+              <CheckCircle2 className="h-7 w-7" />
+            </div>
+            <h3 className="font-bold text-ink-900 text-xl">No skill gaps found!</h3>
+            <p className="text-ink-500 mt-2 max-w-md mx-auto text-sm leading-relaxed">
+              Your profile perfectly matches your target role based on your CV and completed assessments.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary-50 border border-primary-200 px-4 py-1.5 text-xs font-bold text-primary-800">
+              <span>🎓 Eligible for Official Certification • Admin Verification in Review</span>
+            </div>
+          </Card>
+        )
       ) : null}
     </div>
   );

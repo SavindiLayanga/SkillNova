@@ -1,5 +1,5 @@
 // Using global fetch
-import { AI_API_KEY } from "../modelConfig.js";
+import { AI_API_KEY, AI_MODEL } from "../modelConfig.js";
 import { generateDynamicTitle, generateDynamicDescription } from "./testFallbackHelper.js";
 
 export const getAI = () => {
@@ -26,23 +26,51 @@ export const getAI = () => {
           }).join("\n");
         }
 
-        if (config?.responseMimeType === "application/json" && !promptText.toLowerCase().includes("json")) {
-          promptText += "\n\nPlease output in JSON format.";
-        }
+        const isJson = config?.responseMimeType === "application/json";
+        const messages = [];
 
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: model || AI_MODEL || "openai/gpt-oss-20b",
-            messages: [{ role: "user", content: promptText }],
-            response_format: config?.responseMimeType === "application/json" ? { type: "json_object" } : undefined,
-            temperature: 0.1
-          })
-        });
+        if (isJson) {
+          messages.push({
+            role: "system",
+            content: "You are a specialized AI assistant that outputs only valid, raw JSON. Do not include markdown fences (like ```json), commentary, or any text outside the JSON structure."
+          });
+          if (!promptText.toLowerCase().includes("json")) {
+            promptText += "\n\nPlease output in JSON format.";
+          }
+        }
+        messages.push({ role: "user", content: promptText });
+
+        const selectedModel = model || AI_MODEL || "openai/gpt-oss-20b";
+
+        const callGroq = async (enforceJsonObject = true) => {
+          return await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            signal: AbortSignal.timeout(45000),
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: selectedModel,
+              messages,
+              response_format: (isJson && enforceJsonObject) ? { type: "json_object" } : undefined,
+              temperature: 0.1
+            })
+          });
+        };
+
+        let response = await callGroq(true);
+
+        // If Groq rejects strict JSON schema validation, retry without strict json_object format
+        if (!response.ok) {
+          const errText = await response.text();
+          if (errText.includes("json_validate_failed") || errText.includes("failed_generation")) {
+            console.warn("Groq JSON format validation failed; retrying without response_format constraint...");
+            response = await callGroq(false);
+          } else {
+            throw new Error("Groq API Error: " + errText);
+          }
+        }
 
         if (!response.ok) {
            const err = await response.text();
@@ -50,8 +78,10 @@ export const getAI = () => {
         }
 
         const data = await response.json();
+        let content = data.choices[0]?.message?.content || "";
+
         return {
-          text: data.choices[0].message.content
+          text: content
         };
       }
     }

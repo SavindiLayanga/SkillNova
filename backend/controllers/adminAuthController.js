@@ -10,9 +10,14 @@ export const adminLogin = async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    // Explicitly select the password
+    // Explicitly select the password, also allow email or case-insensitive username
+    const trimmedUsername = (username || '').trim();
     const admin = await User.findOne({ 
-      username, 
+      $or: [
+        { username: trimmedUsername },
+        { username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') } },
+        { email: trimmedUsername.toLowerCase() }
+      ],
       role: { $in: ['admin', 'super_admin'] } 
     }).select('+password');
 

@@ -26,6 +26,7 @@ import { LibraryTest } from "./models/LibraryTest.js";
 import { generateDynamicTitle, generateDynamicDescription } from "./utils/testFallbackHelper.js";
 import { sendCVAnalysisEmail } from "./services/emailService.js";
 import { getAI } from "./utils/aiHelper.js";
+import { parseCVLocally } from "./utils/cvParserHelper.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -386,7 +387,7 @@ CRITICAL: You MUST provide realistic integer scores (between 60 and 98) for "mat
 
 JSON Structure:
 {
-    "isITRelated": boolean (true if the CV is related to IT/Software/Tech, false otherwise),
+    "isITRelated": true,
     "name": "string",
     "email": "string",
     "phone": "string",

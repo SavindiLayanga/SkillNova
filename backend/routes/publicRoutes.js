@@ -19,6 +19,7 @@ router.get('/verify-certificate/:certificateId', async (req, res) => {
       readinessScore: cert.jobReadinessScore,
       verifiedSkills: cert.skillsCompleted,
       issueDate: cert.issueDate,
+      pdfUrl: cert.pdfUrl,
       status: "Valid"
     });
   } catch (error) {
