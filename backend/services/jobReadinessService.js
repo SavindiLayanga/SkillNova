@@ -2,6 +2,8 @@ import { CVAnalysis } from "../models/CVAnalysis.js";
 import { LearningPath } from "../models/LearningPath.js";
 import { SkillTest } from "../models/SkillTest.js";
 import { JobReadiness } from "../models/JobReadiness.js";
+import { User } from "../models/User.js";
+import { AdminNotification } from "../models/AdminNotification.js";
 
 export const evaluateJobReadiness = async (userId) => {
   try {
@@ -81,6 +83,28 @@ export const evaluateJobReadiness = async (userId) => {
     }
 
     await jobReadiness.save();
+
+    // Alert Admin if candidate achieves >= 90% Readiness (Industry Ready)
+    if (readinessScore >= 90) {
+      try {
+        const user = await User.findOne({ uid: userId });
+        const candidateName = user?.name || "Student";
+        const notifExists = await AdminNotification.findOne({
+          message: { $regex: candidateName, $options: 'i' },
+          type: "success"
+        });
+        if (!notifExists) {
+          await AdminNotification.create({
+            title: "🎯 Industry Ready Candidate Alert!",
+            message: `${candidateName} has achieved ${readinessScore}% Job Readiness for "${targetRole}" and is fully qualified for industry placement.`,
+            type: "success",
+            link: `/admin/users/${user?._id || userId}`
+          });
+        }
+      } catch (err) {
+        console.warn("Admin notification creation error:", err.message);
+      }
+    }
 
     return jobReadiness;
 

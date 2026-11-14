@@ -3,6 +3,7 @@ import { CVAnalysis } from '../models/CVAnalysis.js';
 import Job from '../models/Job.js';
 import { Course } from '../models/Course.js';
 import { LibraryTest } from '../models/LibraryTest.js';
+import { AdminNotification } from '../models/AdminNotification.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -98,7 +99,67 @@ export const getDashboardStats = async (req, res) => {
       openJobs: totalJobs
     };
 
-    res.json({ stats, recentActivity, chartData, reviewWorkload });
+    // 🌟 Identify Candidates with >= 90% Readiness (Industry Job Ready)
+    const highScoringCVs = await CVAnalysis.find({
+      $or: [
+        { score: { $gte: 90 } },
+        { cvScore: { $gte: 90 } },
+        { skillMatchScore: { $gte: 90 } },
+        { careerReadinessScore: { $gte: 90 } }
+      ]
+    }).sort({ createdAt: -1 }).lean();
+
+    const candidateMap = new Map();
+    for (const cv of highScoringCVs) {
+      const uid = cv.userId || cv.email;
+      if (!uid || candidateMap.has(uid)) continue;
+
+      const user = await User.findOne({ 
+        $or: [{ uid: cv.userId }, { email: cv.email }] 
+      }).lean();
+
+      const candidateName = user?.name || cv.name || "Candidate";
+      const score = Math.max(cv.score || 0, cv.cvScore || 0, cv.skillMatchScore || 0, cv.careerReadinessScore || 0, 90);
+      const targetRole = cv.targetRole || user?.targetRole || "Software Developer";
+      const userRouteId = user?._id?.toString() || cv.userId;
+
+      candidateMap.set(uid, {
+        id: cv._id,
+        userId: userRouteId,
+        studentUid: cv.userId,
+        name: candidateName,
+        email: user?.email || cv.email || "Not specified",
+        targetRole,
+        score,
+        fileName: cv.fileName || "CV_Document.pdf",
+        skills: cv.skills || cv.technicalSkills || [],
+        verifiedSkills: cv.verifiedSkills || [],
+        missingSkills: cv.missingSkills || [],
+        updatedAt: cv.updatedAt || cv.createdAt
+      });
+
+      // Ensure an Admin Notification exists for each industry-ready candidate
+      try {
+        const notifExists = await AdminNotification.findOne({
+          message: { $regex: candidateName, $options: 'i' },
+          type: "success"
+        });
+        if (!notifExists) {
+          await AdminNotification.create({
+            title: "🎯 Industry Ready Candidate Alert!",
+            message: `${candidateName} has achieved ${score}% Job Readiness for "${targetRole}" and is fully qualified for industry placement.`,
+            type: "success",
+            link: `/admin/users/${userRouteId}`
+          });
+        }
+      } catch (notifErr) {
+        console.warn("Could not ensure admin notification:", notifErr.message);
+      }
+    }
+
+    const jobReadyCandidates = Array.from(candidateMap.values());
+
+    res.json({ stats, recentActivity, chartData, reviewWorkload, jobReadyCandidates });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard statistics.' });
