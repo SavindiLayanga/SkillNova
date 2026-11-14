@@ -21,13 +21,17 @@ export const getCvReviews = async (req, res) => {
         id: review._id,
         student: studentName,
         fileName: review.fileName || 'CV_Document.pdf',
+        fileUrl: review.fileUrl || '',
         uploadedAt: new Date(review.createdAt).toISOString().split('T')[0],
-        score: review.score || review.skillMatchScore || 0,
+        score: review.score || review.skillMatchScore || review.cvScore || review.careerReadinessScore || 0,
         status: review.score ? "Reviewed" : "Pending",
-        summary: review.aiInsights || "No summary available.",
+        summary: review.aiInsights || review.professionalSummary || "No summary available.",
         targetRole: review.targetRole || "Not specified",
-        skills: review.skills || [],
-        missingSkills: review.missingSkills || []
+        skills: review.skills?.length ? review.skills : (review.technicalSkills || []),
+        missingSkills: review.missingSkills || [],
+        education: review.education || [],
+        experience: review.experience || [],
+        projects: review.projects || []
       };
     }));
 
