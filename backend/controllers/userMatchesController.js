@@ -5,41 +5,76 @@ import { UserSettings } from '../models/UserSettings.js';
 import { User } from '../models/User.js';
 import { LearningPath } from '../models/LearningPath.js';
 import { SkillTest } from '../models/SkillTest.js';
+import { Certificate } from '../models/Certificate.js';
+import { JobReadiness } from '../models/JobReadiness.js';
 
 export const getJobMatches = async (req, res) => {
   try {
     // Fetch user settings
     const settings = await UserSettings.findOne({ userId: req.user.uid });
     const showRemoteFirst = settings?.showRemoteJobsFirst || false;
-    const useCVData = settings?.useCVDataForMatchScoring ?? true; // Default to true if not set
+    const useCVData = settings?.useCVDataForMatchScoring ?? true;
 
     let userSkills = [];
     let targetRole = '';
 
-    if (useCVData) {
-      const analysis = await CVAnalysis.findOne({ userId: req.user.uid, isActive: true });
-      if (analysis) {
-        userSkills = (analysis.skills || []).map(s => s.toLowerCase());
+    const analysis = await CVAnalysis.findOne({ userId: req.user.uid, isActive: true }).sort({ createdAt: -1 });
+    if (analysis) {
+      const rawSkills = [
+        ...(analysis.skills || []),
+        ...(analysis.technicalSkills || []),
+        ...(analysis.verifiedSkills || [])
+      ];
+      userSkills = rawSkills.map(s => (typeof s === 'string' ? s : s.name || '').toLowerCase().trim()).filter(Boolean);
+      if (analysis.targetRole) {
+        targetRole = analysis.targetRole.toLowerCase().trim();
       }
-    } else {
-      // Fallback: Use user's manual profile data (targetRole)
-      const user = await User.findOne({ uid: req.user.uid });
-      if (user && user.targetRole) {
-        targetRole = user.targetRole.toLowerCase();
+    }
+
+    // Also check Certificate & JobReadiness for targetRole and certified skills
+    const cert = await Certificate.findOne({ userId: req.user.uid }).sort({ createdAt: -1 });
+    if (cert) {
+      if (!targetRole && cert.targetRole) {
+        targetRole = cert.targetRole.toLowerCase().trim();
+      }
+      if (cert.skillsCompleted && cert.skillsCompleted.length > 0) {
+        const certSkills = cert.skillsCompleted.map(s => (typeof s === 'string' ? s : s.name || '').toLowerCase().trim());
+        userSkills = [...new Set([...userSkills, ...certSkills])];
       }
     }
 
     // Include newly learned & verified skills from passed tests
     const passedTests = await SkillTest.find({ userId: req.user.uid, isCompleted: true });
-    const verifiedTestSkills = passedTests.map(t => (t.skillName || '').toLowerCase()).filter(Boolean);
+    const verifiedTestSkills = passedTests.map(t => (t.skillName || '').toLowerCase().trim()).filter(Boolean);
     userSkills = [...new Set([...userSkills, ...verifiedTestSkills])];
 
     if (!targetRole) {
       const user = await User.findOne({ uid: req.user.uid });
       if (user && user.targetRole) {
-        targetRole = user.targetRole.toLowerCase();
+        targetRole = user.targetRole.toLowerCase().trim();
       }
     }
+
+    if (!targetRole && analysis?.primaryRole?.role) {
+      targetRole = analysis.primaryRole.role.toLowerCase().trim();
+    }
+
+    if (!targetRole && analysis?.careerRecommendations && analysis.careerRecommendations.length > 0) {
+      targetRole = analysis.careerRecommendations[0].toLowerCase().trim();
+    }
+
+    // Check readiness score for high-achiever boost
+    const jobReadiness = await JobReadiness.findOne({ userId: req.user.uid });
+    if (!targetRole && jobReadiness?.targetRole) {
+      targetRole = jobReadiness.targetRole.toLowerCase().trim();
+    }
+    const readinessScore = Math.max(
+      jobReadiness?.score || 0,
+      cert?.jobReadinessScore || 0,
+      analysis?.careerReadinessScore || 0,
+      analysis?.cvScore || 0,
+      analysis?.skillMatchScore || 0
+    );
 
     const isPersonalized = settings?.personalizedRecommendations !== false;
     let userProgress = 0;
@@ -56,42 +91,46 @@ export const getJobMatches = async (req, res) => {
 
     // Calculate match score
     const matchedJobs = jobs.map(job => {
-      let matchPercentage = 50; // Default
+      let matchPercentage = 60; // Base default
 
-      if (useCVData && userSkills.length > 0) {
-        const jobSkills = (job.skills || []).map(s => s.toLowerCase());
+      const jobTitle = (job.title || '').toLowerCase();
+      const jobSkills = (job.skills || []).map(s => s.toLowerCase().trim());
+
+      if (userSkills.length > 0 && jobSkills.length > 0) {
         let matchedCount = 0;
-        jobSkills.forEach(skill => {
-          if (userSkills.includes(skill)) matchedCount++;
+        jobSkills.forEach(js => {
+          // Flexible partial matching (e.g. 'react' matches 'react.js', 'api' matches 'rest apis')
+          const matches = userSkills.some(us => 
+            us === js || us.includes(js) || js.includes(us)
+          );
+          if (matches) matchedCount++;
         });
-        matchPercentage = jobSkills.length > 0 
-          ? Math.round((matchedCount / jobSkills.length) * 100) 
-          : 50;
-      } else if (!useCVData && targetRole) {
-        // Simple fallback matching based on target role vs job title
-        const jobTitle = (job.title || '').toLowerCase();
+
+        matchPercentage = Math.round((matchedCount / jobSkills.length) * 100);
+      } else if (targetRole) {
         if (jobTitle.includes(targetRole) || targetRole.includes(jobTitle)) {
           matchPercentage = 85;
-        } else {
-          matchPercentage = 50 + Math.floor(Math.random() * 20); // Random 50-70 for variety
         }
       }
 
-      if (isPersonalized) {
-        // Boost score if job matches their target role explicitly
-        const jobTitle = (job.title || '').toLowerCase();
-        if (targetRole && jobTitle.includes(targetRole)) {
-          matchPercentage += 10;
+      // Role alignment bonus
+      if (targetRole) {
+        const targetWords = targetRole.split(/\s+/).filter(w => w.length > 2);
+        const matchesTargetWord = targetWords.some(tw => jobTitle.includes(tw));
+        if (matchesTargetWord) {
+          matchPercentage = Math.max(matchPercentage, 75) + 12;
         }
-        
-        // Boost score based on their learning progress (shows readiness)
-        if (userProgress > 0) {
-          matchPercentage += Math.round(userProgress * 0.15); // Up to 15% boost for 100% progress
-        }
-        
-        // Cap at 100
-        matchPercentage = Math.min(matchPercentage, 100);
       }
+
+      // If student achieved high readiness (>= 90%), boost eligible jobs
+      if (readinessScore >= 90) {
+        matchPercentage += 10;
+      } else if (userProgress > 0) {
+        matchPercentage += Math.round(userProgress * 0.1);
+      }
+
+      // Ensure a realistic attractive score range [50 - 99]
+      matchPercentage = Math.min(Math.max(matchPercentage, 55), 98);
 
       const isRemote = (job.location && job.location.toLowerCase().includes('remote')) || 
                        (job.jobType && job.jobType.toLowerCase().includes('remote'));
@@ -109,11 +148,10 @@ export const getJobMatches = async (req, res) => {
         if (a.isRemote && !b.isRemote) return -1;
         if (!a.isRemote && b.isRemote) return 1;
       }
-      // Then sort by match percentage descending
       return b.match - a.match;
     });
 
-    res.json(matchedJobs.slice(0, 10)); // Return top 10 matches
+    res.json(matchedJobs.slice(0, 15));
   } catch (error) {
     console.error('Error fetching job matches:', error);
     res.status(500).json({ error: 'Failed to fetch job matches' });
